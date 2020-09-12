@@ -20,7 +20,7 @@ pub struct Packet {
 pub struct Parser {
     /* crc_error_cid */
     rx_queue: VecDeque<Packet>,
-    wait_cids: Vec<UbxCID>,
+    /* wait_cids: Vec<UbxCID>, */
     checksum: Checksum,
 
     state: State,
@@ -53,7 +53,7 @@ impl Parser {
     pub fn new() -> Self {
         let mut obj = Self { 
             rx_queue: VecDeque::with_capacity(10),
-            wait_cids: Vec::<UbxCID>::with_capacity(4),
+            /* wait_cids: Vec::<UbxCID>::with_capacity(4), */
             checksum: Checksum::new(),
             state: State::Init,
             msg_class: 0,
@@ -68,9 +68,11 @@ impl Parser {
         obj
     }
 
+    /*
     pub fn clear_filter(&mut self) {
         self.wait_cids.clear();
     }
+    */
 
     /*
     pub fn set_filter(self, cid) {
@@ -84,13 +86,13 @@ impl Parser {
         self.rx_queue.pop_front()   // Some(Packet) or None
     }
 
+    // TODO: CHange to plain array instead of vector
     pub fn process(&mut self, data: &Vec<u8>) {
         for byte in data.iter() {
             self.process_byte(*byte);
         }
     }
 
-    /* TODO: allow to hand in array of bytes */
     pub fn process_byte(&mut self, data: u8) {
         // println!("processing {:02X}", data);
         match self.state {

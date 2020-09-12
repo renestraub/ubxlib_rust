@@ -3,12 +3,26 @@ use std::fmt;
 use crate::cid::UbxCID as UbxCID;
 use crate::checksum::Checksum as Checksum;
 
+
 pub struct UbxFrame {
-    cid: UbxCID,
+    pub cid: UbxCID,
     data: Vec::<u8>,
 }
 
+
+pub trait UbxFrameInfo {
+    fn name(&self) -> String;
+    fn cls(&self) -> u8;
+    fn id(&self) -> u8;
+}
+
+pub trait UbxFrameSerialize {
+    fn to_bin(&self) -> Vec<u8>;
+}
+
+
 impl UbxFrame {
+    #[cfg(test)]
     pub fn new() -> Self {
         Self { 
             cid: UbxCID::new(0, 0),
@@ -24,6 +38,7 @@ impl UbxFrame {
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
+        let mut checksum = Checksum::new();
         let mut msg = Vec::<u8>::new();
 
         msg.push(0xb5);
@@ -33,41 +48,26 @@ impl UbxFrame {
         let id = self.cid.id();
         msg.push(cls);
         msg.push(id);
+        checksum.add(cls);
+        checksum.add(id);
 
         let length = self.data.len();
         msg.push(((length >> 0) & 0xFF) as u8);   // TODO: proper pack/unpack crate
         msg.push(((length >> 8) & 0xFF) as u8);   // TODO: there is surely one
+        checksum.add(((length >> 0) & 0xFF) as u8);
+        checksum.add(((length >> 8) & 0xFF) as u8);
 
         for d in &self.data {
             msg.push(*d);
+            checksum.add(*d)
         }
 
-        let checksum = self._calc_checksum();
+        // let checksum = self._calc_checksum();
         let (cka, ckb) = checksum.value();
         msg.push(cka);
         msg.push(ckb);
 
         msg
-    }
-
-    fn _calc_checksum(&self) -> Checksum {
-        // TODO: Duplicates code from to_bytes() -> combine
-        let mut checksum = Checksum::new();
-
-        let cls = self.cid.cls();
-        let id = self.cid.id();
-        checksum.add(cls);
-        checksum.add(id);
-
-        let length = self.data.len();
-        checksum.add(((length >> 0) & 0xFF) as u8);
-        checksum.add(((length >> 8) & 0xFF) as u8);
-
-        for d in &self.data {
-            checksum.add(*d)
-        }
-
-        checksum
     }
 }
 

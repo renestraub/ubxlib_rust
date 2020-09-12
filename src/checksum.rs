@@ -17,6 +17,7 @@ impl Checksum {
         (self.cka, self.ckb)
     }
 
+    #[allow(dead_code)]
     pub fn matches(&self, cka: u8, ckb: u8) -> bool {
         return self.cka == cka && self.ckb == ckb
     }
