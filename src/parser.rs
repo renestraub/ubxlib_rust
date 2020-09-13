@@ -7,6 +7,7 @@
  */
 
 use std::collections::VecDeque;
+use std::collections::HashSet;
 
 use crate::cid::UbxCID as UbxCID;
 use crate::checksum::Checksum as Checksum;
@@ -20,7 +21,7 @@ pub struct Packet {
 pub struct Parser {
     /* crc_error_cid */
     rx_queue: VecDeque<Packet>,
-    /* wait_cids: Vec<UbxCID>, */
+    wait_cids: HashSet<UbxCID>,
     checksum: Checksum,
 
     state: State,
@@ -39,7 +40,7 @@ const MAX_MESSAGE_LENGTH: usize = 1000;
 /* TODO: Check all upper case */
 enum State {
     Init,
-    Sync1,   /* TODO: Rename */
+    Sync1,
     Class,
     ID,
     Len1,
@@ -53,7 +54,7 @@ impl Parser {
     pub fn new() -> Self {
         let mut obj = Self { 
             rx_queue: VecDeque::with_capacity(10),
-            /* wait_cids: Vec::<UbxCID>::with_capacity(4), */
+            wait_cids: HashSet::<UbxCID>::new(),
             checksum: Checksum::new(),
             state: State::Init,
             msg_class: 0,
@@ -68,17 +69,14 @@ impl Parser {
         obj
     }
 
-    /*
     pub fn clear_filter(&mut self) {
         self.wait_cids.clear();
     }
-    */
 
-    /*
-    pub fn set_filter(self, cid) {
-        self.wait_cids = cid
+    pub fn add_filter(&mut self, cid: UbxCID) {
+        self.wait_cids.insert(cid);
+        // println!("{:?}", self.wait_cids);
     }
-    */
 
     pub fn packet(&mut self) -> Option<Packet> {
         // let packets = self.rx_queue.len();
@@ -183,33 +181,19 @@ impl Parser {
         if self.checksum.matches(self.cka, self.ckb) {
             // println!("checksum is ok");
 
+            // .. and frame passes filter ..
             let cid = UbxCID::new(self.msg_class, self.msg_id);
             // println!("cid {:?}", cid);
-
-            // TODO: Here comes the fun part.
-            // We have to copy over the buffer to the packet by value
-            let packet = Packet { cid: cid, data: self.msg_data.clone() };
-            self.rx_queue.push_back(packet);
-
-            /*
-            # .. and frame passes filter ..
-            cid = UbxCID(self.msg_class, self.msg_id)
-
-            filters = self.wait_cids
-
-            if filters:
-                if cid in filters:
-                    # .. send CID and data as tuple to server
-                    message = (cid, self.msg_data)
-                    self.rx_queue.put(message)
-                else:
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug(f'no match - dropping {cid}')
-                
-            else:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f'no filters - dropping {cid}')
-            */
+            if self.wait_cids.contains(&cid) {
+                // .. send CID and data as tuple to server
+                // TODO: Here comes the fun part.
+                // We have to copy over the buffer to the packet by value
+                let packet = Packet { cid: cid, data: self.msg_data.clone() };
+                self.rx_queue.push_back(packet);
+            }
+            else {
+                println!("no match - dropping {:?}", cid);
+            }
         }
         else {
             println!("checksum error in frame, discarding");
@@ -249,12 +233,6 @@ mod tests {
                                0x00, 0x00, 0x00, 0x00, 0x51, 0xAC];
     
     #[test]
-    fn construction() {
-        let _uut = Parser::new();
-//        assert_eq!(0, 1);
-    }
-
-    #[test]
     #[should_panic]
     fn no_frames() {
         let mut uut = Parser::new();
@@ -265,6 +243,7 @@ mod tests {
     #[test]
     fn process_byte() {
         let mut uut = Parser::new();
+        uut.add_filter(UbxCID::new(0x13, 0x40));
         for byte in FRAME_1.iter() {
             uut.process_byte(*byte);
         }
@@ -285,13 +264,74 @@ mod tests {
     #[test]
     fn process_array() {
         let mut uut = Parser::new();
+        uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1.to_vec());
 
         let res = uut.packet();     // Some(Packet)
         let packet = res.unwrap();  // panics if None
         assert_eq!(packet.cid, UbxCID::new(0x13, 0x40));
     }
-    
+
+    #[test]
+    fn passes_filter() {
+        let mut uut = Parser::new();
+        uut.add_filter(UbxCID::new(0x13, 0x40));
+        uut.process(&FRAME_1.to_vec());
+
+        let res = uut.packet();     // Some(Packet)
+        let packet = res.unwrap();  // panics if None
+        assert_eq!(packet.cid, UbxCID::new(0x13, 0x40));
+
+    }
+
+    #[test]
+    fn dropped_cls() {
+        let mut uut = Parser::new();
+        uut.add_filter(UbxCID::new(0x12, 0x40));
+        uut.process(&FRAME_1.to_vec());
+
+        let res = uut.packet();
+        assert_eq!(res.is_none(), true);
+    }
+
+    #[test]
+    fn dropped_id() {
+        let mut uut = Parser::new();
+        uut.add_filter(UbxCID::new(0x13, 0x41));
+        uut.process(&FRAME_1.to_vec());
+
+        let res = uut.packet();
+        assert_eq!(res.is_none(), true);
+    }
+
+    #[test]
+    fn multiple_filters() {
+        let mut uut = Parser::new();
+        uut.add_filter(UbxCID::new(0x12, 0x12));
+        uut.add_filter(UbxCID::new(0x13, 0x40));
+        uut.add_filter(UbxCID::new(0xFF, 0x00));
+        uut.add_filter(UbxCID::new(0xFF, 0x00));
+        uut.process(&FRAME_1.to_vec());
+
+        let res = uut.packet();     // Some(Packet)
+        let packet = res.unwrap();  // panics if None
+        assert_eq!(packet.cid, UbxCID::new(0x13, 0x40));
+    }
+
+    #[test]
+    fn clear_filter() {
+        let mut uut = Parser::new();
+        uut.add_filter(UbxCID::new(0x13, 0x40));
+        uut.process(&FRAME_1.to_vec());
+        let res = uut.packet();
+        assert_eq!(res.is_some(), true);
+
+        uut.clear_filter();
+        uut.process(&FRAME_1.to_vec());
+        let res = uut.packet();
+        assert_eq!(res.is_none(), true);
+    }
+
     #[test]
     fn crc_error() {
         /* B5 62 13 40 18 00 10 00 00 12 E4 07 09 05 06 28 30 00 40 28 EF 0C 0A 00 00 00 00 00 00 00 51 AC   */
@@ -300,6 +340,7 @@ mod tests {
                                0x06, 0x28, 0x30, 0x00, 0x40, 0x28, 0xEF, 0x0C, 0x0A, 0x00, 0x00, 0x00, 
                                0x00, 0x00, 0x00, 0x00, 0x51, 0xAC+1];
         let mut uut = Parser::new();
+        uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&frame.to_vec());
         let res = uut.packet();     // crc packet
         assert_eq!(res.is_some(), true);
@@ -313,108 +354,9 @@ mod tests {
                                0x06, 0x28, 0x30, 0x00, 0x40, 0x28, 0xEF, 0x0C, 0x0A, 0x00, 0x00, 0x00, 
                                0x00, 0x00, 0x00, 0x00, 0x51, 0xAC];
         let mut uut = Parser::new();
+        uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&frame.to_vec());
         let res = uut.packet();     // Should be None because frame is too long (MAX_MESSAGE_LENGTH)
         assert_eq!(res.is_none(), true);
     }
-
 }
-
-
-
-
-/*
-
-class UbxParser(object):
-    def clear_filter(self):
-        with self.wait_cid_lock:
-            self.wait_cids = None
-
-    def set_filter(self, cid):
-        with self.wait_cid_lock:
-            self.wait_cids = cid
-
-    def process(self, data):
-        for d in data:
-            if self.state == __class__.State.INIT:
-                if d == UbxFrame.SYNC_1:
-                    self.state = __class__.State.SYNC
-
-            elif self.state == __class__.State.SYNC:
-                if d == UbxFrame.SYNC_2:
-                    self._reset()
-                    self.state = __class__.State.CLASS
-                else:
-                    self.state = __class__.State.INIT
-
-            elif self.state == __class__.State.CLASS:
-                self.msg_class = d
-                self.checksum.add(d)
-                self.state = __class__.State.ID
-
-            elif self.state == __class__.State.ID:
-                self.msg_id = d
-                self.checksum.add(d)
-                self.state = __class__.State.LEN1
-
-            elif self.state == __class__.State.LEN1:
-                self.msg_len = d
-                self.checksum.add(d)
-                self.state = __class__.State.LEN2
-
-            elif self.state == __class__.State.LEN2:
-                self.msg_len = self.msg_len + (d * 256)
-                self.checksum.add(d)
-
-                if self.msg_len == 0:
-                    self.state = __class__.State.CRC1
-                elif self.msg_len > __class__.MAX_MESSAGE_LENGTH:
-                    logger.warning(f'invalid msg len {self.msg_len}')
-                    self.state = __class__.State.INIT
-                else:
-                    self.ofs = 0
-                    self.state = __class__.State.DATA
-
-            elif self.state == __class__.State.DATA:
-                self.msg_data.append(d)
-                self.checksum.add(d)
-                self.ofs += 1
-                if self.ofs == self.msg_len:
-                    self.state = __class__.State.CRC1
-
-            elif self.state == __class__.State.CRC1:
-                self.cka = d
-                self.state = __class__.State.CRC2
-
-            elif self.state == __class__.State.CRC2:
-                self.ckb = d
-
-                # if checksum matches received checksum ..
-                if self.checksum.matches(self.cka, self.ckb):
-                    # .. and frame passes filter ..
-                    cid = UbxCID(self.msg_class, self.msg_id)
-
-                    with self.wait_cid_lock:
-                        filters = self.wait_cids
-
-                    if filters:
-                        if cid in filters:
-                            # .. send CID and data as tuple to server
-                            message = (cid, self.msg_data)
-                            self.rx_queue.put(message)
-                        else:
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug(f'no match - dropping {cid}')
-                        
-                    else:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug(f'no filters - dropping {cid}')
-                else:
-                    logger.warning(f'checksum error in frame, discarding')
-                    logger.warning(f'{self.msg_class:02x} {self.msg_id:02x} {binascii.hexlify(self.msg_data)}')
-                    
-                    crc_error_message = (self.crc_error_cid, None)
-                    self.rx_queue.put(crc_error_message)
-
-                self.state = __class__.State.INIT
-*/
