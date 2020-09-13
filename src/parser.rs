@@ -13,6 +13,7 @@ use crate::cid::UbxCID as UbxCID;
 use crate::checksum::Checksum as Checksum;
 
 
+#[derive(Debug)]
 pub struct Packet {
     pub cid: crate::cid::UbxCID,
     pub data: Vec<u8>,      // mgt struct on stack, data on heap
