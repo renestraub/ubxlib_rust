@@ -3,6 +3,7 @@ use std::fmt;
 // TODO: automatic debug formatter or ..
 // #[derive(Debug)]
 #[derive(Hash, Eq)]
+#[derive(Clone, Copy)]
 pub struct UbxCID {
     cls: u8,
     id: u8,
@@ -46,12 +47,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn construction() {
+    fn formatting() {
         let dut = UbxCID::new(1, 2);
-        assert_eq!(format!("{:?}", dut), "CID { cls: 1, id: 2 }");
+        assert_eq!(format!("{:?}", dut), "CID: 0x01 0x02");
 
         let dut = UbxCID::new(0x13, 0x00);
-        assert_eq!(format!("{:?}", dut), "CID { cls: 19, id: 0 }");
+        assert_eq!(format!("{:?}", dut), "CID: 0x13 0x00");
     }
 
     #[test]
@@ -90,4 +91,12 @@ mod tests {
         let dut2 = UbxCID::new(2, 2);
         assert_ne!(dut1, dut2);
     }
+
+    #[test]
+    fn assign() {
+        let a = UbxCID::new(1, 2);
+        let b = a; 
+        assert_eq!(a, b);
+    }
+
 }
