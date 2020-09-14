@@ -9,18 +9,18 @@
 use std::collections::VecDeque;
 use std::collections::HashSet;
 
-use crate::cid::UbxCID as UbxCID;
-use crate::checksum::Checksum as Checksum;
+use crate::cid::UbxCID;
+use crate::checksum::Checksum;
 
-
+// TODO: Isn't this the same as UbxFrame?
 #[derive(Debug)]
 pub struct Packet {
-    pub cid: crate::cid::UbxCID,
+    pub cid: UbxCID,
     pub data: Vec<u8>,      // mgt struct on stack, data on heap
 }
 
 pub struct Parser {
-    /* crc_error_cid */
+    /* TODO: crc_error_cid */
     rx_queue: VecDeque<Packet>,
     wait_cids: HashSet<UbxCID>,
     checksum: Checksum,
@@ -206,6 +206,8 @@ impl Parser {
             let crc_cid = UbxCID::new(0x00, 0x02);
             let crc_error_message = Packet { cid: crc_cid, data: vec![] };
             self.rx_queue.push_back(crc_error_message);
+
+            // panic!("CRC ERROR");
         }
 
         self.state = State::Init;

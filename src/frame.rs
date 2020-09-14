@@ -1,7 +1,7 @@
 use std::fmt;
 
-use crate::cid::UbxCID as UbxCID;
-use crate::checksum::Checksum as Checksum;
+use crate::cid::UbxCID;
+use crate::checksum::Checksum;
 
 
 pub struct UbxFrame {

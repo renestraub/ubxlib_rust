@@ -1,17 +1,12 @@
 use std::time::Instant;
 use std::time::Duration;
 
-use crate::cid::UbxCID as UbxCID;
+use crate::cid::UbxCID;
 
-use crate::frame::UbxFrameInfo as UbxFrameInfo;
-use crate::frame::UbxFrameSerialize as UbxFrameSerialize;
-use crate::frame::UbxFrameDeSerialize as UbxFrameDeSerialize;
+use crate::frame::{UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
+use crate::parser::{Parser, Packet};
 
-use crate::parser::Parser as Parser;
-use crate::parser::Packet as Packet;
-
-extern crate serial;
-
+// extern crate serial;
 use std::io::prelude::*;
 use serial::prelude::*;
 
@@ -54,7 +49,7 @@ impl ServerTty {
 
     - sends the poll message
     - waits for receiver message with same class/id as poll message
-    - retries in case no answer is received
+    ((- retries in case no answer is received))
     */
     // TODO: Return code caller must handle
     pub fn poll<TPoll: UbxFrameInfo + UbxFrameSerialize, TAnswer: UbxFrameDeSerialize>(&mut self, frame_poll: &TPoll, frame_result: &mut TAnswer)
@@ -77,7 +72,7 @@ impl ServerTty {
         let payload = self.wait();
         match payload {
             Ok(packet) => { 
-                println!("ok {:?}", packet.data);   // ACK or NAK received
+                // println!("ok {:?}", packet.data);   // ACK or NAK received
                 frame_result.from_bin(packet.data);
             },
             // BUG: clear_filter call not executed
@@ -134,7 +129,7 @@ impl ServerTty {
         let res = self.serial_port.write(&data);
         match res {
             Ok(bytes_written) => {
-                println!("{} bytes written", bytes_written);
+                // println!("{} bytes written", bytes_written);
                 if bytes_written == data.len() {
                     Ok(())
                 }
@@ -170,7 +165,7 @@ impl ServerTty {
             let res = self.parser.packet();
             match res {
                 Some(p) => { 
-                    println!("got desired packet {:?}", p);
+                    // println!("got desired packet {:?}", p);
                     return Ok(p);
                 }
                 _ => ()     // No packet decoded so far, no problem just continue

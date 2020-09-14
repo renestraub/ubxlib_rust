@@ -6,18 +6,17 @@ mod parser;
 mod gnss_mgr;
 mod server_tty;
 mod ubx_cfg_rate;
+mod ubx_cfg_nav5;
 mod ubx_mon_ver;
 
 use std::env;
 use std::path::Path;
 
-use crate::gnss_mgr::GnssMgr as GnssMgr;
-use crate::gnss_mgr::GnssMgrConfig as GnssMgrConfig;
+use crate::gnss_mgr::{GnssMgr, GnssMgrConfig};
 
-extern crate clap;
+// extern crate clap;
+// extern crate ini;
 use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
-
-extern crate ini;
 use ini::Ini;
 
 
@@ -182,6 +181,7 @@ fn parse_config(path: &str, config: &mut GnssMgrConfig)  -> Result<(), String> {
     // TODO: Proper error handling
     let conf = Ini::load_from_file(path).unwrap();
 
+    // Check for version 2 format
     let sec_general = conf.section(Some("default")).unwrap();
     let version = match sec_general.get("version") {
         Some("2") => 2,

@@ -1,10 +1,5 @@
-// use std::fmt;
-
-use crate::cid::UbxCID as UbxCID;
-use crate::frame::UbxFrame as UbxFrame;
-use crate::frame::UbxFrameInfo as UbxFrameInfo;
-use crate::frame::UbxFrameSerialize as UbxFrameSerialize;
-use crate::frame::UbxFrameDeSerialize as UbxFrameDeSerialize;
+use crate::cid::UbxCID;
+use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
 
 
 const CLS: u8 = 0x0A;
@@ -38,8 +33,6 @@ impl UbxFrameInfo for UbxMonVerPoll {
 
 impl UbxFrameSerialize for UbxMonVerPoll {
     fn to_bin(&self) -> Vec<u8> {
-        // poll frame has no data to serialize
-        // just build empty frame
         let frame = UbxFrame::construct(UbxCID::new(CLS, ID), [].to_vec());
         let msg = frame.to_bytes();
         msg
@@ -114,19 +107,6 @@ impl UbxFrameDeSerialize for UbxMonVer {
         self.load(&data);
     }
 }
-
-/*
-impl fmt::Debug for UbxMonVer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("UbxCfgRate")
-        .field("cid", &self.cid)
-        .field("measRate", &self.meas_rate)
-        .field("navRate", &self.nav_rate)
-        .field("timeRef", &self.time_ref)
-        .finish()
-    }
-}
-*/
 
 
 #[cfg(test)]

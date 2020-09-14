@@ -17,7 +17,6 @@ impl Checksum {
         (self.cka, self.ckb)
     }
 
-    #[allow(dead_code)]
     pub fn matches(&self, cka: u8, ckb: u8) -> bool {
         return self.cka == cka && self.ckb == ckb
     }
@@ -71,7 +70,8 @@ mod tests {
         assert_eq!(ok, true);
     }
 
-    // #[test]
+    /*
+    #[test]
     fn calculation_2() {
         /* UBX-NAV-VELECEF 20 */
         /*      Cls Id| Len |  iTow     |  ecefVX   |  ecefVY   | ecefVZ    |  sAcc     |        */
@@ -92,7 +92,7 @@ mod tests {
     }
 
 
-    // #[test]
+    #[test]
     fn calculation_3() {
         /* UBX-NAV-DOP (0x01 0x04) ? */
         /*      Cls Id| Len |           |           |           |           |     |      */
@@ -131,7 +131,7 @@ mod tests {
         // 0x4F   0100 1111    0xEC  1110 1100
         //              ^
     }
-
+*/
 }
 
 
@@ -191,4 +191,3 @@ UBX-NAV-PVT
 Len bytearray = 184/2 = 92, 5ch == Ok
 
 */
-
