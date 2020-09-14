@@ -31,13 +31,15 @@ impl PartialEq for UbxCID {
 
 impl fmt::Debug for UbxCID {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CID")
+        // CID { cls: 1, id: 32 }
+        /* f.debug_struct("CID")
          .field("cls", &self.cls)   // TODO: &format_args!("0x{:02X}"), 
          .field("id", &self.id)
-         .finish()
+         .finish(); */
+         // CID: 0x01 0x20
+         write!(f, "CID: 0x{:02x} 0x{:02x}", self.cls, self.id)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
