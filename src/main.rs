@@ -6,6 +6,7 @@ mod parser;
 mod gnss_mgr;
 mod server_tty;
 mod ubx_cfg_rate;
+mod ubx_mon_ver;
 
 use std::env;
 use std::path::Path;
@@ -122,6 +123,8 @@ fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     let _res = parse_config(&configfile_path, &mut config)?;
 
     gnss.configure(&config);
+
+    gnss.version();
 
     Ok(())
 }

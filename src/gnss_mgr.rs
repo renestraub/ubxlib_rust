@@ -1,7 +1,11 @@
+use crate::server_tty::ServerTty as ServerTty;
+
 use crate::ubx_cfg_rate::UbxCfgRate as UbxCfgRate;
 use crate::ubx_cfg_rate::UbxCfgRatePoll as UbxCfgRatePoll;
 
-use crate::server_tty::ServerTty as ServerTty;
+use crate::ubx_mon_ver::UbxMonVer as UbxMonVer;
+use crate::ubx_mon_ver::UbxMonVerPoll as UbxMonVerPoll;
+
 
 
 #[derive(Default)]
@@ -31,6 +35,18 @@ pub struct GnssMgr {
 impl GnssMgr {
     pub fn new(device: &str) -> Self {
         Self { device_name: String::from(device), }
+    }
+
+    pub fn version(&mut self) {
+        // TODO: Not sure what this function shall do
+        // create /run/gnss/gnss0.config
+        let mut server = ServerTty::new(&self.device_name);
+
+        let mut set = UbxMonVer::new();
+        let poll = UbxMonVerPoll::new();
+
+        server.poll(&poll, &mut set);
+        println!("current settings {:?}", set);
     }
 
     pub fn configure(&mut self, config: &GnssMgrConfig) {
@@ -69,9 +85,10 @@ impl GnssMgr {
         println!("persist");
         println!("device {}", self.device_name);
     }
-    
-    
+
     fn set_update_rate(&mut self, rate: u16) {
+        // TODO: Move to some open() function or even ctor
+        // TODO: DOn't want to open/close for each request
         let mut server = ServerTty::new(&self.device_name);
 
         let mut set = UbxCfgRate::new();

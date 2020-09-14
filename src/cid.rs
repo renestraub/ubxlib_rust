@@ -2,6 +2,7 @@ use std::fmt;
 
 // TODO: automatic debug formatter or ..
 // #[derive(Debug)]
+#[derive(Default)]
 #[derive(Hash, Eq)]
 #[derive(Clone, Copy)]
 pub struct UbxCID {
