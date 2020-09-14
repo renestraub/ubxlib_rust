@@ -15,6 +15,7 @@ use std::io::prelude::*;
 use serial::prelude::*;
 
 
+// Port is configured for 115'200, 8N1
 const SETTINGS: serial::PortSettings = serial::PortSettings {
     baud_rate:    serial::Baud115200,
     char_size:    serial::Bits8,
@@ -83,7 +84,11 @@ impl ServerTty {
         // Serialize polling frame payload.
         // Only a few polling frames required payload, most come w/o.
         let data = frame_poll.to_bin();
-        self.send(&data);
+        let res = self.send(&data);
+        match res {
+            Ok(_) => (),
+            Err(e) => println!("poll: {}", e),    // TODO: Abort here? What about clear_filter()?
+        }
 
         let payload = self.wait();
         match payload {
@@ -92,7 +97,7 @@ impl ServerTty {
                 frame_result.from_bin(packet.data);
             },
             // BUG: clear_filter call not executed
-            Err(_) => println!("timeout"),
+            Err(_) => println!("poll: timeout"),
         }
 
         self.parser.clear_filter();
@@ -116,16 +121,21 @@ impl ServerTty {
         // Get frame data (haeader, cls, id, len, payload, checksum a/b)
         let data = frame_set.to_bin();
         // println!("{:?}", data);
-        self.send(&data);
+        let res = self.send(&data);
+        match res {
+            Ok(_) => (),
+            Err(e) => println!("set: {}", e),    // TODO: Abort here? What about clear_filter()?
+        }
 
         // Check proper response (ACK/NAK)
         let payload = self.wait();
         match payload {
             Ok(packet) => { 
                 println!("ok {:?}", packet);
+                // TODO: Check ACK/NAK and CLS, ID in ACK
                 // f2.from_bin(packet.data);
             },
-            Err(_) => println!("timeout"),
+            Err(_) => println!("set: timeout"),
         }
 
         self.parser.clear_filter();
@@ -133,17 +143,21 @@ impl ServerTty {
 
     /*** Private ***/
 
-    // TODO: Return code caller must handle
-    fn send(&mut self, data: &Vec<u8>) {
+    fn send(&mut self, data: &Vec<u8>) -> Result<(), &'static str> {
         // println!("{} bytes to send {:?}", data.len(), data);
 
-        let count = self.serial_port.write(&data);
-        match count {
-            Ok(n) => { 
-                println!("{} bytes written", n); 
-                // TODO: Check bytes written == length data
+        let res = self.serial_port.write(&data);
+        match res {
+            Ok(bytes_written) => {
+                println!("{} bytes written", bytes_written);
+                if bytes_written == data.len() {
+                    Ok(())
+                }
+                else {
+                    Err("Write error, not all data written")
+                }
             },
-            Err(_) => (),   // no data
+            Err(_) => Err("Write error"),
         }
     }
 
@@ -155,8 +169,8 @@ impl ServerTty {
         while elapsed.as_millis() < 3000 {
             // Read data 
             // TODO: Check why only 48 bytes are read at once
-            let count = self.serial_port.read(&mut read_buffer[..]);
-            match count {
+            let res = self.serial_port.read(&mut read_buffer[..]);
+            match res {
                 Ok(bytes_read) => { 
                     // println!("{} bytes read", bytes_read); 
                     let data = read_buffer[0..bytes_read].to_vec();
@@ -167,6 +181,7 @@ impl ServerTty {
                 Err(_) => (),   // no data, just continue
             }
 
+            // Check if a packet could be decoded already
             let res = self.parser.packet();
             match res {
                 Some(p) => { 
