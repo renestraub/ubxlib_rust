@@ -73,8 +73,6 @@ mod tests {
 
     // #[test]
     fn calculation_2() {
-
-
         /* UBX-NAV-VELECEF 20 */
         /*      Cls Id| Len |  iTow     |  ecefVX   |  ecefVY   | ecefVZ    |  sAcc     |        */
         /* B5 62 01 11 14 00 a8 a4 57 01 ff ff ff ff ff ff ff ff fe ff ff ff 19 00 00 00 B5 62   */

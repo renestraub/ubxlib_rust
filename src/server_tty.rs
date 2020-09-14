@@ -1,0 +1,184 @@
+use std::time::Instant;
+use std::time::Duration;
+
+use crate::cid::UbxCID as UbxCID;
+
+use crate::frame::UbxFrameInfo as UbxFrameInfo;
+use crate::frame::UbxFrameSerialize as UbxFrameSerialize;
+
+use crate::parser::Parser as Parser;
+use crate::parser::Packet as Packet;
+
+extern crate serial;
+
+use std::io::prelude::*;
+use serial::prelude::*;
+
+
+const SETTINGS: serial::PortSettings = serial::PortSettings {
+    baud_rate:    serial::Baud115200,
+    char_size:    serial::Bits8,
+    parity:       serial::ParityNone,
+    stop_bits:    serial::Stop1,
+    flow_control: serial::FlowNone,
+};
+
+
+pub struct ServerTty {
+    // device_name: String,
+    parser: Parser,
+    serial_port: serial::SystemPort,
+}
+
+
+impl ServerTty {
+    // TODO: Result return code to handle errors
+    pub fn new(device_name: &str) -> Self {
+        let mut obj = Self { 
+            // device_name: String::from(device_name),
+            parser: Parser::new(),
+            serial_port: serial::open(&device_name).unwrap(),   // TODO: How do we do error check here?
+        };
+
+        // let mut port = serial::open(&self.device_name).unwrap(); // ?;
+        obj.serial_port.configure(&SETTINGS).unwrap(); // ?;
+        obj.serial_port.set_timeout(Duration::from_secs(1000)).unwrap(); //?;
+
+        obj
+    }    
+
+/*
+    fn poll<F>(&mut self, f: &F)
+    where F: UbxFrameSerialize+UbxFrameInfo {
+        // TODO: Can we do a check for a POLL frame here?
+        println!("polling {}", f.name());
+
+        let wait_cid = f.cid();
+        self.parser.add_filter(wait_cid);   // Wait for response with same CID
+
+        let data = f.to_bin();
+        self.send(&data);
+        self.wait();
+
+        self.parser.clear_filter();
+    }
+*/
+
+    /*
+    Poll a receiver status
+
+    - sends the poll message
+    - waits for receiver message with same class/id as poll message
+    - retries in case no answer is received
+    */
+    // TODO: Return code caller must handle
+    pub fn poll<TPoll: UbxFrameInfo + UbxFrameSerialize, TAnswer: UbxFrameSerialize>(&mut self, frame_poll: &TPoll, frame_result: &mut TAnswer)
+    {
+        println!("polling {}", frame_poll.name());
+
+        // We expect a response frame with the exact same CID
+        let wait_cid = frame_poll.cid();
+        self.parser.add_filter(wait_cid);
+
+        // Serialize polling frame payload.
+        // Only a few polling frames required payload, most come w/o.
+        let data = frame_poll.to_bin();
+        self.send(&data);
+
+        let payload = self.wait();
+        match payload {
+            Ok(packet) => { 
+                println!("ok {:?}", packet.data);   // ACK or NAK received
+                frame_result.from_bin(packet.data);
+            },
+            // BUG: clear_filter call not executed
+            Err(_) => println!("timeout"),
+        }
+
+        self.parser.clear_filter();
+    }
+
+    /*
+    Send a set message to modem and wait for acknowledge
+
+    - creates bytes representation of set frame
+    - sends set message to modem
+    - waits for ACK/NAK
+    */
+    // TODO: Return code caller must handle
+    pub fn set<TSet: UbxFrameSerialize + UbxFrameInfo>(&mut self, frame_set: &TSet) {
+        println!("setting {}", frame_set.name());
+
+        // Wait for ACK-ACK and ACK-NAK
+        self.parser.add_filter(UbxCID::new(0x05, 0x01));
+        self.parser.add_filter(UbxCID::new(0x05, 0x00));
+
+        // Get frame data (haeader, cls, id, len, payload, checksum a/b)
+        let data = frame_set.to_bin();
+        // println!("{:?}", data);
+        self.send(&data);
+
+        // Check proper response (ACK/NAK)
+        let payload = self.wait();
+        match payload {
+            Ok(packet) => { 
+                println!("ok {:?}", packet);
+                // f2.from_bin(packet.data);
+            },
+            Err(_) => println!("timeout"),
+        }
+
+        self.parser.clear_filter();
+    }
+
+    /*** Private ***/
+
+    // TODO: Return code caller must handle
+    fn send(&mut self, data: &Vec<u8>) {
+        // println!("{} bytes to send {:?}", data.len(), data);
+
+        let count = self.serial_port.write(&data);
+        match count {
+            Ok(n) => { 
+                println!("{} bytes written", n); 
+                // TODO: Check bytes written == length data
+            },
+            Err(_) => (),   // no data
+        }
+    }
+
+    fn wait(&mut self) -> Result<Packet, &'static str> {
+        let mut read_buffer = [0u8; 1024];
+
+        let start = Instant::now();
+        let mut elapsed = start.elapsed();
+        while elapsed.as_millis() < 3000 {
+            // Read data 
+            // TODO: Check why only 48 bytes are read at once
+            let count = self.serial_port.read(&mut read_buffer[..]);
+            match count {
+                Ok(bytes_read) => { 
+                    // println!("{} bytes read", bytes_read); 
+                    let data = read_buffer[0..bytes_read].to_vec();
+                    // println!("{:?}", data);
+                    // process() places all decoded frames in response_queue
+                    self.parser.process(&data);
+                },
+                Err(_) => (),   // no data, just continue
+            }
+
+            let res = self.parser.packet();
+            match res {
+                Some(p) => { 
+                    println!("got desired packet {:?}", p);
+                    return Ok(p);
+                }
+                _ => ()     // No packet decoded so far, no problem just continue
+            }
+
+            elapsed = start.elapsed();
+        }
+
+        Err("timeout")
+    }
+}
