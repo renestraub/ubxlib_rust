@@ -5,6 +5,10 @@ mod frame;
 mod parser;
 mod ubx_cfg_rate;
 
+use std::path::Path;
+use std::time::Instant;
+use std::time::Duration;
+
 use crate::cid::UbxCID as UbxCID;
 
 use crate::ubx_cfg_rate::UbxCfgRate as UbxCfgRate;
@@ -17,14 +21,20 @@ use crate::frame::UbxFrameSerialize as UbxFrameSerialize;
 use crate::parser::Parser as Parser;
 use crate::parser::Packet as Packet;
 
-
 extern crate clap;
-extern crate ini;
-
-use std::time::Instant;
-use std::path::Path;
 use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
+
+extern crate ini;
 use ini::Ini;
+
+
+extern crate serial;
+
+use std::env;
+// use std::io;
+
+use std::io::prelude::*;
+use serial::prelude::*;
 
 
 fn main() {
@@ -175,7 +185,6 @@ fn build_configfile_path(path: &str) -> String {
     path
 }
 
-
 fn parse_config(path: &str, config: &mut GnssMgrConfig)  -> Result<(), String> {
     // Check if configfile exists
     let config_exists = Path::new(&path).exists();
@@ -198,7 +207,7 @@ fn parse_config(path: &str, config: &mut GnssMgrConfig)  -> Result<(), String> {
     // Return Some(number) with valid content
     // or Err("....")
     let update_rate = match sec_general.get("update-rate") {
-        Some("") => "1",    // TODO: Use 1 Hz if nothing specified
+        Some("") => "3",    // TODO: Use 1 Hz if nothing specified
         Some(x) => x,
         _ => return Err("Invalid configuration file format/version".to_string()),
     };
@@ -287,98 +296,26 @@ impl GnssMgr {
     
     
     fn set_update_rate(&mut self, rate: u16) {
-        let poll = UbxCfgRatePoll::new();
-        // let name = poll.name();
-        frame_info(&poll);
-    
+        let mut server = ServerTty::new(&self.device_name);
+
         let mut set = UbxCfgRate::new();
+        let poll = UbxCfgRatePoll::new();
+
+        server.poll(&poll, &mut set);
+        println!("current settings {:?}", set);
+
+        println!("changing to {}", 1000/rate);
         set.meas_rate = 1000u16 / rate;
-        set.nav_rate = 1;
-        set.time_ref = 0;
-        frame_info(&set);
-    
-        let mut server = ServerTty::new();
+        println!("new settings {:?}", set);
+
         server.set(&set);
     }
 }
 
 
-fn frame_info<F>(f: &F)
-where F: UbxFrameInfo {
-    println!("UbxFrameInfo name is: {}", f.name());
-    println!("cls is: {}", f.cls());
-    println!("id is: {}", f.id());
-}
-
-
-
-
-struct ServerTty {
-    // serial port
-    parser: Parser,
-}
-
-impl ServerTty {
-    pub fn new() -> Self {
-        Self { 
-            parser: Parser::new(),
-        }
-    }    
-
-    // NOTE: Prototype for server_tty send() method
-    fn set<F>(&mut self, f: &F)
-    where F: UbxFrameSerialize {
-        println!("set");
-
-        // message.pack();
-        let data = f.to_bin();
-        // println!("{:?}", data);
-
-        self.parser.add_filter(UbxCID::new(0x05, 0x01));    // ACK-ACK
-        self.parser.add_filter(UbxCID::new(0x05, 0x00));    // ACK-NAK
-        // self.parser.add_filter(UbxCID::new(0x13, 0x40));    // TODO: Remove Test frame
-
-        // self.send();
-        self.wait();
-
-        self.parser.clear_filter();
-    }
-
-    fn wait(&mut self) {
-        const FRAME_1: [u8; 32] = [0xB5, 0x62, 0x13, 0x40, 0x18, 0x00, 0x10, 0x00, 0x00, 0x12, 0xE4, 0x07, 0x09, 0x05, 
-        0x06, 0x28, 0x30, 0x00, 0x40, 0x28, 0xEF, 0x0C, 0x0A, 0x00, 0x00, 0x00, 
-        0x00, 0x00, 0x00, 0x00, 0x51, 0xAC];
-
-        self.parser.process(&FRAME_1.to_vec());
-
-        let start = Instant::now();
-        let mut elapsed = start.elapsed();
-        while elapsed.as_millis() < 3000 {
-
-            let res = self.parser.packet();
-            match res {
-                Some(p) => { println!("got packet {:?}", p); break; }  // TODO: construct frame from packet
-                _ => ()
-            }
-
-            elapsed = start.elapsed();
-            // println!("{:?}", elapsed.as_millis());
-        }
-    }
-}
-
-/*
-extern crate serial;
-
-use std::env;
-use std::io;
-// use std::time::Duration;
-
-use std::io::prelude::*;
-use serial::prelude::*;
-
+// TODO: Move somehow inside ServerTty scope
 const SETTINGS: serial::PortSettings = serial::PortSettings {
-    baud_rate:    serial::Baud9600,
+    baud_rate:    serial::Baud115200,
     char_size:    serial::Bits8,
     parity:       serial::ParityNone,
     stop_bits:    serial::Stop1,
@@ -386,38 +323,160 @@ const SETTINGS: serial::PortSettings = serial::PortSettings {
 };
 
 
-fn main() {
-    loop {
-        match test() {
-            Ok(_) =>  (), //println!("all good"),
-            Err(e) => println!("errored {:?}", e),
+struct ServerTty {
+    // device_name: String,
+    parser: Parser,
+    serial_port: serial::SystemPort,
+}
+
+impl ServerTty {
+    // TODO: Result return code to handle errors
+    pub fn new(device_name: &str) -> Self {
+        let mut obj = Self { 
+            // device_name: String::from(device_name),
+            parser: Parser::new(),
+            serial_port: serial::open(&device_name).unwrap(),   // TODO: How do we do error check here?
+        };
+
+        // let mut port = serial::open(&self.device_name).unwrap(); // ?;
+        obj.serial_port.configure(&SETTINGS).unwrap(); // ?;
+        obj.serial_port.set_timeout(Duration::from_secs(1000)).unwrap(); //?;
+
+        obj
+    }    
+
+/*
+    fn poll<F>(&mut self, f: &F)
+    where F: UbxFrameSerialize+UbxFrameInfo {
+        // TODO: Can we do a check for a POLL frame here?
+        println!("polling {}", f.name());
+
+        let wait_cid = f.cid();
+        self.parser.add_filter(wait_cid);   // Wait for response with same CID
+
+        let data = f.to_bin();
+        self.send(&data);
+        self.wait();
+
+        self.parser.clear_filter();
+    }
+*/
+
+    /*
+    Poll a receiver status
+
+    - sends the poll message
+    - waits for receiver message with same class/id as poll message
+    - retries in case no answer is received
+    */
+    // TODO: Return code caller must handle
+    fn poll<TPoll: UbxFrameInfo + UbxFrameSerialize, TAnswer: UbxFrameSerialize>(&mut self, frame_poll: &TPoll, frame_result: &mut TAnswer)
+    {
+        println!("polling {}", frame_poll.name());
+
+        // We expect a response frame with the exact same CID
+        let wait_cid = frame_poll.cid();
+        self.parser.add_filter(wait_cid);
+
+        // Serialize polling frame payload.
+        // Only a few polling frames required payload, most come w/o.
+        let data = frame_poll.to_bin();
+        self.send(&data);
+
+        let payload = self.wait();
+        match payload {
+            Ok(packet) => { 
+                println!("ok {:?}", packet.data);   // ACK or NAK received
+                frame_result.from_bin(packet.data);
+            },
+            // BUG: clear_filter call not executed
+            Err(_) => println!("timeout"),
+        }
+
+        self.parser.clear_filter();
+    }
+
+    /*
+    Send a set message to modem and wait for acknowledge
+
+    - creates bytes representation of set frame
+    - sends set message to modem
+    - waits for ACK/NAK
+    */
+    // TODO: Return code caller must handle
+    fn set<TSet: UbxFrameSerialize + UbxFrameInfo>(&mut self, frame_set: &TSet) {
+        println!("setting {}", frame_set.name());
+
+        // Wait for ACK-ACK and ACK-NAK
+        self.parser.add_filter(UbxCID::new(0x05, 0x01));
+        self.parser.add_filter(UbxCID::new(0x05, 0x00));
+
+        // Get frame data (haeader, cls, id, len, payload, checksum a/b)
+        let data = frame_set.to_bin();
+        // println!("{:?}", data);
+        self.send(&data);
+
+        // Check proper response (ACK/NAK)
+        let payload = self.wait();
+        match payload {
+            Ok(packet) => { 
+                println!("ok {:?}", packet);
+                // f2.from_bin(packet.data);
+            },
+            Err(_) => println!("timeout"),
+        }
+
+        self.parser.clear_filter();
+    }
+
+    /*** Private ***/
+
+    // TODO: Return code caller must handle
+    fn send(&mut self, data: &Vec<u8>) {
+        // println!("{} bytes to send {:?}", data.len(), data);
+
+        let count = self.serial_port.write(&data);
+        match count {
+            Ok(n) => { 
+                println!("{} bytes written", n); 
+                // TODO: Check bytes written == length data
+            },
+            Err(_) => (),   // no data
         }
     }
-}
 
+    fn wait(&mut self) -> Result<Packet, &'static str> {
+        let mut read_buffer = [0u8; 1024];
 
-fn test() -> Result<(), io::Error> {
-    let mut port = serial::open("/dev/gnss0")?;
+        let start = Instant::now();
+        let mut elapsed = start.elapsed();
+        while elapsed.as_millis() < 3000 {
+            // Read data 
+            // TODO: Check why only 48 bytes are read at once
+            let count = self.serial_port.read(&mut read_buffer[..]);
+            match count {
+                Ok(bytes_read) => { 
+                    // println!("{} bytes read", bytes_read); 
+                    let data = read_buffer[0..bytes_read].to_vec();
+                    // println!("{:?}", data);
+                    // process() places all decoded frames in response_queue
+                    self.parser.process(&data);
+                },
+                Err(_) => (),   // no data, just continue
+            }
 
-    port.configure(&SETTINGS)?;
-    // port.set_timeout(Duration::from_secs(1000))?;
+            let res = self.parser.packet();
+            match res {
+                Some(p) => { 
+                    println!("got desired packet {:?}", p);
+                    return Ok(p);
+                }
+                _ => ()     // No packet decoded so far, no problem just continue
+            }
 
-    // let mut buf: Vec<u8> = Vec::with_capacity(256);
-    let mut read_buffer = [0u8; 1024];
-    // let mut read_buffer = Vec::new();
-    // println!("buf {:?}", read_buffer);
+            elapsed = start.elapsed();
+        }
 
-    let count = port.read(&mut read_buffer[..]);
-    match count {
-        Ok(n) => { 
-            println!("{} bytes read", n); 
-            let data = read_buffer[0..n].to_vec();
-            println!("{:?}", data)
-        },
-        Err(_) => println!("no data"),
+        Err("timeout")
     }
-
-    Ok(())
 }
-
-*/

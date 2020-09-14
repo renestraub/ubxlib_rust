@@ -6,18 +6,20 @@ use crate::checksum::Checksum as Checksum;
 
 pub struct UbxFrame {
     pub cid: UbxCID,
-    data: Vec::<u8>,
+    pub data: Vec::<u8>,
 }
 
 
 pub trait UbxFrameInfo {
     fn name(&self) -> String;
+    fn cid(&self) -> UbxCID;
     fn cls(&self) -> u8;
     fn id(&self) -> u8;
 }
 
 pub trait UbxFrameSerialize {
     fn to_bin(&self) -> Vec<u8>;
+    fn from_bin(&mut self, data: Vec<u8>);
 }
 
 

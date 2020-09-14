@@ -50,6 +50,10 @@ impl UbxFrameInfo for UbxCfgRatePoll {
         String::from(&self.name)
     }
 
+    fn cid(&self) -> UbxCID {
+        self.cid
+    }
+
     fn cls(&self) -> u8 {
         self.cid.cls()
     }
@@ -68,6 +72,11 @@ impl UbxFrameSerialize for UbxCfgRatePoll {
             [].to_vec());
         let msg = frame.to_bytes();
         msg
+    }
+
+    fn from_bin(&mut self, data: Vec<u8>) {
+        // no fields, so nothing to do
+        assert_eq!(data.len(), 0);
     }
 }
 
@@ -95,6 +104,8 @@ impl UbxCfgRate {
     }
 
     pub fn load(&mut self, data: &[u8]) {
+        assert!(data.len() == 6);
+
         // TODO: improve further, this can't be the best solution
         self.meas_rate = u16::from_le_bytes([data[0], data[1]]);
         self.nav_rate = u16::from_le_bytes([data[2], data[3]]);
@@ -120,6 +131,10 @@ impl UbxFrameInfo for UbxCfgRate {
         String::from(&self.name)
     }
 
+    fn cid(&self) -> UbxCID {
+        self.cid
+    }
+
     fn cls(&self) -> u8 {
         self.cid.cls()
     }
@@ -132,12 +147,25 @@ impl UbxFrameInfo for UbxCfgRate {
 impl UbxFrameSerialize for UbxCfgRate {
     fn to_bin(&self) -> Vec<u8> {
         // println!("{:?}", &self);
+        // update binary data in frame
         let data = self.save();
-        let frame = UbxFrame::construct(
-            UbxCID::new(CLS, ID), 
-            data);
+
+        // construct a frame with correct CID and payload
+        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
+
+        // get complete frame data
         let msg = frame.to_bytes();
         msg
+        // TODO: Combine to one statement
+    }
+
+    fn from_bin(&mut self, data: Vec<u8>) {
+        // no fields, so nothing to do
+        assert_eq!(data.len(), 6);
+
+        self.load(&data);
+
+        println!("loading data to UbxCfgRate");
     }
 }
 
@@ -216,5 +244,16 @@ mod tests {
 
         let data = dut.to_bin();
         assert_eq!(data, [0xb5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x34, 0x12, 70, 177]);
+    }
+
+    #[test]
+    fn cfg_rate_deserialize() {
+        const DATA: [u8; 6] = [0xE8, 0x03, 0x01, 0x00, 0x34, 0x12];
+
+        let mut dut = UbxCfgRate::new();
+        dut.load(&DATA);
+        assert_eq!(dut.meas_rate, 1000);
+        assert_eq!(dut.nav_rate, 1);
+        assert_eq!(dut.time_ref, 0x1234);
     }
 }

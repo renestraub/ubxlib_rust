@@ -193,7 +193,7 @@ impl Parser {
                 self.rx_queue.push_back(packet);
             }
             else {
-                println!("no match - dropping {:?}", cid);
+                println!("no match - dropping {:?}, {} bytes", cid, self.msg_len);
             }
         }
         else {
