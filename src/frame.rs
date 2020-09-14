@@ -13,12 +13,13 @@ pub struct UbxFrame {
 pub trait UbxFrameInfo {
     fn name(&self) -> String;
     fn cid(&self) -> UbxCID;
-    fn cls(&self) -> u8;
-    fn id(&self) -> u8;
 }
 
 pub trait UbxFrameSerialize {
     fn to_bin(&self) -> Vec<u8>;
+}
+
+pub trait UbxFrameDeSerialize {
     fn from_bin(&mut self, data: Vec<u8>);
 }
 

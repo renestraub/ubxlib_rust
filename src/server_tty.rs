@@ -5,6 +5,7 @@ use crate::cid::UbxCID as UbxCID;
 
 use crate::frame::UbxFrameInfo as UbxFrameInfo;
 use crate::frame::UbxFrameSerialize as UbxFrameSerialize;
+use crate::frame::UbxFrameDeSerialize as UbxFrameDeSerialize;
 
 use crate::parser::Parser as Parser;
 use crate::parser::Packet as Packet;
@@ -48,23 +49,6 @@ impl ServerTty {
         obj
     }    
 
-/*
-    fn poll<F>(&mut self, f: &F)
-    where F: UbxFrameSerialize+UbxFrameInfo {
-        // TODO: Can we do a check for a POLL frame here?
-        println!("polling {}", f.name());
-
-        let wait_cid = f.cid();
-        self.parser.add_filter(wait_cid);   // Wait for response with same CID
-
-        let data = f.to_bin();
-        self.send(&data);
-        self.wait();
-
-        self.parser.clear_filter();
-    }
-*/
-
     /*
     Poll a receiver status
 
@@ -73,7 +57,7 @@ impl ServerTty {
     - retries in case no answer is received
     */
     // TODO: Return code caller must handle
-    pub fn poll<TPoll: UbxFrameInfo + UbxFrameSerialize, TAnswer: UbxFrameSerialize>(&mut self, frame_poll: &TPoll, frame_result: &mut TAnswer)
+    pub fn poll<TPoll: UbxFrameInfo + UbxFrameSerialize, TAnswer: UbxFrameDeSerialize>(&mut self, frame_poll: &TPoll, frame_result: &mut TAnswer)
     {
         println!("polling {}", frame_poll.name());
 
@@ -140,6 +124,7 @@ impl ServerTty {
 
         self.parser.clear_filter();
     }
+
 
     /*** Private ***/
 

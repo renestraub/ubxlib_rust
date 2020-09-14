@@ -4,6 +4,7 @@ use crate::cid::UbxCID as UbxCID;
 use crate::frame::UbxFrame as UbxFrame;
 use crate::frame::UbxFrameInfo as UbxFrameInfo;
 use crate::frame::UbxFrameSerialize as UbxFrameSerialize;
+use crate::frame::UbxFrameDeSerialize as UbxFrameDeSerialize;
 
 
 const CLS: u8 = 0x06;
@@ -11,7 +12,7 @@ const ID: u8 = 0x08;
 
 
 pub struct UbxCfgRatePoll {
-    pub name: String,
+    pub name: &'static str,
     cid: UbxCID,
 }
 
@@ -19,47 +20,19 @@ pub struct UbxCfgRatePoll {
 impl UbxCfgRatePoll {
     pub fn new() -> Self {
         Self {
-            name: String::from("UBX-CFG-RATE-POLL"),
+            name: "UBX-CFG-RATE-POLL",
             cid: UbxCID::new(CLS, ID), 
         }
     }
 }
 
-// TODO: Can we use a generic/template here
-// Add new member name
-/*
-use duplicate::duplicate;
-#[duplicate(name; [UbxCfgRatePoll]; [UbxCfgRate])]
-impl UbxFrameInfo for name {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn cls(&self) -> u8 {
-        self.frame.cid.cls()
-    }
-
-    fn id(&self) -> u8 {
-        self.frame.cid.id()
-    }
-}
-*/
-
 impl UbxFrameInfo for UbxCfgRatePoll {
     fn name(&self) -> String {
-        String::from(&self.name)
+        String::from(self.name)
     }
 
     fn cid(&self) -> UbxCID {
         self.cid
-    }
-
-    fn cls(&self) -> u8 {
-        self.cid.cls()
-    }
-
-    fn id(&self) -> u8 {
-        self.cid.id()
     }
 }
 
@@ -73,21 +46,18 @@ impl UbxFrameSerialize for UbxCfgRatePoll {
         let msg = frame.to_bytes();
         msg
     }
-
-    fn from_bin(&mut self, data: Vec<u8>) {
-        // no fields, so nothing to do
-        assert_eq!(data.len(), 0);
-    }
 }
 
 
-// TODO: #[derive(Default)] for fields?
+
+#[derive(Default)]
 pub struct UbxCfgRate {
-    pub name: String,
+    pub name: &'static str,
+    cid: UbxCID,
+
     pub meas_rate: u16,  // Time elapsed between two measuremnts in ms
     pub nav_rate: u16,   // Number of measurements for NAV solution
     pub time_ref: u16,
-    cid: UbxCID,
 }
 
 impl UbxCfgRate {
@@ -95,11 +65,9 @@ impl UbxCfgRate {
     // loads frame ...
     pub fn new() -> Self {
         Self { 
-            name: String::from("UBX-CFG-RATE"),
+            name: "UBX-CFG-RATE",
             cid: UbxCID::new(CLS, ID), 
-            meas_rate: 0,
-            nav_rate: 0,
-            time_ref: 0,
+            ..Default::default()
         }
     }
 
@@ -128,19 +96,11 @@ impl UbxCfgRate {
 
 impl UbxFrameInfo for UbxCfgRate {
     fn name(&self) -> String {
-        String::from(&self.name)
+        String::from(self.name)
     }
 
     fn cid(&self) -> UbxCID {
         self.cid
-    }
-
-    fn cls(&self) -> u8 {
-        self.cid.cls()
-    }
-
-    fn id(&self) -> u8 {
-        self.cid.id()
     }
 }
 
@@ -152,22 +112,19 @@ impl UbxFrameSerialize for UbxCfgRate {
 
         // construct a frame with correct CID and payload
         let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-
-        // get complete frame data
         let msg = frame.to_bytes();
         msg
         // TODO: Combine to one statement
     }
+}
 
+impl UbxFrameDeSerialize for UbxCfgRate {
     fn from_bin(&mut self, data: Vec<u8>) {
-        // no fields, so nothing to do
         assert_eq!(data.len(), 6);
-
         self.load(&data);
-
-        println!("loading data to UbxCfgRate");
     }
 }
+
 
 impl fmt::Debug for UbxCfgRate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -187,6 +144,7 @@ mod tests {
     #[test]
     fn cfg_rate_poll() {
         let dut = UbxCfgRatePoll::new();
+        assert_eq!(dut.name, "UBX-CFG-RATE-POLL");
         let msg = dut.to_bin();
         println!("message {:?}", msg);
         assert_eq!(msg, [0xb5, 0x62, CLS, ID, 0, 0, 14, 48]);

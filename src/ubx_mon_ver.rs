@@ -4,15 +4,15 @@ use crate::cid::UbxCID as UbxCID;
 use crate::frame::UbxFrame as UbxFrame;
 use crate::frame::UbxFrameInfo as UbxFrameInfo;
 use crate::frame::UbxFrameSerialize as UbxFrameSerialize;
+use crate::frame::UbxFrameDeSerialize as UbxFrameDeSerialize;
 
 
 const CLS: u8 = 0x0A;
 const ID: u8 = 0x04;
-
-// const CID: UbxCID = UbxCID::new(CLS, ID);
+// const NAME: &'static str = "UBX-MON-VER";
 
 pub struct UbxMonVerPoll {
-    pub name: String,
+    pub name: &'static str,
     cid: UbxCID,
 }
 
@@ -20,47 +20,19 @@ pub struct UbxMonVerPoll {
 impl UbxMonVerPoll {
     pub fn new() -> Self {
         Self {
-            name: String::from("UBX-MON-VER-POLL"),
+            name: "UBX-MON-VER-POLL",
             cid: UbxCID::new(CLS, ID), 
         }
     }
 }
 
-// TODO: Can we use a generic/template here
-// Add new member name
-/*
-use duplicate::duplicate;
-#[duplicate(name; [UbxCfgRatePoll]; [UbxCfgRate])]
-impl UbxFrameInfo for name {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn cls(&self) -> u8 {
-        self.frame.cid.cls()
-    }
-
-    fn id(&self) -> u8 {
-        self.frame.cid.id()
-    }
-}
-*/
-
 impl UbxFrameInfo for UbxMonVerPoll {
     fn name(&self) -> String {
-        String::from(&self.name)
+        String::from(self.name)
     }
 
     fn cid(&self) -> UbxCID {
         self.cid
-    }
-
-    fn cls(&self) -> u8 {
-        self.cid.cls()
-    }
-
-    fn id(&self) -> u8 {
-        self.cid.id()
     }
 }
 
@@ -71,14 +43,7 @@ impl UbxFrameSerialize for UbxMonVerPoll {
         let frame = UbxFrame::construct(UbxCID::new(CLS, ID), [].to_vec());
         let msg = frame.to_bytes();
         msg
-    }
-
-    // TODO: Split into two traits (serialize, deser...)
-    // TODO: Only implement serialize here
-    fn from_bin(&mut self, _data: Vec<u8>) {
-        panic!("can't load into this frame");
-        // no fields, so nothing to do
-        // assert_eq!(data.len(), 0);
+        // TODO: simplify
     }
 }
 
@@ -86,7 +51,7 @@ impl UbxFrameSerialize for UbxMonVerPoll {
 #[derive(Default)]
 #[derive(Debug)]
 pub struct UbxMonVer {
-    pub name: String,
+    pub name: &'static str,
     cid: UbxCID,
 
     pub sw_version: String,
@@ -96,10 +61,11 @@ pub struct UbxMonVer {
 
 impl UbxMonVer {
     pub fn new() -> Self {
-        let mut obj: UbxMonVer = Default::default();
-        obj.name = String::from("UBX-MON-VER");
-        obj.cid = UbxCID::new(CLS, ID);
-        obj
+        Self {
+            name: "UBX-MON-VER",
+            cid: UbxCID::new(CLS, ID),
+            ..Default::default()
+        }
     }
 
     pub fn load(&mut self, data: &[u8]) {
@@ -107,7 +73,7 @@ impl UbxMonVer {
         println!("UbxMonVer, got {} bytes", bytes);
         assert!(bytes >= 40);
 
-        // TODO: make better
+        // TODO: search simpler way, DRY
         let text = &data[0..30].to_vec();
         let text = String::from_utf8_lossy(text);
         self.sw_version = text.replace(|c: char| c == '\0', "");
@@ -135,29 +101,15 @@ impl UbxMonVer {
 
 impl UbxFrameInfo for UbxMonVer {
     fn name(&self) -> String {
-        String::from(&self.name)
+        String::from(self.name)
     }
 
     fn cid(&self) -> UbxCID {
         self.cid
     }
-
-    fn cls(&self) -> u8 {
-        self.cid.cls()
-    }
-
-    fn id(&self) -> u8 {
-        self.cid.id()
-    }
 }
 
-impl UbxFrameSerialize for UbxMonVer {
-    // TODO: Split into two traits (serialize, deser...)
-    // TODO: Only implement deserialize here
-    fn to_bin(&self) -> Vec<u8> {
-        panic!("can't serialize this frame")
-    }
-
+impl UbxFrameDeSerialize for UbxMonVer {
     fn from_bin(&mut self, data: Vec<u8>) {
         self.load(&data);
     }
@@ -175,6 +127,7 @@ impl fmt::Debug for UbxMonVer {
     }
 }
 */
+
 
 #[cfg(test)]
 mod tests {
@@ -199,24 +152,4 @@ mod tests {
         assert_eq!(dut.sw_version, "");
         assert_eq!(dut.hw_version, "");
     }
-
-     #[test]
-    #[should_panic]
-    fn cfg_rate_serialize() {
-        let dut = UbxMonVer::new();
-        let _data = dut.to_bin();
-    }
-
-    /*
-    #[test]
-    fn cfg_rate_deserialize() {
-        const DATA: [u8; 6] = [0xE8, 0x03, 0x01, 0x00, 0x34, 0x12];
-
-        let mut dut = UbxCfgRate::new();
-        dut.load(&DATA);
-        assert_eq!(dut.meas_rate, 1000);
-        assert_eq!(dut.nav_rate, 1);
-        assert_eq!(dut.time_ref, 0x1234);
-    }
-    */
 }
