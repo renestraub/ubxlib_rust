@@ -206,6 +206,8 @@ fn parse_config(path: &str, config: &mut GnssMgrConfig)  -> Result<(), String> {
 
     config.update_rate = Some(update_rate as u16);
 
+    config.mode = Some("stationary");
+
     config.imu_yaw = Some(0.0);
     config.imu_pitch = Some(0.0);
     config.imu_yaw = Some(0.0);

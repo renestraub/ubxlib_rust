@@ -39,7 +39,7 @@ impl GnssMgr {
         Self { 
             device_name: String::from(device), 
             server: ServerTty::new(device),
-    }
+        }
     }
 
     pub fn version(&mut self) {
@@ -110,5 +110,17 @@ impl GnssMgr {
 
         self.server.set(&set);
     }
+
+    fn set_dynamic_mode(&mut self, model: u8) {
+        let mut set = UbxCfgNav5::new();
+        let poll = UbxCfgNav5Poll::new();
+
+        self.server.poll(&poll, &mut set);
+        println!("current settings {:?}", set.data);
+
+        set.data.dyn_model = model;
+        println!("new settings {:?}", set.data);
+
+        // self.server.set(&set);
     }
 }
