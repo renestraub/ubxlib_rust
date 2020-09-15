@@ -3,13 +3,14 @@ use crate::server_tty::ServerTty;
 use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
 use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
+use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 
 
 #[derive(Default)]
 #[derive(Debug)]
 pub struct GnssMgrConfig {
     pub update_rate: Option<u16>,
-    pub mode: Option<&'static str>,
+    pub mode: Option<String>,
     // pub systems: (array of) Strings (or enums)  GPS;Galileo;Beidou;SBAS
 
     pub imu_yaw: Option<f32>,
@@ -51,7 +52,7 @@ impl GnssMgr {
         let poll = UbxMonVerPoll::new();
 
         self.server.poll(&poll, &mut set);
-        println!("current settings {:?}", set);
+        println!("{:?}", set);
     }
 
     pub fn configure(&mut self, config: &GnssMgrConfig) {
@@ -65,11 +66,19 @@ impl GnssMgr {
             self.set_update_rate(rate);
         }
 
-        match config.mode {
-            Some("stationary") => self.set_dynamic_mode(2),
-            Some("vehicle") => self.set_dynamic_mode(4),
+        // TODO: Overly complicated with these string types...
+        match &config.mode {
+            Some(mode) => {
+                match mode.as_str() {
+                    "stationary" => self.set_dynamic_mode(2),
+                    "vehicle" => self.set_dynamic_mode(4),
+                    _ => (),
+                }
+            },
             _ => (),
         }
+
+        self.set_imu_angles();
     }
 
     pub fn sos_save(&mut self) {
@@ -121,6 +130,20 @@ impl GnssMgr {
         set.data.dyn_model = model;
         println!("new settings {:?}", set.data);
 
+        // self.server.set(&set);
+    }
+
+    // TODO: provide arguments
+    fn set_imu_angles(&mut self) {
+        let mut set = UbxCfgEsfAlg::new();
+        let poll = UbxCfgEsfAlgPoll::new();
+
+        self.server.poll(&poll, &mut set);
+        println!("current IMU settings {:?}", set.data);
+
+        set.data.yaw = 30*100;
+        set.data.pitch = 40*100;
+        set.data.roll = -50*100;
         // self.server.set(&set);
     }
 }

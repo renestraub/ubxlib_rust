@@ -4,6 +4,7 @@ use crate::cid::UbxCID;
 use crate::checksum::Checksum;
 
 
+#[derive(Default)]
 pub struct UbxFrame {
     pub cid: UbxCID,
     pub data: Vec::<u8>,
@@ -25,13 +26,23 @@ pub trait UbxFrameDeSerialize {
 
 
 impl UbxFrame {
-    #[cfg(test)]
+    #[cfg(test)]    // only for test, remove later?
     pub fn new() -> Self {
+        //..Default::default()
         Self { 
             cid: UbxCID::new(0, 0),
             data: Vec::<u8>::new(),
         }
     }
+
+    /*
+    pub fn construct_empty(cid: UbxCID) -> Self {
+        Self { 
+            cid: cid,
+            data: Vec::<u8>::new(),
+        }
+    }
+    */
 
     pub fn construct(cid: UbxCID, data: Vec::<u8>) -> Self {
         Self { 

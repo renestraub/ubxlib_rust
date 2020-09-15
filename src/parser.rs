@@ -79,6 +79,10 @@ impl Parser {
         // println!("{:?}", self.wait_cids);
     }
 
+    pub fn empty_queue(&mut self) {
+        self.rx_queue.clear();
+    }
+
     pub fn packet(&mut self) -> Option<Packet> {
         // let packets = self.rx_queue.len();
         // println!("have {} packets", packets);

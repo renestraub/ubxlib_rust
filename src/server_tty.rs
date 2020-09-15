@@ -58,6 +58,7 @@ impl ServerTty {
 
         // We expect a response frame with the exact same CID
         let wait_cid = frame_poll.cid();
+        self.parser.empty_queue();
         self.parser.add_filter(wait_cid);
 
         // Serialize polling frame payload.
@@ -94,6 +95,7 @@ impl ServerTty {
         println!("setting {}", frame_set.name());
 
         // Wait for ACK-ACK and ACK-NAK
+        self.parser.empty_queue();
         self.parser.add_filter(UbxCID::new(0x05, 0x01));
         self.parser.add_filter(UbxCID::new(0x05, 0x00));
 

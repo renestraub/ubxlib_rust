@@ -1,23 +1,25 @@
 // TODO: Is this defining of what files our exe is made?
+mod config_file;
 mod checksum;
 mod cid;
 mod frame;
 mod parser;
 mod gnss_mgr;
 mod server_tty;
-mod ubx_cfg_rate;
+mod ubx_cfg_esfalg;
 mod ubx_cfg_nav5;
+mod ubx_cfg_rate;
 mod ubx_mon_ver;
 
 use std::env;
 use std::path::Path;
+use std::{thread, time};
 
 use crate::gnss_mgr::{GnssMgr, GnssMgrConfig};
+use crate::config_file::parse_config;
 
 // extern crate clap;
-// extern crate ini;
 use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
-use ini::Ini;
 
 
 fn main() {
@@ -91,10 +93,26 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
     if !device_exists {
         return Err(format!("Device {} does not exist", device_name).to_string());
     }
-
+    
+   
     // TODO: create gnss-mgr here and provide to run_xx function instead of device_name
     // run gnss-mgr sos <action>
     let mut gnss = GnssMgr::new(device_name);
+
+    for l in 1..2 {
+        println!("*** {} **************************************************", l);
+        gnss.version();
+        thread::sleep(time::Duration::from_millis(500));
+        /*
+        // Check which subcommand was selected
+        match matches.subcommand() {
+            ("config", Some(m)) => run_config(m, &mut gnss),
+            ("control", Some(m)) => run_control(m, &mut gnss),
+            ("sos", Some(m)) => run_sos(m, &mut gnss),
+            _ => Err("Unknown command".to_string()),
+        };
+        */
+    }
 
     // Check which subcommand was selected
     match matches.subcommand() {
@@ -104,6 +122,7 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
         _ => Err("Unknown command".to_string()),
     }
 }
+
 
 fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     // println!("control {:?}", matches);
@@ -122,8 +141,6 @@ fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     let _res = parse_config(&configfile_path, &mut config)?;
 
     gnss.configure(&config);
-
-    gnss.version();
 
     Ok(())
 }
@@ -168,49 +185,4 @@ fn build_configfile_path(path: &str) -> String {
     path.push_str(".conf");
     println!("path {}", path);
     path
-}
-
-fn parse_config(path: &str, config: &mut GnssMgrConfig)  -> Result<(), String> {
-    // Check if configfile exists
-    let config_exists = Path::new(&path).exists();
-    if !config_exists {
-        return Err(format!("Configuration file {} not found", path).to_string());
-    }
-
-    // Import whole file, check for syntax errors
-    // TODO: Proper error handling
-    let conf = Ini::load_from_file(path).unwrap();
-
-    // Check for version 2 format
-    let sec_general = conf.section(Some("default")).unwrap();
-    let version = match sec_general.get("version") {
-        Some("2") => 2,
-        _ => return Err("Invalid configuration file format/version".to_string()),
-    };
-    println!("{:?}", version);
-
-    // TODO: Combine in a nice getter with range check
-    // Return Some(number) with valid content
-    // or Err("....")
-    let update_rate = match sec_general.get("update-rate") {
-        Some("") => "3",    // TODO: Use 1 Hz if nothing specified
-        Some(x) => x,
-        _ => return Err("Invalid configuration file format/version".to_string()),
-    };
-    println!("{:?}", update_rate);
-    let update_rate = match update_rate.parse::<i16>() {
-        Ok(x) => x,
-        _ => return Err("Invalid update-rate".to_string()),
-    };
-    println!("{:?}", update_rate);
-
-    config.update_rate = Some(update_rate as u16);
-
-    config.mode = Some("stationary");
-
-    config.imu_yaw = Some(0.0);
-    config.imu_pitch = Some(0.0);
-    config.imu_yaw = Some(0.0);
-
-    Ok(())
 }
