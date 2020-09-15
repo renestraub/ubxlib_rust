@@ -49,7 +49,7 @@ pub struct UbxMonVer {
 
     pub sw_version: String,
     pub hw_version: String,
-    pub hw_extension: String,   // TODO: Should be array of Strings
+    pub hw_extension: Vec<String>,
 }
 
 impl UbxMonVer {
@@ -63,17 +63,10 @@ impl UbxMonVer {
 
     pub fn load(&mut self, data: &[u8]) {
         let bytes = data.len();
-        println!("UbxMonVer, got {} bytes", bytes);
         assert!(bytes >= 40);
 
-        // TODO: search simpler way, DRY
-        let text = &data[0..30].to_vec();
-        let text = String::from_utf8_lossy(text);
-        self.sw_version = text.replace(|c: char| c == '\0', "");
-
-        let text = &data[30..40].to_vec();
-        let text = String::from_utf8_lossy(text);
-        self.hw_version = text.replace(|c: char| c == '\0', "");
+        self.sw_version = UbxMonVer::extract_string(&data[0..30]);
+        self.hw_version = UbxMonVer::extract_string(&data[30..40]);
 
         if bytes > 40 {
             assert!((bytes - 40) % 30 == 0);
@@ -81,14 +74,16 @@ impl UbxMonVer {
             let mut offset = 40;
             let size = 30;
             while offset < bytes {
-                let text = &data[offset..offset+size].to_vec();
-                let text = String::from_utf8_lossy(text);
-                let text = text.replace(|c: char| c == '\0', "");
-                println!("{}: {}", offset, text);
+                let text = UbxMonVer::extract_string(&data[offset..offset+size]);
+                self.hw_extension.push(text);
 
                 offset += size;
             }
         }
+    }
+
+    fn extract_string(data: &[u8]) -> String {
+        String::from_utf8_lossy(&data).replace(|c: char| c == '\0', "")
     }
 }
 
