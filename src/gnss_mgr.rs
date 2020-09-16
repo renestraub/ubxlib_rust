@@ -6,22 +6,30 @@ use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 
 
-#[derive(Default)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct GnssMgrConfig {
     pub update_rate: Option<u16>,
     pub mode: Option<String>,
     // pub systems: (array of) Strings (or enums)  GPS;Galileo;Beidou;SBAS
 
-    pub imu_yaw: Option<f32>,
-    pub imu_pitch: Option<f32>,
-    pub imu_roll: Option<f32>,
+    pub imu_yaw: Option<u16>,
+    pub imu_pitch: Option<i16>,
+    pub imu_roll: Option<i16>,
 
+    pub vrp2antenna: Option<Xyz>,
     /*
-    vrp2antenna=
     vrp2imu=
     */
 }
+
+
+#[derive(Debug, Default)]
+pub struct Xyz {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
 
 
 // TODO: define information struct for version() method
@@ -78,7 +86,12 @@ impl GnssMgr {
             _ => (),
         }
 
-        self.set_imu_angles();
+        // TODO: Combine IMU angles in a struct, this is ugly
+        if config.imu_yaw.is_some() &&
+            config.imu_pitch.is_some() &&
+            config.imu_roll.is_some() {
+            self.set_imu_angles(config.imu_yaw.unwrap(), config.imu_pitch.unwrap(), config.imu_roll.unwrap());
+        }
     }
 
     pub fn sos_save(&mut self) {
@@ -130,20 +143,22 @@ impl GnssMgr {
         set.data.dyn_model = model;
         println!("new settings {:?}", set.data);
 
-        // self.server.set(&set);
+        self.server.set(&set);
     }
 
     // TODO: provide arguments
-    fn set_imu_angles(&mut self) {
+    fn set_imu_angles(&mut self, yaw: u16, pitch: i16, roll: i16) {
         let mut set = UbxCfgEsfAlg::new();
         let poll = UbxCfgEsfAlgPoll::new();
 
         self.server.poll(&poll, &mut set);
         println!("current IMU settings {:?}", set.data);
 
-        set.data.yaw = 30*100;
-        set.data.pitch = 40*100;
-        set.data.roll = -50*100;
-        // self.server.set(&set);
+        set.data.yaw = yaw as u32 * 100;
+        set.data.pitch = pitch as i16 * 100;
+        set.data.roll = roll as i16 * 100;
+        println!("new IMU settings {:?}", set.data);
+
+        self.server.set(&set);
     }
 }

@@ -2,7 +2,11 @@ use std::path::Path;
 use ini::Ini;
 
 use crate::gnss_mgr::GnssMgrConfig;
+use crate::gnss_mgr::Xyz;
 
+
+
+// TODO:make member of GnssMgrConfig struct
 
 pub fn parse_config(path: &str, config: &mut GnssMgrConfig)  -> Result<(), String> {
     // Check if configfile exists
@@ -56,12 +60,164 @@ pub fn parse_config(path: &str, config: &mut GnssMgrConfig)  -> Result<(), Strin
     };
     config.mode = value;
 
-    /*
-    config.imu_yaw = Some(0.0);
-    config.imu_pitch = Some(0.0);
-    config.imu_yaw = Some(0.0);
-    */
+    let sec_installation = match conf.section(Some("installation")) {
+        Some(sec) => sec,
+        _ => return Err("Invalid configuration file format/version".to_string()),
+    };
+
+    let keyname = "yaw";
+    let value = match sec_installation.get(keyname) {
+        Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+        Some(x) => {
+            match x.parse::<u16>() {
+                Ok(y) if y <= 360 => { println!("using {} for {}", x, keyname); Some(y) },
+                Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+            }
+        },
+        _ => { println!("key '{}' not defined", keyname); None },
+    };
+    config.imu_yaw = value;
+
+    let keyname = "pitch";
+    let value = match sec_installation.get(keyname) {
+        Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+        Some(x) => {
+            match x.parse::<i16>() {
+                Ok(y) if y >= -90 && y <= 90 => { println!("using {} for {}", x, keyname); Some(y) },
+                Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+            }
+        },
+        _ => { println!("key '{}' not defined", keyname); None },
+    };
+    config.imu_pitch = value;
+
+    let keyname = "roll";
+    let value = match sec_installation.get(keyname) {
+        Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+        Some(x) => {
+            match x.parse::<i16>() {
+                Ok(y) if y >= -180 && y <= 180 => { println!("using {} for {}", x, keyname); Some(y) },
+                Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+            }
+        },
+        _ => { println!("key '{}' not defined", keyname); None },
+    };
+    config.imu_roll = value;
+
+
+    // TODO: Implement, add simple test for good case
+    config.vrp2antenna = Xyz::from_str("1.0;2.0;3.0");
+
+
     Ok(())
+}
+
+impl Xyz {
+    pub fn from_str(text: &str) -> Option<Self> {
+        // TODO: Add limit checks
+
+        if text.is_empty() {
+            // TODO: Go with Result<Self, str> ? so we can return an error message
+            // Or log error message here directly?
+            return None;
+        }
+
+        let mut obj: Self = Default::default();
+        let tokens:Vec<&str>= text.split(";").collect();
+        if tokens.len() != 3 {
+            return None;
+        }
+
+        println!("x is {}",tokens[0]);
+        println!("y is {}",tokens[1]);
+        println!("z is {}",tokens[2]);
+
+        let x = Xyz::parse_float(tokens[0]);    // TODO: check here and return with error message (.or_else, ...)
+        let y = Xyz::parse_float(tokens[1]);
+        let z = Xyz::parse_float(tokens[2]);
+        if x.is_ok() && y.is_ok() && z.is_ok() {
+            obj.x = x.unwrap();
+            obj.y = y.unwrap();
+            obj.z = z.unwrap();
+            Some(obj)
+        }
+        else {
+            None
+        }
+    }
+
+    fn parse_float(text: &str) -> Result<f32, &'static str> {
+        match text.trim().parse::<f32>() {
+            Ok(res) => Ok(res),
+            _ => Err("Conversion error"),
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod xyz_reader {
+    use super::*;
+
+    #[test]
+    fn empty_string() {
+        let uut = Xyz::from_str("");
+        println!("{:?}", uut);
+        assert_eq!(uut.is_none(), true);
+    }
+
+    #[test]
+    fn ok() {
+        let uut = Xyz::from_str("1.0;-2.2;333.3");
+        println!("{:?}", uut);
+        assert_eq!(uut.is_some(), true);
+        let uut = uut.unwrap();
+        assert_eq!(uut.x, 1.0); // TODO: Check float comparison
+        assert_eq!(uut.y, -2.2);
+        assert_eq!(uut.z, 333.3);
+
+        let uut = Xyz::from_str("-11.1;22.2;-333.33");
+        println!("{:?}", uut);
+        assert_eq!(uut.is_some(), true);
+        let uut = uut.unwrap();
+        assert_eq!(uut.x, -11.1);
+        assert_eq!(uut.y, 22.2);
+        assert_eq!(uut.z, -333.33);
+    }
+
+    #[test]
+    fn ok_with_spaces() {
+        let uut = Xyz::from_str("1.25;   -2.5; 3.75");
+        println!("{:?}", uut);
+        assert_eq!(uut.is_some(), true);
+        let uut = uut.unwrap();
+        assert_eq!(uut.x, 1.25);
+        assert_eq!(uut.y, -2.5);
+        assert_eq!(uut.z, 3.75);
+    }
+
+    #[test]
+    fn value_missing() {
+        let uut = Xyz::from_str("1.0;;2.0");
+        println!("{:?}", uut);
+        assert_eq!(uut.is_none(), true);
+    }
+
+    #[test]
+    fn invalid_separators() {
+        let uut = Xyz::from_str("1.0;2.0,3.0");
+        println!("{:?}", uut);
+        assert_eq!(uut.is_none(), true);
+    }
+
+    /*
+    #[test]
+    fn out_of_range() {
+        let uut = "1.0,222,3.0";
+        println!("{:?}", uut);
+        assert_eq!(1, 0);
+    }
+    */
 }
 
 
@@ -199,5 +355,60 @@ mod mode {
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode.is_none(), true);
+    }
+}
+
+
+#[cfg(test)]
+mod imu_angles {
+    use super::*;
+   
+    #[test]
+    fn key_missing() {
+        let mut config: GnssMgrConfig = Default::default();
+        let res = parse_config("test_files/gnss0_no_imu_yaw.conf", &mut config);
+        println!("{:?}", res);
+        assert_eq!(res.is_ok(), true);
+        assert_eq!(config.imu_yaw.is_none(), true);
+    }
+
+    #[test]
+    fn no_value() {
+        let mut config: GnssMgrConfig = Default::default();
+        let res = parse_config("test_files/gnss0_imu_yaw_empty.conf", &mut config);
+        println!("{:?}", res);
+        assert_eq!(res.is_ok(), true);
+        assert_eq!(config.imu_yaw.is_none(), true);
+    }
+
+    #[test]
+    fn yaw_ok() {
+        let mut config: GnssMgrConfig = Default::default();
+        let res = parse_config("test_files/gnss0_imu_yaw_ok.conf", &mut config);
+        println!("{:?}", res);
+        assert_eq!(res.is_ok(), true);
+        assert_eq!(config.imu_yaw, Some(182));
+        assert_eq!(config.imu_pitch, None);
+        assert_eq!(config.imu_roll, None);
+    }
+
+    #[test]
+    fn pitch_ok() {
+        let mut config: GnssMgrConfig = Default::default();
+        let res = parse_config("test_files/gnss0_imu_pitch_ok.conf", &mut config);
+        println!("{:?}", res);
+        assert_eq!(config.imu_yaw, None);
+        assert_eq!(config.imu_pitch, Some(-45));
+        assert_eq!(config.imu_roll, None);
+    }
+
+    #[test]
+    fn roll_ok() {
+        let mut config: GnssMgrConfig = Default::default();
+        let res = parse_config("test_files/gnss0_imu_roll_ok.conf", &mut config);
+        println!("{:?}", res);
+        assert_eq!(config.imu_yaw, None);
+        assert_eq!(config.imu_pitch, None);
+        assert_eq!(config.imu_roll, Some(45));
     }
 }
