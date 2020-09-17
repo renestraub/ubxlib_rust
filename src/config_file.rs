@@ -1,115 +1,148 @@
 use std::path::Path;
 use ini::Ini;
 
-use crate::gnss_mgr::GnssMgrConfig;
-use crate::gnss_mgr::Xyz;
+
+#[derive(Debug, Default)]
+pub struct GnssMgrConfig {
+    pub update_rate: Option<u16>,
+    pub mode: Option<String>,
+    // pub systems: (array of) Strings (or enums)  GPS;Galileo;Beidou;SBAS
+
+    pub imu_yaw: Option<u16>,
+    pub imu_pitch: Option<i16>,
+    pub imu_roll: Option<i16>,
+
+    pub vrp2antenna: Option<Xyz>,
+    /*
+    vrp2imu=
+    */
+}
+
+
+#[derive(Debug, Default)]
+pub struct Xyz {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+
+impl GnssMgrConfig {
+    pub fn parse_config(&mut self, path: &str)  -> Result<(), String> {
+        // Check if configfile exists
+        let config_exists = Path::new(&path).exists();
+        if !config_exists {
+            return Err(format!("Configuration file {} not found", path).to_string());
+        }
+
+        // Import whole file, check for syntax errors
+        // TODO: Proper error handling
+        let conf = Ini::load_from_file(path).unwrap();
+
+        // Check for version 2 format
+        let sec_general = match conf.section(Some("default")) {
+            Some(sec) => sec,
+            _ => return Err("Invalid configuration file format/version".to_string()),
+        };
+
+        let _version = match sec_general.get("version") {
+            Some("2") => 2,
+            _ => return Err("Invalid configuration file format/version".to_string()),
+        };
+
+
+        // TODO: Combine in a nice getter with range check
+        // Return Some(number) with valid content
+        // or Err("....")
+        let keyname = "update-rate";
+        let value = match sec_general.get(keyname) {
+            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some(x) => {
+                match x.parse::<u16>() {
+                    Ok(y) if y <= 2 => { println!("using {} for {}", x, keyname); Some(y) },
+                    Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+                }
+            },
+            _ => { println!("key '{}' not defined", keyname); None },
+        };
+        self.update_rate = value;
+
+        let sec_navigation = match conf.section(Some("navigation")) {
+            Some(sec) => sec,
+            _ => return Err("Invalid configuration file format/version".to_string()),
+        };
+
+        let keyname = "mode";
+        let valid_args = vec!["stationary", "vehicle"]; 
+        let value = match sec_navigation.get(keyname) {
+            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some(x) if valid_args.contains(&x) => { println!("using {} for {}", x, keyname); Some(String::from(x)) },
+            _ => { println!("key '{}' not defined", keyname); None },
+        };
+        self.mode = value;
 
 
 
-// TODO:make member of GnssMgrConfig struct
+        let sec_installation = match conf.section(Some("installation")) {
+            Some(sec) => sec,
+            _ => return Err("Invalid configuration file format/version".to_string()),
+        };
 
-pub fn parse_config(path: &str, config: &mut GnssMgrConfig)  -> Result<(), String> {
-    // Check if configfile exists
-    let config_exists = Path::new(&path).exists();
-    if !config_exists {
-        return Err(format!("Configuration file {} not found", path).to_string());
+        let keyname = "yaw";
+        let value = match sec_installation.get(keyname) {
+            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some(x) => {
+                match x.parse::<u16>() {
+                    Ok(y) if y <= 360 => { println!("using {} for {}", x, keyname); Some(y) },
+                    Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+                }
+            },
+            _ => { println!("key '{}' not defined", keyname); None },
+        };
+        self.imu_yaw = value;
+
+        let keyname = "pitch";
+        let value = match sec_installation.get(keyname) {
+            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some(x) => {
+                match x.parse::<i16>() {
+                    Ok(y) if y >= -90 && y <= 90 => { println!("using {} for {}", x, keyname); Some(y) },
+                    Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+                }
+            },
+            _ => { println!("key '{}' not defined", keyname); None },
+        };
+        self.imu_pitch = value;
+
+        let keyname = "roll";
+        let value = match sec_installation.get(keyname) {
+            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some(x) => {
+                match x.parse::<i16>() {
+                    Ok(y) if y >= -180 && y <= 180 => { println!("using {} for {}", x, keyname); Some(y) },
+                    Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+                }
+            },
+            _ => { println!("key '{}' not defined", keyname); None },
+        };
+        self.imu_roll = value;
+
+
+        // TODO: Implement, add simple test for good case
+        self.vrp2antenna = Xyz::from_str("1.0;2.0;3.0");
+
+        let keyname = "vrp2antenna";
+        let value = match sec_installation.get(keyname) {
+            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some(x) => { println!("using {} for {}", x, keyname); Xyz::from_str(&x) },
+            _ => { println!("key '{}' not defined", keyname); None },
+        };
+        
+        self.vrp2antenna = value;
+        // self.mode = value;
+
+        Ok(())
     }
-
-    // Import whole file, check for syntax errors
-    // TODO: Proper error handling
-    let conf = Ini::load_from_file(path).unwrap();
-
-    // Check for version 2 format
-    let sec_general = match conf.section(Some("default")) {
-        Some(sec) => sec,
-        _ => return Err("Invalid configuration file format/version".to_string()),
-    };
-
-    let _version = match sec_general.get("version") {
-        Some("2") => 2,
-        _ => return Err("Invalid configuration file format/version".to_string()),
-    };
-
-    // TODO: Combine in a nice getter with range check
-    // Return Some(number) with valid content
-    // or Err("....")
-    let keyname = "update-rate";
-    let value = match sec_general.get(keyname) {
-        Some("") => { println!("no value for {} specified, ignoring", keyname); None },
-        Some(x) => {
-            match x.parse::<u16>() {
-                Ok(y) if y <= 2 => { println!("using {} for {}", x, keyname); Some(y) },
-                Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
-            }
-        },
-        _ => { println!("key '{}' not defined", keyname); None },
-    };
-    config.update_rate = value;
-
-    let sec_navigation = match conf.section(Some("navigation")) {
-        Some(sec) => sec,
-        _ => return Err("Invalid configuration file format/version".to_string()),
-    };
-
-    let keyname = "mode";
-    let valid_args = vec!["stationary", "vehicle"]; 
-    let value = match sec_navigation.get(keyname) {
-        Some("") => { println!("no value for {} specified, ignoring", keyname); None },
-        Some(x) if valid_args.contains(&x) => { println!("using {} for {}", x, keyname); Some(String::from(x)) },
-        _ => { println!("key '{}' not defined", keyname); None },
-    };
-    config.mode = value;
-
-    let sec_installation = match conf.section(Some("installation")) {
-        Some(sec) => sec,
-        _ => return Err("Invalid configuration file format/version".to_string()),
-    };
-
-    let keyname = "yaw";
-    let value = match sec_installation.get(keyname) {
-        Some("") => { println!("no value for {} specified, ignoring", keyname); None },
-        Some(x) => {
-            match x.parse::<u16>() {
-                Ok(y) if y <= 360 => { println!("using {} for {}", x, keyname); Some(y) },
-                Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
-            }
-        },
-        _ => { println!("key '{}' not defined", keyname); None },
-    };
-    config.imu_yaw = value;
-
-    let keyname = "pitch";
-    let value = match sec_installation.get(keyname) {
-        Some("") => { println!("no value for {} specified, ignoring", keyname); None },
-        Some(x) => {
-            match x.parse::<i16>() {
-                Ok(y) if y >= -90 && y <= 90 => { println!("using {} for {}", x, keyname); Some(y) },
-                Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
-            }
-        },
-        _ => { println!("key '{}' not defined", keyname); None },
-    };
-    config.imu_pitch = value;
-
-    let keyname = "roll";
-    let value = match sec_installation.get(keyname) {
-        Some("") => { println!("no value for {} specified, ignoring", keyname); None },
-        Some(x) => {
-            match x.parse::<i16>() {
-                Ok(y) if y >= -180 && y <= 180 => { println!("using {} for {}", x, keyname); Some(y) },
-                Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
-            }
-        },
-        _ => { println!("key '{}' not defined", keyname); None },
-    };
-    config.imu_roll = value;
-
-
-    // TODO: Implement, add simple test for good case
-    config.vrp2antenna = Xyz::from_str("1.0;2.0;3.0");
-
-
-    Ok(())
 }
 
 impl Xyz {
@@ -228,14 +261,14 @@ mod file_and_format {
     #[test]
     fn file_not_found() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/does_not_exists.conf", &mut config);
+        let res = config.parse_config("test_files/does_not_exists.conf");
         assert_eq!(res.is_err(), true);
     }
 
     #[test]
     fn no_default_section() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_no_default_section.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_no_default_section.conf");
         println!("{:?}", res);
         assert_eq!(res.is_err(), true);
     }
@@ -243,7 +276,7 @@ mod file_and_format {
     #[test]
     fn no_version_info() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_no_version.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_no_version.conf");
         // println!("{:?}", res);
         assert_eq!(res.is_err(), true);
     }
@@ -251,7 +284,7 @@ mod file_and_format {
     #[test]
     fn wrong_version_info() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_no_version.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_no_version.conf");
         // println!("{:?}", res);
         assert_eq!(res.is_err(), true);
     }
@@ -265,7 +298,7 @@ mod update_rate {
     #[test]
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_no_update_rate.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_no_update_rate.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate.is_none(), true);
@@ -274,7 +307,7 @@ mod update_rate {
     #[test]
     fn no_value() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_update_rate_empty.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_update_rate_empty.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate.is_none(), true);
@@ -283,7 +316,7 @@ mod update_rate {
     #[test]
     fn value_ok() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_update_rate_ok.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_update_rate_ok.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate, Some(2));
@@ -292,7 +325,7 @@ mod update_rate {
     #[test]
     fn value_too_high() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_update_rate_too_high.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_update_rate_too_high.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate.is_none(), true);
@@ -301,7 +334,7 @@ mod update_rate {
     #[test]
     fn syntax_error() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_update_rate_syntax_error.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_update_rate_syntax_error.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate.is_none(), true);
@@ -315,7 +348,7 @@ mod mode {
     #[test]
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_no_mode.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_no_mode.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode.is_none(), true);
@@ -324,7 +357,7 @@ mod mode {
     #[test]
     fn no_value() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_mode_empty.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_mode_empty.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode.is_none(), true);
@@ -333,7 +366,7 @@ mod mode {
     #[test]
     fn vehicle() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_mode_vehicle.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_mode_vehicle.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode, Some(String::from("vehicle")));
@@ -342,7 +375,7 @@ mod mode {
     #[test]
     fn stationary() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_mode_stationary.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_mode_stationary.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode, Some(String::from("stationary")));
@@ -351,7 +384,7 @@ mod mode {
     #[test]
     fn unknown() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_mode_unknown.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_mode_unknown.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode.is_none(), true);
@@ -366,7 +399,7 @@ mod imu_angles {
     #[test]
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_no_imu_yaw.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_no_imu_yaw.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw.is_none(), true);
@@ -375,7 +408,7 @@ mod imu_angles {
     #[test]
     fn no_value() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_imu_yaw_empty.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_imu_yaw_empty.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw.is_none(), true);
@@ -384,7 +417,7 @@ mod imu_angles {
     #[test]
     fn yaw_ok() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_imu_yaw_ok.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_imu_yaw_ok.conf");
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw, Some(182));
@@ -395,8 +428,9 @@ mod imu_angles {
     #[test]
     fn pitch_ok() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_imu_pitch_ok.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_imu_pitch_ok.conf");
         println!("{:?}", res);
+        assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw, None);
         assert_eq!(config.imu_pitch, Some(-45));
         assert_eq!(config.imu_roll, None);
@@ -405,10 +439,31 @@ mod imu_angles {
     #[test]
     fn roll_ok() {
         let mut config: GnssMgrConfig = Default::default();
-        let res = parse_config("test_files/gnss0_imu_roll_ok.conf", &mut config);
+        let res = config.parse_config("test_files/gnss0_imu_roll_ok.conf");
         println!("{:?}", res);
+        assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw, None);
         assert_eq!(config.imu_pitch, None);
         assert_eq!(config.imu_roll, Some(45));
+    }
+}
+
+
+#[cfg(test)]
+mod vrp_antenna {
+    use super::*;
+
+    #[test]
+    fn ok() {
+        let mut config: GnssMgrConfig = Default::default();
+        let res = config.parse_config("test_files/gnss0_vrp_antenna_ok.conf");
+        println!("{:?}", res);
+        assert_eq!(res.is_ok(), true);
+
+        // let expect = Xyz { x: 1.0, y: 1.5, z: 0.3 };
+        let xyz = config.vrp2antenna.unwrap();
+        assert_eq!(xyz.x, 1.0);
+        assert_eq!(xyz.y, 1.5);
+        assert_eq!(xyz.z, 0.3);
     }
 }

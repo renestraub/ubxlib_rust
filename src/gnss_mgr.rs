@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::server_tty::ServerTty;
 
 use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
@@ -5,31 +7,7 @@ use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 
-
-#[derive(Debug, Default)]
-pub struct GnssMgrConfig {
-    pub update_rate: Option<u16>,
-    pub mode: Option<String>,
-    // pub systems: (array of) Strings (or enums)  GPS;Galileo;Beidou;SBAS
-
-    pub imu_yaw: Option<u16>,
-    pub imu_pitch: Option<i16>,
-    pub imu_roll: Option<i16>,
-
-    pub vrp2antenna: Option<Xyz>,
-    /*
-    vrp2imu=
-    */
-}
-
-
-#[derive(Debug, Default)]
-pub struct Xyz {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
+use crate::config_file::GnssMgrConfig;
 
 
 // TODO: define information struct for version() method
@@ -44,6 +22,8 @@ pub struct GnssMgr {
 }
 
 impl GnssMgr {
+    // TODO: rename to open/create?
+    // TODO: Result return code
     pub fn new(device: &str) -> Self {
         Self { 
             device_name: String::from(device), 
@@ -51,16 +31,26 @@ impl GnssMgr {
         }
     }
 
-    pub fn version(&mut self) {
-        // TODO: Not sure what this function shall do
-        // create /run/gnss/gnss0.config
-        // let mut server = ServerTty::new(&self.device_name);
-
-        let mut set = UbxMonVer::new();
+    pub fn version(&mut self, info: &mut HashMap<&str, String>) {
+        let mut ver_result = UbxMonVer::new();
         let poll = UbxMonVerPoll::new();
 
-        self.server.poll(&poll, &mut set);
-        println!("{:?}", set);
+        // TODO: error check missing for sure
+        self.server.poll(&poll, &mut ver_result);
+        // println!("{:?}", ver_result);
+
+        // TODO: Don't assume fixed position for these entries
+        let fw_ver = String::from(ver_result.hw_extension[1].trim_start_matches("FWVER="));
+        let proto = String::from(ver_result.hw_extension[2].trim_start_matches("PROTVER="));
+        let model = String::from(ver_result.hw_extension[3].trim_start_matches("MOD="));
+        
+        info.insert("model", model);
+        info.insert("sw_ver", ver_result.sw_version);
+        info.insert("hw_ver", ver_result.hw_version);
+        info.insert("fw_ver", fw_ver);
+        info.insert("protocol", proto);
+        info.insert("systems", String::from(&ver_result.hw_extension[5]));
+        info.insert("augmentation", String::from(&ver_result.hw_extension[6]));
     }
 
     pub fn configure(&mut self, config: &GnssMgrConfig) {
