@@ -13,18 +13,22 @@ mod ubx_mon_ver;
 
 use std::env;
 use std::path::Path;
+use std::fs::File;
+use std::io::prelude::*;
 use std::{thread, time};
+use std::collections::HashMap;
 
-use crate::gnss_mgr::{GnssMgr, GnssMgrConfig};
-use crate::config_file::parse_config;
+use crate::gnss_mgr::GnssMgr;
+use crate::config_file::GnssMgrConfig;
 
-// extern crate clap;
 use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
+
+
+static CURRENT_FW_VER: &str = "ADR 4.31";
 
 
 fn main() {
     let app = App::new("gnss manager utility")
-                // .version("0.1.0")
                 .version(crate_version!())
                 .about("Operates and configures u-blox NEO GNSS modems")
                 .arg(Arg::with_name("verbose")
@@ -39,6 +43,9 @@ fn main() {
                     .arg(Arg::with_name("device")
                     .required(true)
                     .help("local serial device to which GNSS modem is connected (e.g. /dev/gnss0)"))
+
+                .subcommand(SubCommand::with_name("init")
+                    .about("Initializes GNSS"))
 
                 .subcommand(SubCommand::with_name("config")
                     .about("Performs GNSS modem control function")
@@ -86,41 +93,71 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
 
     // Devicename
     let device_name = matches.value_of("device").unwrap();  // unwrap must never fail here, as argument is required
-    // println!("device_name {}", device_name);
 
-    // Check that device exists (and is a TTY?)
+    // Check that device exists
+    // TODO: required, as GnssMgr::new will test it as well
     let device_exists = Path::new(device_name).exists();
     if !device_exists {
         return Err(format!("Device {} does not exist", device_name).to_string());
     }
-    
-   
-    // TODO: create gnss-mgr here and provide to run_xx function instead of device_name
-    // run gnss-mgr sos <action>
+
+    // TODO: Check return code
     let mut gnss = GnssMgr::new(device_name);
 
     for l in 1..2 {
         println!("*** {} **************************************************", l);
-        gnss.version();
-        thread::sleep(time::Duration::from_millis(500));
-        /*
+        // gnss.version();
+        thread::sleep(time::Duration::from_millis(250));
+
         // Check which subcommand was selected
         match matches.subcommand() {
+            ("init", Some(m)) => run_init(m, &mut gnss),
             ("config", Some(m)) => run_config(m, &mut gnss),
             ("control", Some(m)) => run_control(m, &mut gnss),
             ("sos", Some(m)) => run_sos(m, &mut gnss),
             _ => Err("Unknown command".to_string()),
-        };
-        */
+        }.unwrap();
     }
-
+/*
     // Check which subcommand was selected
     match matches.subcommand() {
+        ("init", Some(m)) => run_init(m, &mut gnss),
         ("config", Some(m)) => run_config(m, &mut gnss),
         ("control", Some(m)) => run_control(m, &mut gnss),
         ("sos", Some(m)) => run_sos(m, &mut gnss),
         _ => Err("Unknown command".to_string()),
     }
+*/
+    Ok(())
+}
+
+
+fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
+    // TODO:
+    // Check bitrate, change if required
+
+    // create /run/gnss/gnss0.config
+    let runfile_path = build_runfile_path(&gnss.device_name);
+
+    //let mut info: HashMap<&str, String> = [
+    //    ("vendor", String::from("ublox")),
+    //].iter().cloned().collect();
+
+    // vendor is always "ublox" when using this library
+    let mut info: HashMap<&str, String> = HashMap::new();
+    info.insert("vendor", String::from("ublox"));
+
+    gnss.version(&mut info);
+    // println!("{:?}", info);
+
+    match write_runfile(&runfile_path, &info) {
+        Ok(_) => println!("GNSS run file created"),
+        Err(_) => { println!("Error creating run file"); }, // TODO: return code on error
+    }
+
+    // TODO: Change protocol to NMEA 4.1
+
+    Ok(())
 }
 
 
@@ -138,7 +175,7 @@ fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
 
     // TODO: Have parse_config return config?
     let mut config: GnssMgrConfig = Default::default();
-    let _res = parse_config(&configfile_path, &mut config)?;
+    let _res = config.parse_config(&configfile_path)?;
 
     gnss.configure(&config);
 
@@ -177,12 +214,61 @@ fn run_sos(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     Ok(())
 }
 
-
+// TODO: return Path instead of String
 fn build_configfile_path(path: &str) -> String {
     // Take devicename of form /dev/<name> to build /etc/gnss/<name>
     let path = &path.replace("/dev/", "/etc/gnss/");
     let mut path = String::from(path);
     path.push_str(".conf");
-    println!("path {}", path);
     path
+}
+
+fn build_runfile_path(path: &str) -> String {
+    // Take devicename of form /dev/<name> to build /run/gnss/<name>.config
+    let path = &path.replace("/dev/", "/run/gnss/");
+    let mut path = String::from(path);
+    path.push_str(".config");
+    path
+    //let owner = Path::new(&path);
+    // path.as_ref()
+}
+
+fn write_runfile(path: &str, info: &HashMap<&str, String>) -> Result<(), &'static str> {
+    let path = Path::new(path);
+    // let display = path.display();
+    let mut file = match File::create(&path) {
+        Err(_) => return Err("Can't create GNSS run file"),
+        Ok(file) => file,
+    };
+
+    let deprecated = if info["fw_ver"] != CURRENT_FW_VER {
+        " (Deprecated)"
+    }
+    else {
+        ""
+    };
+
+    let text = format!(
+        "Vendor:                             {}\n\
+        Model:                              {}\n\
+        Firmware:                           {}{}\n\
+        ubx-Protocol:                       {}\n\
+        Supported Satellite Systems:        {}\n\
+        Supported Augmentation Services:    {}\n\
+        SW Version:                         {}\n\
+        HW Version:                         {}\n", 
+        info["vendor"],
+        info["model"],
+        info["fw_ver"], deprecated,
+        info["protocol"],
+        info["systems"],
+        info["augmentation"],
+        info["sw_ver"],
+        info["hw_ver"],
+    );
+
+    match file.write_all(text.as_bytes()) {
+        Err(_) => Err("Can't write GNSS run file"),
+        Ok(_) => Ok(()),
+    }
 }
