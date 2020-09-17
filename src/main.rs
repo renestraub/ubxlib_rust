@@ -9,6 +9,7 @@ mod server_tty;
 mod ubx_cfg_esfalg;
 mod ubx_cfg_nav5;
 mod ubx_cfg_rate;
+mod ubx_cfg_nmea;
 mod ubx_mon_ver;
 
 use std::env;
@@ -139,10 +140,6 @@ fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     // create /run/gnss/gnss0.config
     let runfile_path = build_runfile_path(&gnss.device_name);
 
-    //let mut info: HashMap<&str, String> = [
-    //    ("vendor", String::from("ublox")),
-    //].iter().cloned().collect();
-
     // vendor is always "ublox" when using this library
     let mut info: HashMap<&str, String> = HashMap::new();
     info.insert("vendor", String::from("ublox"));
@@ -155,7 +152,8 @@ fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
         Err(_) => { println!("Error creating run file"); }, // TODO: return code on error
     }
 
-    // TODO: Change protocol to NMEA 4.1
+    // Change protocol to NMEA 4.1
+    gnss.set_nmea_protocol_version(0x41);
 
     Ok(())
 }

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::server_tty::ServerTty;
 
 use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
+use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
 use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
@@ -118,6 +119,23 @@ impl GnssMgr {
 
         println!("changing to {}", 1000/rate);
         set.data.meas_rate = 1000u16 / rate;
+        println!("new settings {:?}", set);
+
+        self.server.set(&set);
+    }
+
+    // TODO: make all these public?
+    // TODO: Consider format of version parameter. The hex code is a bit too close to the UBX frame definition
+    // enum ? string ?
+    pub fn set_nmea_protocol_version(&mut self, version: u8) {
+        let mut set = UbxCfgNmea::new();
+        let poll = UbxCfgNmeaPoll::new();
+
+        self.server.poll(&poll, &mut set);
+        println!("current settings {:?}", set);
+
+        println!("changing to {:02X}", version);
+        set.data.nmea_version = version;
         println!("new settings {:?}", set);
 
         self.server.set(&set);

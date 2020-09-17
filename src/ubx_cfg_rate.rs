@@ -108,7 +108,6 @@ impl UbxFrameSerialize for UbxCfgRate {
 
 impl UbxFrameDeSerialize for UbxCfgRate {
     fn from_bin(&mut self, data: Vec<u8>) {
-        assert_eq!(data.len(), 6);
         self.load(&data);
     }
 }
