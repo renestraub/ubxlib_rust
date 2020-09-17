@@ -10,6 +10,7 @@ mod ubx_cfg_esfalg;
 mod ubx_cfg_nav5;
 mod ubx_cfg_rate;
 mod ubx_cfg_nmea;
+mod ubx_cfg_rst;
 mod ubx_mon_ver;
 
 use std::env;
@@ -107,7 +108,6 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
 
     for l in 1..2 {
         println!("*** {} **************************************************", l);
-        // gnss.version();
         thread::sleep(time::Duration::from_millis(250));
 
         // Check which subcommand was selected
@@ -137,6 +137,10 @@ fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     // TODO:
     // Check bitrate, change if required
 
+
+
+
+
     // create /run/gnss/gnss0.config
     let runfile_path = build_runfile_path(&gnss.device_name);
 
@@ -160,8 +164,6 @@ fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
 
 
 fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
-    // println!("control {:?}", matches);
-
     // Check for optional config file name
     let configfile_path = matches.value_of("configfile");
     let configfile_path: String = match configfile_path {
@@ -169,9 +171,9 @@ fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
         _ => build_configfile_path(&gnss.device_name),      // left away, compute from device name
     };
 
-    println!("configfile {}", configfile_path);
+    // println!("configfile {}", configfile_path);
 
-    // TODO: Have parse_config return config?
+    // Get configuration from config file
     let mut config: GnssMgrConfig = Default::default();
     let _res = config.parse_config(&configfile_path)?;
 

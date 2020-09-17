@@ -1,14 +1,15 @@
+use std::{thread, time};
 use std::collections::HashMap;
 
+use crate::config_file::GnssMgrConfig;
 use crate::server_tty::ServerTty;
-
 use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
 use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
 use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
+use crate::ubx_cfg_rst::UbxCfgRstAction;
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 
-use crate::config_file::GnssMgrConfig;
 
 
 // TODO: define information struct for version() method
@@ -56,7 +57,6 @@ impl GnssMgr {
 
     pub fn configure(&mut self, config: &GnssMgrConfig) {
         println!("configure");
-        println!("device {}", self.device_name);
         println!("config {:?}", config);
 
         if config.update_rate.is_some() {
@@ -77,12 +77,19 @@ impl GnssMgr {
             _ => (),
         }
 
+        // TODO: Sat Systems
+
+
+
         // TODO: Combine IMU angles in a struct, this is ugly
         if config.imu_yaw.is_some() &&
             config.imu_pitch.is_some() &&
             config.imu_roll.is_some() {
             self.set_imu_angles(config.imu_yaw.unwrap(), config.imu_pitch.unwrap(), config.imu_roll.unwrap());
         }
+
+        // TODO: Lever Arms
+
     }
 
     pub fn sos_save(&mut self) {
@@ -97,11 +104,18 @@ impl GnssMgr {
 
     pub fn cold_start(&mut self) {
         println!("cold-start");
-        println!("device {}", self.device_name);
+
+        let mut set = UbxCfgRstAction::new();
+        set.cold_start();
+        self.server.fire_and_forget(&set);
+
+        // Cold Start is not acknowledged, give receiver time to boot
+        // before commanding next messages
+        thread::sleep(time::Duration::from_millis(200));
     }    
 
     pub fn factory_reset(&mut self) {
-        println!("factory-eset");
+        println!("factory-reset");
         println!("device {}", self.device_name);
     }    
 

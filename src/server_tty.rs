@@ -99,7 +99,7 @@ impl ServerTty {
         self.parser.add_filter(UbxCID::new(0x05, 0x01));
         self.parser.add_filter(UbxCID::new(0x05, 0x00));
 
-        // Get frame data (haeader, cls, id, len, payload, checksum a/b)
+        // Get frame data (header, cls, id, len, payload, checksum a/b)
         let data = frame_set.to_bin();
         // println!("{:?}", data);
         let res = self.send(&data);
@@ -120,6 +120,26 @@ impl ServerTty {
         }
 
         self.parser.clear_filter();
+    }
+
+    /*
+    Send a set message to modem without waiting for a response
+    (fire and forget)
+
+    This method is typically used for commands that are not ACKed, i.e.
+    - cold start
+    - change baudrate
+    */    
+    pub fn fire_and_forget<TSet: UbxFrameSerialize + UbxFrameInfo>(&mut self, frame_set: &TSet) {
+        println!("firing {}", frame_set.name());
+
+        let data = frame_set.to_bin();
+        // println!("{:?}", data);
+        let res = self.send(&data);
+        match res {
+            Ok(_) => (),
+            Err(e) => println!("set: {}", e),    // TODO: Abort here? What about clear_filter()?
+        }
     }
 
 
