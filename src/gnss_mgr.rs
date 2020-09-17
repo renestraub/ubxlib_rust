@@ -1,7 +1,7 @@
 use std::{thread, time};
 use std::collections::HashMap;
 
-use crate::config_file::GnssMgrConfig;
+use crate::config_file::{GnssMgrConfig, Xyz};
 use crate::server_tty::ServerTty;
 use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
 use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
@@ -9,6 +9,7 @@ use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_rst::UbxCfgRstAction;
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
+use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
 
 
 
@@ -88,8 +89,16 @@ impl GnssMgr {
             self.set_imu_angles(config.imu_yaw.unwrap(), config.imu_pitch.unwrap(), config.imu_roll.unwrap());
         }
 
-        // TODO: Lever Arms
+        // Lever Arms
+        if config.vrp2antenna.is_some() {
+            // TODO: replace 0 with a proper constant
+            self.set_lever_arm(0, &config.vrp2antenna.unwrap());
+        }
 
+        if config.vrp2imu.is_some() {
+            // TODO: replace 1 with a proper constant
+            self.set_lever_arm(1, &config.vrp2imu.unwrap());
+        }
     }
 
     pub fn sos_save(&mut self) {
@@ -180,6 +189,25 @@ impl GnssMgr {
         set.data.pitch = pitch as i16 * 100;
         set.data.roll = roll as i16 * 100;
         println!("new IMU settings {:?}", set.data);
+
+        self.server.set(&set);
+    }
+
+    // TODO const for arm type 0 = VRP-to-Ant, 1 = VRP_to_IMU
+    fn set_lever_arm(&mut self, armtype: u8, distances: &Xyz) {
+        let mut set = UbxCfgEsflaSet::new();
+
+        assert!(distances.x >= -20.0 && distances.x <= 20.0);
+        assert!(distances.y >= -10.0 && distances.y <= 10.0);
+        assert!(distances.z >= -10.0 && distances.z <= 10.0);
+
+        set.data.version = 0;
+        set.data.num_configs = 1;
+        set.data.leverarm_type = armtype; 
+        set.data.leverarm_x = (distances.x * 100.0) as i16;
+        set.data.leverarm_y = (distances.y * 100.0) as i16;
+        set.data.leverarm_z = (distances.z * 100.0) as i16;
+        println!("new lever arm settings {:?}", set.data);
 
         self.server.set(&set);
     }

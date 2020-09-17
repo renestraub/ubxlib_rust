@@ -13,13 +13,12 @@ pub struct GnssMgrConfig {
     pub imu_roll: Option<i16>,
 
     pub vrp2antenna: Option<Xyz>,
-    /*
-    vrp2imu=
-    */
+    pub vrp2imu: Option<Xyz>,
 }
 
 
 #[derive(Debug, Default)]
+#[derive(Clone, Copy)]
 pub struct Xyz {
     pub x: f32,
     pub y: f32,
@@ -128,8 +127,6 @@ impl GnssMgrConfig {
         self.imu_roll = value;
 
 
-        // TODO: Implement, add simple test for good case
-        self.vrp2antenna = Xyz::from_str("1.0;2.0;3.0");
 
         let keyname = "vrp2antenna";
         let value = match sec_installation.get(keyname) {
@@ -137,9 +134,15 @@ impl GnssMgrConfig {
             Some(x) => { println!("using {} for {}", x, keyname); Xyz::from_str(&x) },
             _ => { println!("key '{}' not defined", keyname); None },
         };
-        
         self.vrp2antenna = value;
-        // self.mode = value;
+
+        let keyname = "vrp2imu";
+        let value = match sec_installation.get(keyname) {
+            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some(x) => { println!("using {} for {}", x, keyname); Xyz::from_str(&x) },
+            _ => { println!("key '{}' not defined", keyname); None },
+        };
+        self.vrp2imu = value;
 
         Ok(())
     }
@@ -460,7 +463,6 @@ mod vrp_antenna {
         println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
 
-        // let expect = Xyz { x: 1.0, y: 1.5, z: 0.3 };
         let xyz = config.vrp2antenna.unwrap();
         assert_eq!(xyz.x, 1.0);
         assert_eq!(xyz.y, 1.5);

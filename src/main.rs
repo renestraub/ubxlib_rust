@@ -6,6 +6,7 @@ mod frame;
 mod parser;
 mod gnss_mgr;
 mod server_tty;
+mod ubx_cfg_esfla;
 mod ubx_cfg_esfalg;
 mod ubx_cfg_nav5;
 mod ubx_cfg_rate;
