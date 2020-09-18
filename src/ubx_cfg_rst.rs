@@ -63,7 +63,7 @@ pub struct Data {
 
 impl Data {
     pub fn new(mask: u16, reset_mode: u8) -> Self {
-        Self { 
+        Self {
             nav_bbr_mask: mask,
             reset_mode: reset_mode,
             ..Default::default()
@@ -81,17 +81,17 @@ pub struct UbxCfgRstAction {
 
 impl UbxCfgRstAction {
     pub fn cold_start() -> Self {
-        Self { 
+        Self {
             name: "UBX-CFG-RST",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             data: Data::new(COLD_START, SW_RESET),
         }
     }
 
     pub fn stop() -> Self {
-        Self { 
+        Self {
             name: "UBX-CFG-RST",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             data: Data::new(HOT_START, STOP),
         }
     }

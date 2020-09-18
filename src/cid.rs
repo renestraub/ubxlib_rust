@@ -88,7 +88,7 @@ mod tests {
     #[test]
     fn assign() {
         let a = UbxCID::new(1, 2);
-        let b = a; 
+        let b = a;
         assert_eq!(a, b);
     }
 }

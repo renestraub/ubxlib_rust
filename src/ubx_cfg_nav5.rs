@@ -17,7 +17,7 @@ impl UbxCfgNav5Poll {
     pub fn new() -> Self {
         Self {
             name: "UBX-CFG-NAV5-POLL",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
         }
     }
 }
@@ -73,9 +73,9 @@ pub struct UbxCfgNav5 {
 
 impl UbxCfgNav5 {
     pub fn new() -> Self {
-        Self { 
+        Self {
             name: "UBX-CFG-NAV5",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             ..Default::default()
         }
     }

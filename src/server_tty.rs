@@ -28,7 +28,7 @@ pub struct ServerTty {
 impl ServerTty {
     // TODO: Result return code to handle errors
     pub fn new(device_name: &str) -> Self {
-        let mut obj = Self { 
+        let mut obj = Self {
             // device_name: String::from(device_name),
             parser: Parser::new(),
             serial_port: serial::open(&device_name).unwrap(),   // TODO: How do we do error check here?
@@ -39,7 +39,7 @@ impl ServerTty {
         obj.serial_port.set_timeout(Duration::from_secs(1000)).unwrap(); //?;
 
         obj
-    }    
+    }
 
     /*
     Poll a receiver status
@@ -69,7 +69,7 @@ impl ServerTty {
 
         let payload = self.wait();
         match payload {
-            Ok(packet) => { 
+            Ok(packet) => {
                 // println!("ok {:?}", packet.data);   // ACK or NAK received
                 frame_result.from_bin(packet.data);
             },
@@ -108,7 +108,7 @@ impl ServerTty {
         // Check proper response (ACK/NAK)
         let payload = self.wait();
         match payload {
-            Ok(packet) => { 
+            Ok(packet) => {
                 println!("ok {:?}", packet);
                 // TODO: Check ACK/NAK and CLS, ID in ACK
                 // f2.from_bin(packet.data);
@@ -126,7 +126,7 @@ impl ServerTty {
     This method is typically used for commands that are not ACKed, i.e.
     - cold start
     - change baudrate
-    */    
+    */
     pub fn fire_and_forget<TSet: UbxFrameSerialize + UbxFrameInfo>(&mut self, frame_set: &TSet) {
         println!("firing {}", frame_set.name());
 
@@ -166,12 +166,12 @@ impl ServerTty {
         let start = Instant::now();
         let mut elapsed = start.elapsed();
         while elapsed.as_millis() < 3000 {
-            // Read data 
+            // Read data
             // TODO: Check why only 48 bytes are read at once
             let res = self.serial_port.read(&mut read_buffer[..]);
             match res {
-                Ok(bytes_read) => { 
-                    // println!("{} bytes read", bytes_read); 
+                Ok(bytes_read) => {
+                    // println!("{} bytes read", bytes_read);
                     let data = read_buffer[0..bytes_read].to_vec();
                     // println!("{:?}", data);
                     // process() places all decoded frames in response_queue
@@ -183,7 +183,7 @@ impl ServerTty {
             // Check if a packet could be decoded already
             let res = self.parser.packet();
             match res {
-                Some(p) => { 
+                Some(p) => {
                     // println!("got desired packet {:?}", p);
                     return Ok(p);
                 }

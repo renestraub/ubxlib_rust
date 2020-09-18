@@ -19,7 +19,7 @@ impl UbxCfgRatePoll {
     pub fn new() -> Self {
         Self {
             name: "UBX-CFG-RATE-POLL",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
         }
     }
 }
@@ -59,9 +59,9 @@ pub struct UbxCfgRate {
 
 impl UbxCfgRate {
     pub fn new() -> Self {
-        Self { 
+        Self {
             name: "UBX-CFG-RATE",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             ..Default::default()
         }
     }

@@ -17,7 +17,7 @@ impl UbxUpdSosPoll {
     pub fn new() -> Self {
         Self {
             name: "UBX-UPD-SOS-POLL",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
         }
     }
 }
@@ -59,9 +59,9 @@ pub struct UbxUpdSos {
 
 impl UbxUpdSos {
     pub fn new() -> Self {
-        Self { 
+        Self {
             name: "UBX-UPD-SOS",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             ..Default::default()
         }
     }
@@ -118,7 +118,7 @@ pub struct DataAction {
 
 impl DataAction {
     pub fn new(cmd: u8) -> Self {
-        Self { 
+        Self {
             cmd: cmd,
             ..Default::default()
         }
@@ -135,18 +135,18 @@ pub struct UbxUpdSosAction {
 
 impl UbxUpdSosAction {
     pub fn backup() -> Self {
-        Self { 
+        Self {
             name: "UBX-UPD-SOS-ACTION",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             data: DataAction::new(0x00),
             ..Default::default()
         }
     }
 
     pub fn clear() -> Self {
-        Self { 
+        Self {
             name: "UBX-UPD-SOS-ACTION",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             data: DataAction::new(0x01),
             ..Default::default()
         }
@@ -199,5 +199,5 @@ mod tests {
         let dut = UbxUpdSosAction::clear();
         let msg = dut.to_bin();
         assert_eq!(msg[..10], [0xb5, 0x62, 0x09, 0x14, 4, 0,  1, 0, 0, 0]);
-    }    
+    }
 }

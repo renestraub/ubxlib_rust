@@ -28,7 +28,7 @@ impl UbxFrame {
     #[cfg(test)]    // only for test, remove later?
     pub fn new() -> Self {
         //..Default::default()
-        Self { 
+        Self {
             cid: UbxCID::new(0, 0),
             data: Vec::<u8>::new(),
         }
@@ -36,7 +36,7 @@ impl UbxFrame {
 
     /*
     pub fn construct_empty(cid: UbxCID) -> Self {
-        Self { 
+        Self {
             cid: cid,
             data: Vec::<u8>::new(),
         }
@@ -44,7 +44,7 @@ impl UbxFrame {
     */
 
     pub fn construct(cid: UbxCID, data: Vec::<u8>) -> Self {
-        Self { 
+        Self {
             cid: cid,
             data: data
         }
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn poll_mon_ver() {
-        // Poll UBX-MON-VER: B5 62 0A 04 00 00 0E 34 
+        // Poll UBX-MON-VER: B5 62 0A 04 00 00 0E 34
         let dut = UbxFrame::construct(UbxCID::new(0x0A, 0x04), [].to_vec());
         println!("{:?}", dut);
         let msg = dut.to_bytes();

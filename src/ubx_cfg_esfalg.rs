@@ -17,7 +17,7 @@ impl UbxCfgEsfAlgPoll {
     pub fn new() -> Self {
         Self {
             name: "UBX-CFG-ESFALG-POLL",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
         }
     }
 }
@@ -58,9 +58,9 @@ pub struct UbxCfgEsfAlg {
 
 impl UbxCfgEsfAlg {
     pub fn new() -> Self {
-        Self { 
+        Self {
             name: "UBX-CFG-ESFALG",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             ..Default::default()
         }
     }

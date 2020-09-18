@@ -21,7 +21,7 @@ pub struct Data {
 impl Data {
     // TODO: Remove load mask as not needed so far
     pub fn new(clear: u32, save: u32, load: u32) -> Self {
-        Self { 
+        Self {
             clear_mask: clear,
             save_mask: save,
             load_mask: load,
@@ -40,17 +40,17 @@ pub struct UbxCfgCfgAction {
 
 impl UbxCfgCfgAction {
     pub fn factory_reset() -> Self {
-        Self { 
+        Self {
             name: "UBX-CFG-CFG",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             data: Data::new(MASK_ALL, 0, MASK_ALL),
         }
     }
 
     pub fn persist() -> Self {
-        Self { 
+        Self {
             name: "UBX-CFG-RST",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             data: Data::new(0, MASK_ALL, 0),
         }
     }

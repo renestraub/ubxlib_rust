@@ -66,14 +66,14 @@ fn main() {
                         .required(true)
                         .possible_values(&["cold-start", "persist", "factory-reset"])
                         .help("Selects action to perform")))
-   
+
                 .subcommand(SubCommand::with_name("sos")
                     .about("Save on shutdown operations")
                     .arg(Arg::with_name("action")
                         .required(true)
                         .possible_values(&["save", "clear"])
                         .help("Selects sos operation to perform")));
-    
+
     let matches = app.get_matches();
 
     let rc = run_app(matches);
@@ -257,7 +257,7 @@ fn write_runfile(path: &str, info: &HashMap<&str, String>) -> Result<(), &'stati
         Supported Satellite Systems:        {}\n\
         Supported Augmentation Services:    {}\n\
         SW Version:                         {}\n\
-        HW Version:                         {}\n", 
+        HW Version:                         {}\n",
         info["vendor"],
         info["model"],
         info["fw_ver"], deprecated,

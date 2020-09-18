@@ -23,7 +23,7 @@ pub struct Data {
 
 impl Data {
     pub fn new() -> Self {
-        Self { 
+        Self {
             version: 0x00,
             num_configs: 1,
             ..Default::default()
@@ -41,10 +41,10 @@ pub struct UbxCfgEsflaSet {
 
 impl UbxCfgEsflaSet {
     pub fn new() -> Self {
-        Self { 
+        Self {
             name: "UBX-CFG-ESFLA",
             cid: UbxCID::new(CLS, ID),
-            data: Data::new(), 
+            data: Data::new(),
             ..Default::default()
         }
     }

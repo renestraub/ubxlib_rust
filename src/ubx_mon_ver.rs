@@ -15,7 +15,7 @@ impl UbxMonVerPoll {
     pub fn new() -> Self {
         Self {
             name: "UBX-MON-VER-POLL",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
         }
     }
 }

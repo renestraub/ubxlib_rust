@@ -62,7 +62,7 @@ impl GnssMgrConfig {
         };
 
         let keyname = "mode";
-        let valid_args = vec!["stationary", "vehicle"]; 
+        let valid_args = vec!["stationary", "vehicle"];
         let value = match sec_navigation.get(keyname) {
             Some("") => { println!("no value for {} specified, ignoring", keyname); None },
             Some(x) if valid_args.contains(&x) => { println!("using {} for {}", x, keyname); Some(String::from(x)) },
@@ -258,7 +258,7 @@ mod xyz_reader {
 #[cfg(test)]
 mod file_and_format {
     use super::*;
-   
+
     #[test]
     fn file_not_found() {
         let mut config: GnssMgrConfig = Default::default();
@@ -295,7 +295,7 @@ mod file_and_format {
 #[cfg(test)]
 mod update_rate {
     use super::*;
-   
+
     #[test]
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
@@ -396,7 +396,7 @@ mod mode {
 #[cfg(test)]
 mod imu_angles {
     use super::*;
-   
+
     #[test]
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();

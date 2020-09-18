@@ -17,7 +17,7 @@ impl UbxCfgNmeaPoll {
     pub fn new() -> Self {
         Self {
             name: "UBX-CFG-NMEA-POLL",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
         }
     }
 }
@@ -66,9 +66,9 @@ pub struct UbxCfgNmea {
 
 impl UbxCfgNmea {
     pub fn new() -> Self {
-        Self { 
+        Self {
             name: "UBX-CFG-NMEA",
-            cid: UbxCID::new(CLS, ID), 
+            cid: UbxCID::new(CLS, ID),
             ..Default::default()
         }
     }
