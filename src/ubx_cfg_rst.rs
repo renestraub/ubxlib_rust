@@ -9,6 +9,9 @@ const ID: u8 = 0x04;
 
 /*
 TODO: Enum is serialized as four bytes, thus not working here
+See serde customization
+https://serde.rs/container-attrs.html
+https://serde.rs/enum-representations.html#untagged
 
 #[repr(u16)]
 #[derive(Serialize, Debug)]
@@ -58,6 +61,16 @@ pub struct Data {
     pub res1: u8,
 }
 
+impl Data {
+    pub fn new(mask: u16, reset_mode: u8) -> Self {
+        Self { 
+            nav_bbr_mask: mask,
+            reset_mode: reset_mode,
+            ..Default::default()
+        }
+    }
+}
+
 
 #[derive(Default, Debug)]
 pub struct UbxCfgRstAction {
@@ -67,13 +80,22 @@ pub struct UbxCfgRstAction {
 }
 
 impl UbxCfgRstAction {
-    pub fn new() -> Self {
+    pub fn cold_start() -> Self {
         Self { 
             name: "UBX-CFG-RST",
             cid: UbxCID::new(CLS, ID), 
-            ..Default::default()
+            data: Data::new(COLD_START, SW_RESET),
         }
     }
+
+    pub fn stop() -> Self {
+        Self { 
+            name: "UBX-CFG-RST",
+            cid: UbxCID::new(CLS, ID), 
+            data: Data::new(HOT_START, STOP),
+        }
+    }
+
 
     // TODO: Realize the following as constructors
     // simper to use, just a bit more code here
@@ -84,22 +106,17 @@ impl UbxCfgRstAction {
     }
 */
 
-    pub fn cold_start(&mut self) {
-        self.data.reset_mode = SW_RESET;
-        self.data.nav_bbr_mask = COLD_START;
-    }
-
 /*
     pub fn start(&mut self) {
         self.data.reset_mode = START;
         self.data.nav_bbr_mask = HOT_START;
     }
-*/
 
     pub fn stop(&mut self) {
         self.data.reset_mode = STOP;
         self.data.nav_bbr_mask = HOT_START;
     }
+*/
 
     fn save(&self) -> Vec<u8> {
         let data = bincode::serialize(&self.data).unwrap();
@@ -138,18 +155,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test1() {
-        let dut = UbxCfgRstAction::new();
-        assert_eq!(dut.name, "UBX-CFG-RST");
-        let msg = dut.to_bin();
-        // println!("message {:?}", msg);
-        assert_eq!(msg, [0xb5, 0x62, CLS, ID, 4, 0, 0, 0, 0, 0, 14, 100]);
-    }
-
-    #[test]
     fn cold_start() {
-        let mut dut = UbxCfgRstAction::new();
-        dut.cold_start();
+        let dut = UbxCfgRstAction::cold_start();
         let msg = dut.to_bin();
         // println!("message {:?}", msg);
         assert_eq!(msg, [0xb5, 0x62, CLS, ID, 4, 0,  0xFF, 0xFF, 0x01, 0, 13, 95]);
@@ -157,8 +164,7 @@ mod tests {
 
     #[test]
     fn stop() {
-        let mut dut = UbxCfgRstAction::new();
-        dut.stop();
+        let dut = UbxCfgRstAction::stop();
         let msg = dut.to_bin();
         println!("message {:?}", msg);
         assert_eq!(msg, [0xb5, 0x62, CLS, ID, 4, 0,  0x00, 0x00, 0x08, 0, 22, 116]);

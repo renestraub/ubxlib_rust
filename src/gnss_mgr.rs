@@ -10,6 +10,7 @@ use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_rst::UbxCfgRstAction;
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
+use crate::ubx_upd_sos::UbxUpdSosAction;
 
 
 // TODO: define information struct for version() method
@@ -102,19 +103,29 @@ impl GnssMgr {
 
     pub fn sos_save(&mut self) {
         println!("sos save");
-        println!("device {}", self.device_name);
+
+        // Stop receiver
+        let set = UbxCfgRstAction::stop();
+        self.server.fire_and_forget(&set);
+        // Stop is not acknowledged, give receiver time to execute
+        // request before commanding next messages
+        thread::sleep(time::Duration::from_millis(200));
+
+        let set = UbxUpdSosAction::backup();
+        self.server.set(&set);
     }    
 
     pub fn sos_clear(&mut self) {
         println!("sos clear");
-        println!("device {}", self.device_name);
+
+        let set = UbxUpdSosAction::clear();
+        self.server.set(&set);
     }    
 
     pub fn cold_start(&mut self) {
         println!("cold-start");
 
-        let mut set = UbxCfgRstAction::new();
-        set.cold_start();
+        let set = UbxCfgRstAction::cold_start();
         self.server.fire_and_forget(&set);
 
         // Cold Start is not acknowledged, give receiver time to boot
