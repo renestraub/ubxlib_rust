@@ -19,6 +19,7 @@ pub struct Packet {
     pub data: Vec<u8>,      // mgt struct on stack, data on heap
 }
 
+
 pub struct Parser {
     /* TODO: crc_error_cid */
     rx_queue: VecDeque<Packet>,
@@ -34,7 +35,6 @@ pub struct Parser {
     ckb: u8,
     ofs: usize,
 }
-
 
 const MAX_MESSAGE_LENGTH: usize = 1000;
 
@@ -228,6 +228,7 @@ impl Parser {
         self.checksum.reset();
     }
 }
+
 
 #[cfg(test)]
 mod tests {

@@ -41,8 +41,7 @@ impl UbxFrameSerialize for UbxCfgNmeaPoll {
 }
 
 
-#[derive(Default)]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
     pub filter: u8,
     pub nmea_version: u8,
@@ -117,12 +116,25 @@ impl UbxFrameDeSerialize for UbxCfgNmea {
 }
 
 
-/*
-// TODO:
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    #[test]
+    fn poll() {
+        let dut = UbxCfgNmeaPoll::new();
+        assert_eq!(dut.name, "UBX-CFG-NMEA-POLL");
+        let msg = dut.to_bin();
+        assert_eq!(msg, [0xb5, 0x62, CLS, ID, 0, 0, 29, 93]);
+    }
+
+    #[test]
+    fn set() {
+        let mut dut = UbxCfgNmea::new();
+        assert_eq!(dut.name, "UBX-CFG-NMEA");
+        dut.data.nmea_version = 0x41;
+        let msg = dut.to_bin();
+        // println!("Serialized Data is {} {:?}", msg.len(), msg);
+        assert_eq!(msg[6+1], 0x41);
+    }
 }
-*/

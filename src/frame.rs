@@ -4,13 +4,6 @@ use crate::cid::UbxCID;
 use crate::checksum::Checksum;
 
 
-#[derive(Default)]
-pub struct UbxFrame {
-    pub cid: UbxCID,
-    pub data: Vec::<u8>,
-}
-
-
 pub trait UbxFrameInfo {
     fn name(&self) -> String;
     fn cid(&self) -> UbxCID;
@@ -24,6 +17,12 @@ pub trait UbxFrameDeSerialize {
     fn from_bin(&mut self, data: Vec<u8>);
 }
 
+
+#[derive(Default)]
+pub struct UbxFrame {
+    pub cid: UbxCID,
+    pub data: Vec::<u8>,
+}
 
 impl UbxFrame {
     #[cfg(test)]    // only for test, remove later?
@@ -94,6 +93,7 @@ impl fmt::Debug for UbxFrame {
          .finish()
     }
 }
+
 
 #[cfg(test)]
 mod tests {

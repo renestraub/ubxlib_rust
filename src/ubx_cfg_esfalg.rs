@@ -13,7 +13,6 @@ pub struct UbxCfgEsfAlgPoll {
     cid: UbxCID,
 }
 
-
 impl UbxCfgEsfAlgPoll {
     pub fn new() -> Self {
         Self {
@@ -42,8 +41,7 @@ impl UbxFrameSerialize for UbxCfgEsfAlgPoll {
 }
 
 
-#[derive(Default)]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
     pub bitfield: u32,  // u-blox describes as U4, bit is X4
     pub yaw: u32,       // 1e-2, 0..360°
@@ -111,7 +109,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn poll_frame() {
+    fn poll() {
         let dut = UbxCfgEsfAlgPoll::new();
         assert_eq!(dut.name, "UBX-CFG-ESFALG-POLL");
         let msg = dut.to_bin();
@@ -138,20 +136,4 @@ mod tests {
         assert_eq!(dut.data.pitch, 0x0708i16);
         assert_eq!(dut.data.roll, 0x0506i16);
     }
-
-    /*
-    #[test]
-    fn cfg_rate_change() {
-        let mut dut = UbxCfgRate::new();
-        assert_eq!(dut.data.meas_rate, 0);
-        assert_eq!(dut.data.nav_rate, 0);
-        assert_eq!(dut.data.time_ref, 0);
-
-        dut.data.meas_rate = 1000;
-        dut.data.nav_rate = 1;
-        dut.data.time_ref = 0x1234;
-        let data = dut.save();
-        assert_eq!(data, [0xE8, 3, 1, 0, 0x34, 0x12]);
-    }
-    */
 }

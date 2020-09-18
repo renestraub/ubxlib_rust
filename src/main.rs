@@ -20,11 +20,10 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::{thread, time};
 use std::collections::HashMap;
+use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
 
 use crate::gnss_mgr::GnssMgr;
 use crate::config_file::GnssMgrConfig;
-
-use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
 
 
 static CURRENT_FW_VER: &str = "ADR 4.31";
@@ -133,7 +132,6 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
     Ok(())
 }
 
-
 fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     // TODO:
     // Check bitrate, change if required
@@ -162,7 +160,6 @@ fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
 
     Ok(())
 }
-
 
 fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     // Check for optional config file name
@@ -214,6 +211,7 @@ fn run_sos(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
 
     Ok(())
 }
+
 
 // TODO: return Path instead of String
 fn build_configfile_path(path: &str) -> String {

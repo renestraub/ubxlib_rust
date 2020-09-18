@@ -2,11 +2,9 @@ use std::time::Instant;
 use std::time::Duration;
 
 use crate::cid::UbxCID;
-
 use crate::frame::{UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
 use crate::parser::{Parser, Packet};
 
-// extern crate serial;
 use std::io::prelude::*;
 use serial::prelude::*;
 
@@ -26,7 +24,6 @@ pub struct ServerTty {
     parser: Parser,
     serial_port: serial::SystemPort,
 }
-
 
 impl ServerTty {
     // TODO: Result return code to handle errors

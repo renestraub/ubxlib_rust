@@ -1,4 +1,4 @@
-use std::fmt;
+//use std::fmt;
 
 use serde::{Serialize, Deserialize};
 
@@ -14,7 +14,6 @@ pub struct UbxCfgRatePoll {
     pub name: &'static str,
     cid: UbxCID,
 }
-
 
 impl UbxCfgRatePoll {
     pub fn new() -> Self {
@@ -44,15 +43,14 @@ impl UbxFrameSerialize for UbxCfgRatePoll {
 }
 
 
-#[derive(Default)]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
     pub meas_rate: u16,  // Time elapsed between two measuremnts in ms
     pub nav_rate: u16,   // Number of measurements for NAV solution
     pub time_ref: u16,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct UbxCfgRate {
     pub name: &'static str,
     cid: UbxCID,
@@ -72,13 +70,11 @@ impl UbxCfgRate {
         assert!(data.len() == 6);
         self.data = bincode::deserialize(&data).unwrap();
         // println!("Decoded struct is {:?}", self.data);
-
     }
 
     pub fn save(&self) -> Vec<u8> {
         let data = bincode::serialize(&self.data).unwrap();
         data
-
     }
 }
 
@@ -94,10 +90,7 @@ impl UbxFrameInfo for UbxCfgRate {
 
 impl UbxFrameSerialize for UbxCfgRate {
     fn to_bin(&self) -> Vec<u8> {
-        // println!("{:?}", &self);
-        // update binary data in frame
         let data = self.save();
-
         // construct a frame with correct CID and payload
         let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
         let msg = frame.to_bytes();
@@ -112,7 +105,7 @@ impl UbxFrameDeSerialize for UbxCfgRate {
     }
 }
 
-
+/*
 impl fmt::Debug for UbxCfgRate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("UbxCfgRate")
@@ -123,6 +116,8 @@ impl fmt::Debug for UbxCfgRate {
         .finish()
     }
 }
+*/
+
 
 #[cfg(test)]
 mod tests {

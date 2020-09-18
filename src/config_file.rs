@@ -16,16 +16,6 @@ pub struct GnssMgrConfig {
     pub vrp2imu: Option<Xyz>,
 }
 
-
-#[derive(Debug, Default)]
-#[derive(Clone, Copy)]
-pub struct Xyz {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-
 impl GnssMgrConfig {
     pub fn parse_config(&mut self, path: &str)  -> Result<(), String> {
         // Check if configfile exists
@@ -146,6 +136,14 @@ impl GnssMgrConfig {
 
         Ok(())
     }
+}
+
+
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Xyz {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 impl Xyz {

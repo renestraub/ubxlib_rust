@@ -12,7 +12,6 @@ use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
 
 
-
 // TODO: define information struct for version() method
 
 // TODO: Implement !

@@ -4,13 +4,12 @@ use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerializ
 
 const CLS: u8 = 0x0A;
 const ID: u8 = 0x04;
-// const NAME: &'static str = "UBX-MON-VER";
+
 
 pub struct UbxMonVerPoll {
     pub name: &'static str,
     cid: UbxCID,
 }
-
 
 impl UbxMonVerPoll {
     pub fn new() -> Self {
@@ -41,8 +40,7 @@ impl UbxFrameSerialize for UbxMonVerPoll {
 }
 
 
-#[derive(Default)]
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct UbxMonVer {
     pub name: &'static str,
     cid: UbxCID,
@@ -85,6 +83,8 @@ impl UbxMonVer {
     fn extract_string(data: &[u8]) -> String {
         String::from_utf8_lossy(&data).replace(|c: char| c == '\0', "")
     }
+
+    // TODO: Decoder function for "FWVER=" etc.
 }
 
 impl UbxFrameInfo for UbxMonVer {

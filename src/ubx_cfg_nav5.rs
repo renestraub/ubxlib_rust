@@ -1,7 +1,3 @@
-// use std::fmt;
-
-//extern crate bincode;
-//use bincode::{serialize, deserialize};
 use serde::{Serialize, Deserialize};
 
 use crate::cid::UbxCID;
@@ -11,11 +7,11 @@ use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerializ
 const CLS: u8 = 0x06;
 const ID: u8 = 0x24;
 
+
 pub struct UbxCfgNav5Poll {
     pub name: &'static str,
     cid: UbxCID,
 }
-
 
 impl UbxCfgNav5Poll {
     pub fn new() -> Self {
@@ -44,8 +40,8 @@ impl UbxFrameSerialize for UbxCfgNav5Poll {
     }
 }
 
-#[derive(Default)]
-#[derive(Serialize, Deserialize, Debug)]
+
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
     pub mask: u16,
     pub dyn_model: u8,
@@ -132,7 +128,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn cfg_rate_poll() {
+    fn poll() {
         let dut = UbxCfgNav5Poll::new();
         assert_eq!(dut.name, "UBX-CFG-NAV5-POLL");
         let msg = dut.to_bin();
@@ -140,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn cfg_rate_ser_des() {
+    fn serialize_deser() {
         let mut dut = UbxCfgNav5::new();
         assert_eq!(dut.name, "UBX-CFG-NAV5");
 
@@ -150,8 +146,11 @@ mod tests {
         dut.data.utc_standard = 3;
 
         let res = dut.save();
-        // println!("Serialized Data is {} {:?}", res.len(), res);
+        println!("Serialized Data is {} {:?}", res.len(), res);
         assert_eq!(res.len(), 36);
+        assert_eq!(res[2], 4);
+        assert_eq!(res[3], 2);
+        assert_eq!(res[30], 3);
 
         // invalidate data, to check load() is actually working
         dut.data.mask = 0x0000;

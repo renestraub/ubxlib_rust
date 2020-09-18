@@ -49,8 +49,7 @@ const STOP: u8 = 0x08;
 // const START: u8 = 0x09;
 
 
-#[derive(Default)]
-#[derive(Serialize, Debug)]
+#[derive(Default, Debug, Serialize)]
 pub struct Data {
     // pub nav_bbr_mask: BbrMask,
     // pub reset_mode: ResetMode,
@@ -76,7 +75,6 @@ impl UbxCfgRstAction {
         }
     }
 
-
     // TODO: Realize the following as constructors
     // simper to use, just a bit more code here
 /*
@@ -90,12 +88,14 @@ impl UbxCfgRstAction {
         self.data.reset_mode = SW_RESET;
         self.data.nav_bbr_mask = COLD_START;
     }
+
 /*
     pub fn start(&mut self) {
         self.data.reset_mode = START;
         self.data.nav_bbr_mask = HOT_START;
     }
 */
+
     pub fn stop(&mut self) {
         self.data.reset_mode = STOP;
         self.data.nav_bbr_mask = HOT_START;
@@ -108,7 +108,6 @@ impl UbxCfgRstAction {
         data
     }
 }
-
 
 impl UbxFrameInfo for UbxCfgRstAction {
     fn name(&self) -> String {
