@@ -12,6 +12,7 @@ mod ubx_cfg_nav5;
 mod ubx_cfg_rate;
 mod ubx_cfg_nmea;
 mod ubx_cfg_rst;
+mod ubx_cfg_cfg;
 mod ubx_mon_ver;
 mod ubx_upd_sos;
 

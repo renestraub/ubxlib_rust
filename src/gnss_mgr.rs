@@ -8,6 +8,7 @@ use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
 use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_rst::UbxCfgRstAction;
+use crate::ubx_cfg_cfg::UbxCfgCfgAction;
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
 use crate::ubx_upd_sos::UbxUpdSosAction;
@@ -28,8 +29,8 @@ impl GnssMgr {
     // TODO: rename to open/create?
     // TODO: Result return code
     pub fn new(device: &str) -> Self {
-        Self { 
-            device_name: String::from(device), 
+        Self {
+            device_name: String::from(device),
             server: ServerTty::new(device),
         }
     }
@@ -46,7 +47,7 @@ impl GnssMgr {
         let fw_ver = String::from(ver_result.hw_extension[1].trim_start_matches("FWVER="));
         let proto = String::from(ver_result.hw_extension[2].trim_start_matches("PROTVER="));
         let model = String::from(ver_result.hw_extension[3].trim_start_matches("MOD="));
-        
+
         info.insert("model", model);
         info.insert("sw_ver", ver_result.sw_version);
         info.insert("hw_ver", ver_result.hw_version);
@@ -113,14 +114,16 @@ impl GnssMgr {
 
         let set = UbxUpdSosAction::backup();
         self.server.set(&set);
-    }    
+        // log.info("Saving receiver state successfully performed")
+    }
 
     pub fn sos_clear(&mut self) {
         println!("sos clear");
 
         let set = UbxUpdSosAction::clear();
         self.server.set(&set);
-    }    
+        // log.info("Clearing receiver state successfully performed")
+    }
 
     pub fn cold_start(&mut self) {
         println!("cold-start");
@@ -128,19 +131,32 @@ impl GnssMgr {
         let set = UbxCfgRstAction::cold_start();
         self.server.fire_and_forget(&set);
 
+        // log.info("Cold boot of GNSS receiver triggered, let receiver start")
+
         // Cold Start is not acknowledged, give receiver time to boot
-        // before commanding next messages
+        // before commanding next message
         thread::sleep(time::Duration::from_millis(200));
-    }    
+    }
 
     pub fn factory_reset(&mut self) {
         println!("factory-reset");
-        println!("device {}", self.device_name);
-    }    
+
+        let set = UbxCfgCfgAction::factory_reset();
+        self.server.fire_and_forget(&set);
+
+        // log.info("Reset GNSS receiver configuration to default, let receiver start with default config")
+
+        // Factory reset leads to change of bitrate, no acknowledge can be received
+        // Give receiver time before commanding next message
+        thread::sleep(time::Duration::from_millis(200));
+    }
 
     pub fn persist(&mut self) {
         println!("persist");
-        println!("device {}", self.device_name);
+        // log.info("Persisting receiver configuration")
+
+        let set = UbxCfgCfgAction::persist();
+        self.server.set(&set);
     }
 
     fn set_update_rate(&mut self, rate: u16) {
@@ -187,8 +203,11 @@ impl GnssMgr {
         self.server.set(&set);
     }
 
-    // TODO: provide arguments
     fn set_imu_angles(&mut self, yaw: u16, pitch: i16, roll: i16) {
+        assert!(yaw <= 360);
+        assert!(pitch >= -90 && pitch <= 90);
+        assert!(roll >= -180 && roll <= 180);
+
         let mut set = UbxCfgEsfAlg::new();
         let poll = UbxCfgEsfAlgPoll::new();
 
@@ -213,7 +232,7 @@ impl GnssMgr {
 
         set.data.version = 0;
         set.data.num_configs = 1;
-        set.data.leverarm_type = armtype; 
+        set.data.leverarm_type = armtype;
         set.data.leverarm_x = (distances.x * 100.0) as i16;
         set.data.leverarm_y = (distances.y * 100.0) as i16;
         set.data.leverarm_z = (distances.z * 100.0) as i16;
