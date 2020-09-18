@@ -129,7 +129,7 @@ mod tests {
         assert_eq!(dut.name, "UBX-CFG-RATE-POLL");
         let msg = dut.to_bin();
         println!("message {:?}", msg);
-        assert_eq!(msg, [0xb5, 0x62, CLS, ID, 0, 0, 14, 48]);
+        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x08, 0, 0, 14, 48]);
     }
 
     #[test]

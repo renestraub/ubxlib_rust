@@ -159,7 +159,7 @@ mod tests {
         let dut = UbxCfgRstAction::cold_start();
         let msg = dut.to_bin();
         // println!("message {:?}", msg);
-        assert_eq!(msg, [0xb5, 0x62, CLS, ID, 4, 0,  0xFF, 0xFF, 0x01, 0, 13, 95]);
+        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x04, 4, 0,  0xFF, 0xFF, 0x01, 0, 13, 95]);
     }
 
     #[test]
@@ -167,6 +167,6 @@ mod tests {
         let dut = UbxCfgRstAction::stop();
         let msg = dut.to_bin();
         println!("message {:?}", msg);
-        assert_eq!(msg, [0xb5, 0x62, CLS, ID, 4, 0,  0x00, 0x00, 0x08, 0, 22, 116]);
+        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x04, 4, 0,  0x00, 0x00, 0x08, 0, 22, 116]);
     }
 }

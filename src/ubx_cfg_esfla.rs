@@ -93,7 +93,7 @@ mod tests {
 
         let msg = dut.to_bin();
         println!("message {:?}", msg);
-        assert_eq!(msg, [0xb5, 0x62, CLS, ID, 12, 0, 0x00, 0x01, 0x00, 0x00, 2, 0x00, 127, 0, 255, 0, 0xe8, 0x03, 173, 173]);
+        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x2F, 12, 0, 0x00, 0x01, 0x00, 0x00, 2, 0x00, 127, 0, 255, 0, 0xe8, 0x03, 173, 173]);
     }
 
     #[test]
@@ -107,6 +107,6 @@ mod tests {
 
         let msg = dut.to_bin();
         println!("message {:?}", msg);
-        assert_eq!(msg, [0xb5, 0x62, CLS, ID, 12, 0, 0x00, 0x01, 0x00, 0x00, 3, 0x00, 129, 255, 1, 255, 24, 252, 217, 26]);
+        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x2F, 12, 0, 0x00, 0x01, 0x00, 0x00, 3, 0x00, 129, 255, 1, 255, 24, 252, 217, 26]);
     }
 }

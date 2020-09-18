@@ -125,7 +125,7 @@ mod tests {
         let dut = UbxCfgNmeaPoll::new();
         assert_eq!(dut.name, "UBX-CFG-NMEA-POLL");
         let msg = dut.to_bin();
-        assert_eq!(msg, [0xb5, 0x62, CLS, ID, 0, 0, 29, 93]);
+        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x17, 0, 0, 29, 93]);
     }
 
     #[test]
