@@ -57,7 +57,6 @@ impl UbxCfgCfgAction {
 
     fn save(&self) -> Vec<u8> {
         let data = bincode::serialize(&self.data).unwrap();
-        println!("{:?}", data);
         assert!(data.len() == 12);
         data
     }
@@ -103,7 +102,6 @@ mod tests {
     fn persist() {
         let dut = UbxCfgCfgAction::persist();
         let msg = dut.to_bin();
-        println!("message {:?}", msg);
         assert_eq!(msg[..18], [0xb5, 0x62, 0x06, 0x09, 12, 0, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         //                       B5    62    06    09  0D 00    00    00    00    00    FF    FF    00    00    00    00    00    00   17   31 BF
     }

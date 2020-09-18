@@ -1,5 +1,6 @@
 use std::path::Path;
 use ini::Ini;
+use log::{debug, info};
 
 
 #[derive(Debug, Default)]
@@ -45,14 +46,14 @@ impl GnssMgrConfig {
         // or Err("....")
         let keyname = "update-rate";
         let value = match sec_general.get(keyname) {
-            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
             Some(x) => {
                 match x.parse::<u16>() {
-                    Ok(y) if y <= 2 => { println!("using {} for {}", x, keyname); Some(y) },
-                    Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+                    Ok(y) if y <= 2 => { info!("using {} for {}", x, keyname); Some(y) },
+                    Ok(_) | Err(_) => { info!("invalid value {} for key {}", x, keyname); None },
                 }
             },
-            _ => { println!("key '{}' not defined", keyname); None },
+            _ => { info!("key '{}' not defined", keyname); None },
         };
         self.update_rate = value;
 
@@ -64,9 +65,9 @@ impl GnssMgrConfig {
         let keyname = "mode";
         let valid_args = vec!["stationary", "vehicle"];
         let value = match sec_navigation.get(keyname) {
-            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
-            Some(x) if valid_args.contains(&x) => { println!("using {} for {}", x, keyname); Some(String::from(x)) },
-            _ => { println!("key '{}' not defined", keyname); None },
+            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
+            Some(x) if valid_args.contains(&x) => { info!("using {} for {}", x, keyname); Some(String::from(x)) },
+            _ => { info!("key '{}' not defined", keyname); None },
         };
         self.mode = value;
 
@@ -79,40 +80,40 @@ impl GnssMgrConfig {
 
         let keyname = "yaw";
         let value = match sec_installation.get(keyname) {
-            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
             Some(x) => {
                 match x.parse::<u16>() {
-                    Ok(y) if y <= 360 => { println!("using {} for {}", x, keyname); Some(y) },
-                    Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+                    Ok(y) if y <= 360 => { info!("using {} for {}", x, keyname); Some(y) },
+                    Ok(_) | Err(_) => { info!("invalid value {} for key {}", x, keyname); None },
                 }
             },
-            _ => { println!("key '{}' not defined", keyname); None },
+            _ => { info!("key '{}' not defined", keyname); None },
         };
         self.imu_yaw = value;
 
         let keyname = "pitch";
         let value = match sec_installation.get(keyname) {
-            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
             Some(x) => {
                 match x.parse::<i16>() {
-                    Ok(y) if y >= -90 && y <= 90 => { println!("using {} for {}", x, keyname); Some(y) },
-                    Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+                    Ok(y) if y >= -90 && y <= 90 => { info!("using {} for {}", x, keyname); Some(y) },
+                    Ok(_) | Err(_) => { info!("invalid value {} for key {}", x, keyname); None },
                 }
             },
-            _ => { println!("key '{}' not defined", keyname); None },
+            _ => { info!("key '{}' not defined", keyname); None },
         };
         self.imu_pitch = value;
 
         let keyname = "roll";
         let value = match sec_installation.get(keyname) {
-            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
+            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
             Some(x) => {
                 match x.parse::<i16>() {
-                    Ok(y) if y >= -180 && y <= 180 => { println!("using {} for {}", x, keyname); Some(y) },
-                    Ok(_) | Err(_) => { println!("invalid value {} for key {}", x, keyname); None },
+                    Ok(y) if y >= -180 && y <= 180 => { info!("using {} for {}", x, keyname); Some(y) },
+                    Ok(_) | Err(_) => { info!("invalid value {} for key {}", x, keyname); None },
                 }
             },
-            _ => { println!("key '{}' not defined", keyname); None },
+            _ => { info!("key '{}' not defined", keyname); None },
         };
         self.imu_roll = value;
 
@@ -120,17 +121,17 @@ impl GnssMgrConfig {
 
         let keyname = "vrp2antenna";
         let value = match sec_installation.get(keyname) {
-            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
-            Some(x) => { println!("using {} for {}", x, keyname); Xyz::from_str(&x) },
-            _ => { println!("key '{}' not defined", keyname); None },
+            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
+            Some(x) => { info!("using {} for {}", x, keyname); Xyz::from_str(&x) },
+            _ => { info!("key '{}' not defined", keyname); None },
         };
         self.vrp2antenna = value;
 
         let keyname = "vrp2imu";
         let value = match sec_installation.get(keyname) {
-            Some("") => { println!("no value for {} specified, ignoring", keyname); None },
-            Some(x) => { println!("using {} for {}", x, keyname); Xyz::from_str(&x) },
-            _ => { println!("key '{}' not defined", keyname); None },
+            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
+            Some(x) => { info!("using {} for {}", x, keyname); Xyz::from_str(&x) },
+            _ => { info!("key '{}' not defined", keyname); None },
         };
         self.vrp2imu = value;
 
@@ -162,9 +163,9 @@ impl Xyz {
             return None;
         }
 
-        println!("x is {}",tokens[0]);
-        println!("y is {}",tokens[1]);
-        println!("z is {}",tokens[2]);
+        debug!("x is {}",tokens[0]);
+        debug!("y is {}",tokens[1]);
+        debug!("z is {}",tokens[2]);
 
         let x = Xyz::parse_float(tokens[0]);    // TODO: check here and return with error message (.or_else, ...)
         let y = Xyz::parse_float(tokens[1]);
@@ -196,14 +197,12 @@ mod xyz_reader {
     #[test]
     fn empty_string() {
         let uut = Xyz::from_str("");
-        println!("{:?}", uut);
         assert_eq!(uut.is_none(), true);
     }
 
     #[test]
     fn ok() {
         let uut = Xyz::from_str("1.0;-2.2;333.3");
-        println!("{:?}", uut);
         assert_eq!(uut.is_some(), true);
         let uut = uut.unwrap();
         assert_eq!(uut.x, 1.0); // TODO: Check float comparison
@@ -211,7 +210,6 @@ mod xyz_reader {
         assert_eq!(uut.z, 333.3);
 
         let uut = Xyz::from_str("-11.1;22.2;-333.33");
-        println!("{:?}", uut);
         assert_eq!(uut.is_some(), true);
         let uut = uut.unwrap();
         assert_eq!(uut.x, -11.1);
@@ -222,7 +220,6 @@ mod xyz_reader {
     #[test]
     fn ok_with_spaces() {
         let uut = Xyz::from_str("1.25;   -2.5; 3.75");
-        println!("{:?}", uut);
         assert_eq!(uut.is_some(), true);
         let uut = uut.unwrap();
         assert_eq!(uut.x, 1.25);
@@ -233,14 +230,12 @@ mod xyz_reader {
     #[test]
     fn value_missing() {
         let uut = Xyz::from_str("1.0;;2.0");
-        println!("{:?}", uut);
         assert_eq!(uut.is_none(), true);
     }
 
     #[test]
     fn invalid_separators() {
         let uut = Xyz::from_str("1.0;2.0,3.0");
-        println!("{:?}", uut);
         assert_eq!(uut.is_none(), true);
     }
 
@@ -248,7 +243,6 @@ mod xyz_reader {
     #[test]
     fn out_of_range() {
         let uut = "1.0,222,3.0";
-        println!("{:?}", uut);
         assert_eq!(1, 0);
     }
     */
@@ -270,7 +264,6 @@ mod file_and_format {
     fn no_default_section() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_default_section.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_err(), true);
     }
 
@@ -278,7 +271,6 @@ mod file_and_format {
     fn no_version_info() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_version.conf");
-        // println!("{:?}", res);
         assert_eq!(res.is_err(), true);
     }
 
@@ -286,7 +278,6 @@ mod file_and_format {
     fn wrong_version_info() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_version.conf");
-        // println!("{:?}", res);
         assert_eq!(res.is_err(), true);
     }
 }
@@ -300,7 +291,6 @@ mod update_rate {
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_update_rate.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate.is_none(), true);
     }
@@ -309,7 +299,6 @@ mod update_rate {
     fn no_value() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_update_rate_empty.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate.is_none(), true);
     }
@@ -318,7 +307,6 @@ mod update_rate {
     fn value_ok() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_update_rate_ok.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate, Some(2));
     }
@@ -327,7 +315,6 @@ mod update_rate {
     fn value_too_high() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_update_rate_too_high.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate.is_none(), true);
     }
@@ -336,7 +323,6 @@ mod update_rate {
     fn syntax_error() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_update_rate_syntax_error.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.update_rate.is_none(), true);
     }
@@ -350,7 +336,6 @@ mod mode {
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_mode.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode.is_none(), true);
     }
@@ -359,7 +344,6 @@ mod mode {
     fn no_value() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_mode_empty.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode.is_none(), true);
     }
@@ -368,7 +352,6 @@ mod mode {
     fn vehicle() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_mode_vehicle.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode, Some(String::from("vehicle")));
     }
@@ -377,7 +360,6 @@ mod mode {
     fn stationary() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_mode_stationary.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode, Some(String::from("stationary")));
     }
@@ -386,7 +368,6 @@ mod mode {
     fn unknown() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_mode_unknown.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.mode.is_none(), true);
     }
@@ -401,7 +382,6 @@ mod imu_angles {
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_imu_yaw.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw.is_none(), true);
     }
@@ -410,7 +390,6 @@ mod imu_angles {
     fn no_value() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_imu_yaw_empty.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw.is_none(), true);
     }
@@ -419,7 +398,6 @@ mod imu_angles {
     fn yaw_ok() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_imu_yaw_ok.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw, Some(182));
         assert_eq!(config.imu_pitch, None);
@@ -430,7 +408,6 @@ mod imu_angles {
     fn pitch_ok() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_imu_pitch_ok.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw, None);
         assert_eq!(config.imu_pitch, Some(-45));
@@ -441,7 +418,6 @@ mod imu_angles {
     fn roll_ok() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_imu_roll_ok.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
         assert_eq!(config.imu_yaw, None);
         assert_eq!(config.imu_pitch, None);
@@ -458,7 +434,6 @@ mod vrp_antenna {
     fn ok() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_vrp_antenna_ok.conf");
-        println!("{:?}", res);
         assert_eq!(res.is_ok(), true);
 
         let xyz = config.vrp2antenna.unwrap();

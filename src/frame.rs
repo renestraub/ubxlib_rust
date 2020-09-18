@@ -103,7 +103,6 @@ mod tests {
     fn dummy_frame() {
         let dut = UbxFrame::new();
         let msg = dut.to_bytes();
-        println!("message {:?}", msg);
         assert_eq!(msg, [0xb5, 0x62, 0, 0, 0, 0, 0, 0]);
     }
 
@@ -111,7 +110,6 @@ mod tests {
     fn ack_frame() {
         let dut = UbxFrame::construct(UbxCID::new(0x05, 0x01), [1, 2].to_vec());
         let msg = dut.to_bytes();
-        println!("{:?}", dut);
         assert_eq!(msg, [0xb5, 0x62, 0x05, 0x01, 0x02, 0x00, 1, 2, 11, 47]);
     }
 
@@ -119,7 +117,6 @@ mod tests {
     fn poll_mon_ver() {
         // Poll UBX-MON-VER: B5 62 0A 04 00 00 0E 34
         let dut = UbxFrame::construct(UbxCID::new(0x0A, 0x04), [].to_vec());
-        println!("{:?}", dut);
         let msg = dut.to_bytes();
         assert_eq!(msg, [0xb5, 0x62, 0x0a, 0x04, 0x00, 0x00, 0x0e, 0x34]);
     }

@@ -84,7 +84,6 @@ impl UbxCfgNav5 {
     pub fn load(&mut self, data: &[u8]) {
         assert!(data.len() == 36);
         self.data = bincode::deserialize(&data).unwrap();
-        // println!("Decoded struct is {:?}", self.data);
     }
 
     // TODO: Remove, write directly in UbxFrameSerialize
@@ -146,7 +145,6 @@ mod tests {
         dut.data.utc_standard = 3;
 
         let res = dut.save();
-        println!("Serialized Data is {} {:?}", res.len(), res);
         assert_eq!(res.len(), 36);
         assert_eq!(res[2], 4);
         assert_eq!(res[3], 2);

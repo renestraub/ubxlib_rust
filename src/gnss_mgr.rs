@@ -1,5 +1,6 @@
 use std::{thread, time};
 use std::collections::HashMap;
+use log::{debug, info};
 
 use crate::config_file::{GnssMgrConfig, Xyz};
 use crate::server_tty::ServerTty;
@@ -13,6 +14,8 @@ use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
 use crate::ubx_upd_sos::UbxUpdSosAction;
 
+
+// TODO: Split away neom8 driver module
 
 // TODO: define information struct for version() method
 
@@ -41,7 +44,7 @@ impl GnssMgr {
 
         // TODO: error check missing for sure
         self.server.poll(&poll, &mut ver_result);
-        // println!("{:?}", ver_result);
+        debug!("{:?}", ver_result);
 
         // TODO: Don't assume fixed position for these entries
         let fw_ver = String::from(ver_result.hw_extension[1].trim_start_matches("FWVER="));
@@ -58,12 +61,8 @@ impl GnssMgr {
     }
 
     pub fn configure(&mut self, config: &GnssMgrConfig) {
-        println!("configure");
-        println!("config {:?}", config);
-
         if config.update_rate.is_some() {
             let rate = config.update_rate.unwrap();
-            // println!("applying update_rate {}", rate);
             self.set_update_rate(rate);
         }
 
@@ -103,8 +102,6 @@ impl GnssMgr {
     }
 
     pub fn sos_save(&mut self) {
-        println!("sos save");
-
         // Stop receiver
         let set = UbxCfgRstAction::stop();
         self.server.fire_and_forget(&set);
@@ -114,24 +111,20 @@ impl GnssMgr {
 
         let set = UbxUpdSosAction::backup();
         self.server.set(&set);
-        // log.info("Saving receiver state successfully performed")
+        info!("Saving receiver state successfully performed");
     }
 
     pub fn sos_clear(&mut self) {
-        println!("sos clear");
-
         let set = UbxUpdSosAction::clear();
         self.server.set(&set);
-        // log.info("Clearing receiver state successfully performed")
+        info!("Clearing receiver state successfully performed");
     }
 
     pub fn cold_start(&mut self) {
-        println!("cold-start");
-
         let set = UbxCfgRstAction::cold_start();
         self.server.fire_and_forget(&set);
 
-        // log.info("Cold boot of GNSS receiver triggered, let receiver start")
+        info!("Cold boot of GNSS receiver triggered, let receiver start");
 
         // Cold Start is not acknowledged, give receiver time to boot
         // before commanding next message
@@ -139,21 +132,18 @@ impl GnssMgr {
     }
 
     pub fn factory_reset(&mut self) {
-        println!("factory-reset");
-
         let set = UbxCfgCfgAction::factory_reset();
         self.server.fire_and_forget(&set);
 
-        // log.info("Reset GNSS receiver configuration to default, let receiver start with default config")
+        info!("Reset GNSS receiver configuration to default, let receiver start with default config");
 
-        // Factory reset leads to change of bitrate, no acknowledge can be received
+        // Factory reset can lead to change of bitrate, no acknowledge can be received then
         // Give receiver time before commanding next message
         thread::sleep(time::Duration::from_millis(200));
     }
 
     pub fn persist(&mut self) {
-        println!("persist");
-        // log.info("Persisting receiver configuration")
+        info!("Persisting receiver configuration");
 
         let set = UbxCfgCfgAction::persist();
         self.server.set(&set);
@@ -164,13 +154,16 @@ impl GnssMgr {
         let poll = UbxCfgRatePoll::new();
 
         self.server.poll(&poll, &mut set);
-        println!("current settings {:?}", set);
+        // debug!("current settings {:?}", set);
 
-        println!("changing to {}", 1000/rate);
-        set.data.meas_rate = 1000u16 / rate;
-        println!("new settings {:?}", set);
+        let new_time = 1000u16 / rate;
+        if true || set.data.meas_rate != new_time {
+            info!("setting update rate to {} ms", new_time);
+            set.data.meas_rate = new_time;
+            debug!("new settings {:?}", set);
 
-        self.server.set(&set);
+            self.server.set(&set);
+        }
     }
 
     // TODO: make all these public?
@@ -181,13 +174,14 @@ impl GnssMgr {
         let poll = UbxCfgNmeaPoll::new();
 
         self.server.poll(&poll, &mut set);
-        println!("current settings {:?}", set);
+        // debug!("current settings {:?}", set);
 
-        println!("changing to {:02X}", version);
-        set.data.nmea_version = version;
-        println!("new settings {:?}", set);
-
-        self.server.set(&set);
+        if set.data.nmea_version != version {
+            info!("setting NMEA protocol version to 0x{:02X}", version);
+            set.data.nmea_version = version;
+            debug!("new settings {:?}", set);
+            self.server.set(&set);
+        }
     }
 
     fn set_dynamic_mode(&mut self, model: u8) {
@@ -195,12 +189,14 @@ impl GnssMgr {
         let poll = UbxCfgNav5Poll::new();
 
         self.server.poll(&poll, &mut set);
-        println!("current settings {:?}", set.data);
+        // debug!("current settings {:?}", set.data);
 
-        set.data.dyn_model = model;
-        println!("new settings {:?}", set.data);
-
-        self.server.set(&set);
+        if true || set.data.dyn_model != model {
+            info!("setting dynamic model to {}", model);
+            set.data.dyn_model = model;
+            debug!("new settings {:?}", set.data);
+            self.server.set(&set);
+        }
     }
 
     fn set_imu_angles(&mut self, yaw: u16, pitch: i16, roll: i16) {
@@ -212,12 +208,12 @@ impl GnssMgr {
         let poll = UbxCfgEsfAlgPoll::new();
 
         self.server.poll(&poll, &mut set);
-        println!("current IMU settings {:?}", set.data);
+        debug!("current IMU settings {:?}", set.data);
 
         set.data.yaw = yaw as u32 * 100;
         set.data.pitch = pitch as i16 * 100;
         set.data.roll = roll as i16 * 100;
-        println!("new IMU settings {:?}", set.data);
+        debug!("new IMU settings {:?}", set.data);
 
         self.server.set(&set);
     }
@@ -236,7 +232,7 @@ impl GnssMgr {
         set.data.leverarm_x = (distances.x * 100.0) as i16;
         set.data.leverarm_y = (distances.y * 100.0) as i16;
         set.data.leverarm_z = (distances.z * 100.0) as i16;
-        println!("new lever arm settings {:?}", set.data);
+        debug!("new lever arm settings {:?}", set.data);
 
         self.server.set(&set);
     }

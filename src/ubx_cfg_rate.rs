@@ -69,7 +69,6 @@ impl UbxCfgRate {
     pub fn load(&mut self, data: &[u8]) {
         assert!(data.len() == 6);
         self.data = bincode::deserialize(&data).unwrap();
-        // println!("Decoded struct is {:?}", self.data);
     }
 
     pub fn save(&self) -> Vec<u8> {
@@ -128,7 +127,6 @@ mod tests {
         let dut = UbxCfgRatePoll::new();
         assert_eq!(dut.name, "UBX-CFG-RATE-POLL");
         let msg = dut.to_bin();
-        println!("message {:?}", msg);
         assert_eq!(msg, [0xb5, 0x62, 0x06, 0x08, 0, 0, 14, 48]);
     }
 
@@ -148,9 +146,7 @@ mod tests {
     fn cfg_rate_load_too_few_values() {
         const DATA: [u8; 5] = [0xe8, 0x03, 0x01, 0x00, 0x34];
         let mut dut = UbxCfgRate::new();
-        // println!("{:?}", dut);
         dut.load(&DATA.to_vec());
-        // println!("{:?}", dut);
 
         assert_eq!(dut.data.meas_rate, 1000);
         assert_eq!(dut.data.nav_rate, 1);

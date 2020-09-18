@@ -68,7 +68,6 @@ impl UbxCfgEsfAlg {
     pub fn load(&mut self, data: &[u8]) {
         assert!(data.len() == 12);
         self.data = bincode::deserialize(&data).unwrap();
-        // println!("Decoded struct is {:?}", self.data);
     }
 
     pub fn save(&self) -> Vec<u8> {
@@ -113,7 +112,6 @@ mod tests {
         let dut = UbxCfgEsfAlgPoll::new();
         assert_eq!(dut.name, "UBX-CFG-ESFALG-POLL");
         let msg = dut.to_bin();
-        println!("message {:?}", msg);
         assert_eq!(msg, [0xb5, 0x62, 0x06, 0x56, 0, 0, 92, 26]);
     }
 

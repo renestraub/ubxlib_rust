@@ -9,8 +9,11 @@
 use std::collections::VecDeque;
 use std::collections::HashSet;
 
+use log::{debug, warn};
+
 use crate::cid::UbxCID;
 use crate::checksum::Checksum;
+
 
 // TODO: Isn't this the same as UbxFrame?
 #[derive(Debug)]
@@ -76,7 +79,7 @@ impl Parser {
 
     pub fn add_filter(&mut self, cid: UbxCID) {
         self.wait_cids.insert(cid);
-        // println!("{:?}", self.wait_cids);
+        debug!("acceptance CID {:?}", self.wait_cids);
     }
 
     pub fn empty_queue(&mut self) {
@@ -84,8 +87,6 @@ impl Parser {
     }
 
     pub fn packet(&mut self) -> Option<Packet> {
-        // let packets = self.rx_queue.len();
-        // println!("have {} packets", packets);
         self.rx_queue.pop_front()   // Some(Packet) or None
     }
 
@@ -97,7 +98,6 @@ impl Parser {
     }
 
     pub fn process_byte(&mut self, data: u8) {
-        // println!("processing {:02X}", data);
         match self.state {
             State::Init => self.state_init(data),
             State::Sync1 => self.state_sync(data),
@@ -147,14 +147,14 @@ impl Parser {
 
     fn state_len2(&mut self, data: u8) {
         self.msg_len = self.msg_len + (data as usize * 256);
-        // println!("length {:?}", self.msg_len);
+        // debug!("length {:?}", self.msg_len);
         self.checksum.add(data);
 
         if self.msg_len == 0 {
             self.state = State::CRC1;
         }
         else if self.msg_len > MAX_MESSAGE_LENGTH {
-            println!("invalid msg len {}", self.msg_len);
+            warn!("invalid msg len {}", self.msg_len);
             self.state = State::Init;
         }
         else {
@@ -165,7 +165,7 @@ impl Parser {
 
     fn state_data(&mut self, data: u8) {
         self.msg_data.push(data);
-        // println!("vec {:?}", self.msg_data);
+        // debug!("vec {:?}", self.msg_data);
         self.checksum.add(data);
         self.ofs += 1;
 
@@ -184,11 +184,11 @@ impl Parser {
 
         // if checksum matches received checksum ..
         if self.checksum.matches(self.cka, self.ckb) {
-            // println!("checksum is ok");
+            // debug!("checksum is ok");
 
             // .. and frame passes filter ..
             let cid = UbxCID::new(self.msg_class, self.msg_id);
-            // println!("cid {:?}", cid);
+            // debug!("cid {:?}", cid);
             if self.wait_cids.contains(&cid) {
                 // .. send CID and data as tuple to server
                 // TODO: Here comes the fun part.
@@ -197,14 +197,13 @@ impl Parser {
                 self.rx_queue.push_back(packet);
             }
             else {
-                println!("no match - dropping {:?}, {} bytes", cid, self.msg_len);
+                debug!("no match - dropping {:?}, {} bytes", cid, self.msg_len);
             }
         }
         else {
-            println!("checksum error in frame, discarding");
-            println!("computed {:?}", self.checksum);
-
-            // println!("{self.msg_class:02x} {self.msg_id:02x} {binascii.hexlify(self.msg_data)}')
+            warn!("checksum error in frame, discarding");
+            warn!("computed {:?}", self.checksum);
+            // debug!("{self.msg_class:02x} {self.msg_id:02x} {binascii.hexlify(self.msg_data)}')
 
             // TODO: Move to ctor argument
             let crc_cid = UbxCID::new(0x00, 0x02);
@@ -259,14 +258,6 @@ mod tests {
         let res = uut.packet();     // Some(Packet)
         let packet = res.unwrap();  // panics if None
         assert_eq!(packet.cid, UbxCID::new(0x13, 0x40));
-
-        /*
-        match packet {
-            Packet(ref x) => println!("received {:?}", x.cid),    // ref to avoid consuming packet here
-            None => println!("no packet"),
-        }
-        println!("received {:?}", packet.unwrap().cid);
-        */
     }
 
     #[test]

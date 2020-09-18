@@ -1,12 +1,13 @@
+use std::io::prelude::*;
 use std::time::Instant;
 use std::time::Duration;
+
+use log::{debug, warn};
+use serial::prelude::*;
 
 use crate::cid::UbxCID;
 use crate::frame::{UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
 use crate::parser::{Parser, Packet};
-
-use std::io::prelude::*;
-use serial::prelude::*;
 
 
 // Port is configured for 115'200, 8N1
@@ -51,7 +52,7 @@ impl ServerTty {
     // TODO: Return code caller must handle
     pub fn poll<TPoll: UbxFrameInfo + UbxFrameSerialize, TAnswer: UbxFrameDeSerialize>(&mut self, frame_poll: &TPoll, frame_result: &mut TAnswer)
     {
-        println!("polling {}", frame_poll.name());
+        debug!("polling {}", frame_poll.name());
 
         // We expect a response frame with the exact same CID
         let wait_cid = frame_poll.cid();
@@ -64,17 +65,17 @@ impl ServerTty {
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => println!("poll: {}", e),    // TODO: Abort here? What about clear_filter()?
+            Err(e) => warn!("poll: {}", e),    // TODO: Abort here? What about clear_filter()?
         }
 
         let payload = self.wait();
         match payload {
             Ok(packet) => {
-                // println!("ok {:?}", packet.data);   // ACK or NAK received
+                debug!("result received {:?}", packet.data);
                 frame_result.from_bin(packet.data);
             },
             // BUG: clear_filter call not executed
-            Err(_) => println!("poll: timeout"),
+            Err(_) => warn!("poll: timeout"),
         }
 
         self.parser.clear_filter();
@@ -89,7 +90,7 @@ impl ServerTty {
     */
     // TODO: Return code caller must handle
     pub fn set<TSet: UbxFrameSerialize + UbxFrameInfo>(&mut self, frame_set: &TSet) {
-        println!("setting {}", frame_set.name());
+        debug!("setting {}", frame_set.name());
 
         // Wait for ACK-ACK and ACK-NAK
         self.parser.empty_queue();
@@ -98,22 +99,22 @@ impl ServerTty {
 
         // Get frame data (header, cls, id, len, payload, checksum a/b)
         let data = frame_set.to_bin();
-        // println!("{:?}", data);
+        // debug!("{:?}", data);
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => println!("set: {}", e),    // TODO: Abort here? What about clear_filter()?
+            Err(e) => warn!("set: {}", e),    // TODO: Abort here? What about clear_filter()?
         }
 
         // Check proper response (ACK/NAK)
         let payload = self.wait();
         match payload {
             Ok(packet) => {
-                println!("ok {:?}", packet);
+                debug!("ACK/NAK received {:?}", packet);
                 // TODO: Check ACK/NAK and CLS, ID in ACK
                 // f2.from_bin(packet.data);
             },
-            Err(_) => println!("set: timeout"),
+            Err(_) => warn!("set: timeout"),
         }
 
         self.parser.clear_filter();
@@ -128,14 +129,14 @@ impl ServerTty {
     - change baudrate
     */
     pub fn fire_and_forget<TSet: UbxFrameSerialize + UbxFrameInfo>(&mut self, frame_set: &TSet) {
-        println!("firing {}", frame_set.name());
+        debug!("firing {}", frame_set.name());
 
         let data = frame_set.to_bin();
-        // println!("{:?}", data);
+        // debug!("{:?}", data);
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => println!("set: {}", e),    // TODO: Abort here? What about clear_filter()?
+            Err(e) => warn!("set: {}", e),    // TODO: Abort here? What about clear_filter()?
         }
     }
 
@@ -143,12 +144,12 @@ impl ServerTty {
     /*** Private ***/
 
     fn send(&mut self, data: &Vec<u8>) -> Result<(), &'static str> {
-        // println!("{} bytes to send {:?}", data.len(), data);
+        // debug!("{} bytes to send {:?}", data.len(), data);
 
         let res = self.serial_port.write(&data);
         match res {
             Ok(bytes_written) => {
-                // println!("{} bytes written", bytes_written);
+                // debug!("{} bytes written", bytes_written);
                 if bytes_written == data.len() {
                     Ok(())
                 }
@@ -171,9 +172,10 @@ impl ServerTty {
             let res = self.serial_port.read(&mut read_buffer[..]);
             match res {
                 Ok(bytes_read) => {
-                    // println!("{} bytes read", bytes_read);
+                    // debug!("{} bytes read", bytes_read);
                     let data = read_buffer[0..bytes_read].to_vec();
-                    // println!("{:?}", data);
+                    // debug!("{:?}", data);
+
                     // process() places all decoded frames in response_queue
                     self.parser.process(&data);
                 },
@@ -184,7 +186,7 @@ impl ServerTty {
             let res = self.parser.packet();
             match res {
                 Some(p) => {
-                    // println!("got desired packet {:?}", p);
+                    // debug!("got desired packet {:?}", p);
                     return Ok(p);
                 }
                 _ => ()     // No packet decoded so far, no problem just continue

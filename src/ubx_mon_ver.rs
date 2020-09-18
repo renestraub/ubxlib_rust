@@ -113,7 +113,6 @@ mod tests {
         let dut = UbxMonVerPoll::new();
         assert_eq!(dut.name, "UBX-MON-VER-POLL");
         let msg = dut.to_bin();
-        println!("message {:?}", msg);
         assert_eq!(msg, [0xb5, 0x62, 0x0A, 0x04, 0, 0, 14, 52]);
     }
 
@@ -121,9 +120,6 @@ mod tests {
     fn ubx_mon_ver() {
         let dut = UbxMonVer::new();
         assert_eq!(dut.name, "UBX-MON-VER");
-
-        println!("message {:?}", dut);
-
         assert_eq!(dut.sw_version, "");
         assert_eq!(dut.hw_version, "");
     }

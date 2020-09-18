@@ -120,7 +120,6 @@ impl UbxCfgRstAction {
 
     fn save(&self) -> Vec<u8> {
         let data = bincode::serialize(&self.data).unwrap();
-        println!("{:?}", data);
         assert!(data.len() == 4);
         data
     }
@@ -158,7 +157,6 @@ mod tests {
     fn cold_start() {
         let dut = UbxCfgRstAction::cold_start();
         let msg = dut.to_bin();
-        // println!("message {:?}", msg);
         assert_eq!(msg, [0xb5, 0x62, 0x06, 0x04, 4, 0,  0xFF, 0xFF, 0x01, 0, 13, 95]);
     }
 
@@ -166,7 +164,6 @@ mod tests {
     fn stop() {
         let dut = UbxCfgRstAction::stop();
         let msg = dut.to_bin();
-        println!("message {:?}", msg);
         assert_eq!(msg, [0xb5, 0x62, 0x06, 0x04, 4, 0,  0x00, 0x00, 0x08, 0, 22, 116]);
     }
 }

@@ -22,6 +22,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::{thread, time};
 use std::collections::HashMap;
+
+use log::{debug, info, warn};
 use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
 
 use crate::gnss_mgr::GnssMgr;
@@ -30,8 +32,11 @@ use crate::config_file::GnssMgrConfig;
 
 static CURRENT_FW_VER: &str = "ADR 4.31";
 
+// TODO: Move away code to gnss-mgr module
 
 fn main() {
+    env_logger::init();
+
     let app = App::new("gnss manager utility")
                 .version(crate_version!())
                 .about("Operates and configures u-blox NEO GNSS modems")
@@ -85,8 +90,6 @@ fn main() {
 
 
 fn run_app(matches: ArgMatches) -> Result<(), String> {
-    // println!("{:?}", matches);
-
     // Parse logger options -v/-q (mutually exclusive)
     if matches.is_present("verbose") {
         println!("verbose");
@@ -94,6 +97,9 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
     if matches.is_present("quiet") {
         println!("quiet");
     }
+    // TODO: See how we can map this to env_logger
+    // ENable logger only below this check and modify ENV before?
+
 
     // Devicename
     let device_name = matches.value_of("device").unwrap();  // unwrap must never fail here, as argument is required
@@ -150,14 +156,15 @@ fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     info.insert("vendor", String::from("ublox"));
 
     gnss.version(&mut info);
-    // println!("{:?}", info);
+    debug!("{:?}", info);
 
     match write_runfile(&runfile_path, &info) {
-        Ok(_) => println!("GNSS run file created"),
-        Err(_) => { println!("Error creating run file"); }, // TODO: return code on error
+        Ok(_) => info!("GNSS run file {} created", &runfile_path),
+        Err(_) => { warn!("Error creating run file"); }, // TODO: return code on error
     }
 
     // Change protocol to NMEA 4.1
+    // TODO: add get method so we can check first
     gnss.set_nmea_protocol_version(0x41);
 
     Ok(())
@@ -171,7 +178,7 @@ fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
         _ => build_configfile_path(&gnss.device_name),      // left away, compute from device name
     };
 
-    // println!("configfile {}", configfile_path);
+    info!("using configfile {}", configfile_path);
 
     // Get configuration from config file
     let mut config: GnssMgrConfig = Default::default();
@@ -183,10 +190,8 @@ fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
 }
 
 fn run_control(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
-    println!("control {:?}", matches);
-
     let action = matches.value_of("action").unwrap();
-    // println!("action {:?}", action);
+    debug!("control action {:?}", action);
 
     match action {
         "cold-start" => gnss.cold_start(),
@@ -199,11 +204,8 @@ fn run_control(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
 }
 
 fn run_sos(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
-    println!("sos {:?}", matches);
-
-    // Distinguish sos save, clear
     let action = matches.value_of("action").unwrap();
-    // println!("action {:?}", action);
+    debug!("sos action {:?}", action);
 
     match action {
         "save" => gnss.sos_save(),

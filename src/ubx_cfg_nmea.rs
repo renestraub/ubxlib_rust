@@ -134,7 +134,6 @@ mod tests {
         assert_eq!(dut.name, "UBX-CFG-NMEA");
         dut.data.nmea_version = 0x41;
         let msg = dut.to_bin();
-        // println!("Serialized Data is {} {:?}", msg.len(), msg);
         assert_eq!(msg[6+1], 0x41);
     }
 }
