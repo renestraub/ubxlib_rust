@@ -2,7 +2,7 @@ use std::io::prelude::*;
 use std::time::Instant;
 use std::time::Duration;
 
-use log::{debug, warn};
+use log::{debug, info, warn};
 use serial::prelude::*;
 
 use crate::cid::UbxCID;
@@ -196,5 +196,109 @@ impl ServerTty {
         }
 
         Err("timeout")
+    }
+}
+
+
+
+pub struct DetectBaudrate {
+    device_name: String,
+    serial_port: Option<serial::SystemPort>,
+    parser: Parser,
+}
+
+impl DetectBaudrate {
+    pub fn new(device_name: &str) -> Self {
+        let obj = Self {
+            device_name: String::from(device_name),
+            serial_port: None,
+            parser: Parser::new(),
+        };
+        obj
+    }
+
+    pub fn exec(&mut self) -> Result<usize, &'static str> {
+        const BITRATES: [usize; 2] = [115200, 9600];
+
+        self.serial_port = serial::open(&self.device_name).ok();
+        if self.serial_port.is_none() {
+            return Err("cannot open serial port");
+        }
+
+        for baud in BITRATES.iter() {
+            info!("checking {} bps", baud);
+   
+            // configure port for desired bitrate
+            match self.serial_port.as_mut() {
+                Some(port) => {
+                    let settings = serial::PortSettings {
+                        baud_rate:    serial::BaudRate::from_speed(*baud),
+                        char_size:    serial::Bits8,
+                        parity:       serial::ParityNone,
+                        stop_bits:    serial::Stop1,
+                        flow_control: serial::FlowNone,
+                    };
+
+                    port.configure(&settings).unwrap();
+                    port.set_timeout(Duration::from_secs(100)).unwrap();
+                },
+                _ => return Err("cannot configure serial port"),
+            }
+
+            // try to receive ubx or NMEA frames
+            match self.scan() {
+                true => { return Ok(*baud); },
+                _ => { info!("bitrate {:?} not working", baud); (); },
+            }
+        }
+
+        Err("cannot detect bitrate")
+    }
+
+    // TODO: result<bool, string>
+    fn scan(&mut self) -> bool {
+        let port = self.serial_port.as_mut().unwrap();
+        // TODO: move to (dummy) parser_nmea module
+        let mut nmea_buffer = String::new();    // hold combined string from all received data
+
+        let start = Instant::now();
+        let mut elapsed = start.elapsed();
+        let ubx_frames = self.parser.frames_received();
+
+        while elapsed.as_millis() < 1500 {
+            let mut read_buffer = [0u8; 1024];
+            let res = port.read(&mut read_buffer[..]);
+            match res {
+                Ok(bytes_read) => {
+                    let data = read_buffer[0..bytes_read].to_vec();
+                    // debug!("{:?}", data);
+                    self.parser.process(&data);
+
+                    // TODO: move to (dummy) parser_nmea module
+                    let nmea = std::str::from_utf8(&read_buffer[0..bytes_read]);
+                    if nmea.is_ok() {
+                        // debug!("{:?}", nmea);
+                        nmea_buffer.push_str(&nmea.unwrap());
+                        // debug!("{:?}", nmea_buffer);
+                    }
+                },
+                Err(_) => (),   // no data, just continue
+            }
+
+            let _res = self.parser.packet();
+            if self.parser.frames_received() - ubx_frames > 2 {
+                info!("ubx frames received");
+                return true;
+            }
+
+            let count = nmea_buffer.matches("GPGSV").count();
+            if count >= 2 {
+                info!("NMEA frames received");
+                return true;
+            }
+
+            elapsed = start.elapsed();
+        }
+        false
     }
 }

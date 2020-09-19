@@ -1,6 +1,6 @@
 [package]
-name = "hello"
-version = "0.1.1"
+name = "gnss-mgr"
+version = "0.2.0"
 authors = ["Rene Straub"]
 edition = "2018"
 
@@ -14,3 +14,4 @@ bincode = "1.3.1"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4.11"
 env_logger = "0.7.1"
+chrono = "0.4"

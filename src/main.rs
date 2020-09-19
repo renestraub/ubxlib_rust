@@ -15,6 +15,7 @@ mod ubx_cfg_rst;
 mod ubx_cfg_cfg;
 mod ubx_mon_ver;
 mod ubx_upd_sos;
+mod ubx_mga_init_time_utc;
 
 use std::env;
 use std::path::Path;
@@ -27,6 +28,8 @@ use log::{debug, info, warn};
 use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
 
 use crate::gnss_mgr::GnssMgr;
+use crate::server_tty::DetectBaudrate;
+
 use crate::config_file::GnssMgrConfig;
 
 
@@ -100,9 +103,9 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
     // TODO: See how we can map this to env_logger
     // ENable logger only below this check and modify ENV before?
 
-
     // Devicename
     let device_name = matches.value_of("device").unwrap();  // unwrap must never fail here, as argument is required
+/*
 
     // Check that device exists
     // TODO: required, as GnssMgr::new will test it as well
@@ -111,9 +114,29 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
         return Err(format!("Device {} does not exist", device_name).to_string());
     }
 
+    // Check if device is already in use (fuser) call?
+*/
+
+    
+    // Check bitrate and change to 115'200 if different
+    let mut detector = DetectBaudrate::new(device_name);
+    let res = detector.exec();
+    match res {
+        Ok(bitrate) => {
+            info!("detected bitrate {:?}", bitrate);
+            if bitrate != 115200 {
+                info!("changing bitrate from {} to 115'200 bps", bitrate);
+            }
+        },
+        Err(e) => // return Err(String::from(e)),
+            return Err(format!("Bitrate detection failed, {}", e).to_string()),
+    }
+
     // TODO: Check return code
     let mut gnss = GnssMgr::new(device_name);
+    // TODO: Check return code
 
+    
     for l in 1..2 {
         println!("*** {} **************************************************", l);
         thread::sleep(time::Duration::from_millis(250));
@@ -166,6 +189,10 @@ fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     // Change protocol to NMEA 4.1
     // TODO: add get method so we can check first
     gnss.set_nmea_protocol_version(0x41);
+
+    // TODO: Move to sos ...
+    gnss.set_assistance_time();
+
 
     Ok(())
 }

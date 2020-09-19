@@ -29,6 +29,8 @@ pub struct Parser {
     wait_cids: HashSet<UbxCID>,
     checksum: Checksum,
 
+    frames_rx: usize,
+
     state: State,
     msg_class: u8,
     msg_id: u8,
@@ -60,6 +62,7 @@ impl Parser {
             rx_queue: VecDeque::with_capacity(10),
             wait_cids: HashSet::<UbxCID>::new(),
             checksum: Checksum::new(),
+            frames_rx: 0,
             state: State::Init,
             msg_class: 0,
             msg_id: 0,
@@ -71,6 +74,10 @@ impl Parser {
         };
         obj._reset();
         obj
+    }
+
+    pub fn frames_received(&self) -> usize {
+        return self.frames_rx;
     }
 
     pub fn clear_filter(&mut self) {
@@ -185,6 +192,7 @@ impl Parser {
         // if checksum matches received checksum ..
         if self.checksum.matches(self.cka, self.ckb) {
             // debug!("checksum is ok");
+            self.frames_rx += 1;
 
             // .. and frame passes filter ..
             let cid = UbxCID::new(self.msg_class, self.msg_id);
@@ -202,7 +210,7 @@ impl Parser {
         }
         else {
             warn!("checksum error in frame, discarding");
-            warn!("computed {:?}", self.checksum);
+            // debug!("computed {:?}", self.checksum);
             // debug!("{self.msg_class:02x} {self.msg_id:02x} {binascii.hexlify(self.msg_data)}')
 
             // TODO: Move to ctor argument
