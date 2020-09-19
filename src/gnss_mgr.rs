@@ -1,6 +1,7 @@
 use std::{thread, time};
 use std::collections::HashMap;
 use log::{debug, info};
+use chrono::prelude::*;
 
 use crate::config_file::{GnssMgrConfig, Xyz};
 use crate::server_tty::ServerTty;
@@ -13,6 +14,7 @@ use crate::ubx_cfg_cfg::UbxCfgCfgAction;
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
 use crate::ubx_upd_sos::UbxUpdSosAction;
+use crate::ubx_mga_init_time_utc::UbxMgaIniTimeUtc;
 
 
 // TODO: Split away neom8 driver module
@@ -235,5 +237,17 @@ impl GnssMgr {
         debug!("new lever arm settings {:?}", set.data);
 
         self.server.set(&set);
+    }
+
+    pub fn set_assistance_time(&mut self) {
+        let utc: DateTime<Utc> = Utc::now();
+        debug!("Setting GNSS time to {:?}", utc);
+
+        let mut set = UbxMgaIniTimeUtc::new();
+        set.set_date_time(&utc);
+
+        self.server.fire_and_forget(&set);
+        // MGA messages are not acked by default
+        // Would have to enable with NAVX5 message
     }
 }
