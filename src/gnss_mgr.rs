@@ -11,6 +11,7 @@ use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_rst::UbxCfgRstAction;
 use crate::ubx_cfg_cfg::UbxCfgCfgAction;
+use crate::ubx_cfg_prt::{UbxCfgPrtPoll, UbxCfgPrtUart};
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
 use crate::ubx_upd_sos::UbxUpdSosAction;
@@ -33,10 +34,10 @@ pub struct GnssMgr {
 impl GnssMgr {
     // TODO: rename to open/create?
     // TODO: Result return code
-    pub fn new(device: &str) -> Self {
+    pub fn new(device: &str, bitrate: usize) -> Self {
         Self {
             device_name: String::from(device),
-            server: ServerTty::new(device),
+            server: ServerTty::new(device, bitrate),
         }
     }
 
@@ -151,6 +152,23 @@ impl GnssMgr {
         self.server.set(&set);
     }
 
+    pub fn set_baudrate(&mut self, baudrate: u32) {
+        let mut set = UbxCfgPrtUart::new();
+        let poll = UbxCfgPrtPoll::new();
+
+        self.server.poll(&poll, &mut set);
+        // debug!("current settings {:?}", set);
+
+        if set.data.baudrate != baudrate {
+            info!("setting baudrate {} bps", baudrate);
+            set.data.baudrate = baudrate;
+            debug!("new settings {:?}", set);
+
+            self.server.fire_and_forget(&set);
+            thread::sleep(time::Duration::from_millis(200));
+        }
+    }
+
     fn set_update_rate(&mut self, rate: u16) {
         let mut set = UbxCfgRate::new();
         let poll = UbxCfgRatePoll::new();
@@ -159,7 +177,7 @@ impl GnssMgr {
         // debug!("current settings {:?}", set);
 
         let new_time = 1000u16 / rate;
-        if true || set.data.meas_rate != new_time {
+        if set.data.meas_rate != new_time {
             info!("setting update rate to {} ms", new_time);
             set.data.meas_rate = new_time;
             debug!("new settings {:?}", set);

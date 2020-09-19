@@ -13,6 +13,7 @@ mod ubx_cfg_rate;
 mod ubx_cfg_nmea;
 mod ubx_cfg_rst;
 mod ubx_cfg_cfg;
+mod ubx_cfg_prt;
 mod ubx_mon_ver;
 mod ubx_upd_sos;
 mod ubx_mga_init_time_utc;
