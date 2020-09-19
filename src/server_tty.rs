@@ -10,16 +10,6 @@ use crate::frame::{UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
 use crate::parser::{Parser, Packet};
 
 
-// Port is configured for 115'200, 8N1
-const SETTINGS: serial::PortSettings = serial::PortSettings {
-    baud_rate:    serial::Baud115200,
-    char_size:    serial::Bits8,
-    parity:       serial::ParityNone,
-    stop_bits:    serial::Stop1,
-    flow_control: serial::FlowNone,
-};
-
-
 pub struct ServerTty {
     // device_name: String,
     parser: Parser,
@@ -28,15 +18,24 @@ pub struct ServerTty {
 
 impl ServerTty {
     // TODO: Result return code to handle errors
-    pub fn new(device_name: &str) -> Self {
+    pub fn new(device_name: &str, bitrate: usize) -> Self {
         let mut obj = Self {
             // device_name: String::from(device_name),
             parser: Parser::new(),
             serial_port: serial::open(&device_name).unwrap(),   // TODO: How do we do error check here?
         };
 
+        // Port is configured for 115'200, 8N1
+        let settings: serial::PortSettings = serial::PortSettings {
+            baud_rate:    serial::BaudRate::from_speed(bitrate),
+            char_size:    serial::Bits8,
+            parity:       serial::ParityNone,
+            stop_bits:    serial::Stop1,
+            flow_control: serial::FlowNone,
+        };
+
         // let mut port = serial::open(&self.device_name).unwrap(); // ?;
-        obj.serial_port.configure(&SETTINGS).unwrap(); // ?;
+        obj.serial_port.configure(&settings).unwrap(); // ?;
         obj.serial_port.set_timeout(Duration::from_secs(1000)).unwrap(); //?;
 
         obj

@@ -22,8 +22,8 @@ use std::env;
 use std::path::Path;
 use std::fs::File;
 use std::io::prelude::*;
-use std::{thread, time};
 use std::collections::HashMap;
+use std::process::Command;
 
 use log::{debug, info, warn};
 use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
@@ -88,10 +88,9 @@ fn main() {
     let rc = run_app(matches);
     std::process::exit(match rc {
         Ok(_) => 0,
-        Err(err) => { eprintln!("error: {:?}", err); 1 }
+        Err(err) => { eprintln!("error: {}", err); 1 }
     });
 }
-
 
 fn run_app(matches: ArgMatches) -> Result<(), String> {
     // Parse logger options -v/-q (mutually exclusive)
@@ -106,53 +105,43 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
 
     // Devicename
     let device_name = matches.value_of("device").unwrap();  // unwrap must never fail here, as argument is required
-/*
 
     // Check that device exists
-    // TODO: required, as GnssMgr::new will test it as well
     let device_exists = Path::new(device_name).exists();
     if !device_exists {
         return Err(format!("Device {} does not exist", device_name).to_string());
     }
 
-    // Check if device is already in use (fuser) call?
-*/
-
-    
-    // Check bitrate and change to 115'200 if different
-    let mut detector = DetectBaudrate::new(device_name);
-    let res = detector.exec();
-    match res {
-        Ok(bitrate) => {
-            info!("detected bitrate {:?}", bitrate);
-            if bitrate != 115200 {
-                info!("changing bitrate from {} to 115'200 bps", bitrate);
+    // Check if device is already in use, if so abort
+    let output = Command::new("fuser").args(&[device_name]).output();
+    match output {
+        Ok(o) => { 
+            if o.stdout.len() > 0 {
+                let pid = String::from_utf8_lossy(&o.stdout);
+                let pid = pid.trim();
+                return Err(format!("device {} is in use by another process ({})", device_name, &pid).to_string());
             }
         },
-        Err(e) => // return Err(String::from(e)),
-            return Err(format!("Bitrate detection failed, {}", e).to_string()),
+        Err(e) => return Err(format!("error executing fuser command {:?}", e).to_string()),
     }
 
+    // The "init" command checks the current bitrate and changes it
+    // to 115200 if required.
+    let bitrate = match matches.subcommand() {
+        ("init", Some(_)) => {
+            match prepare_port(&device_name) {
+                Ok(br) => br,
+                _ => return Err(format!("xxxx").to_string()),
+            }
+        },
+        _ => 115200,
+    };
+
     // TODO: Check return code
-    let mut gnss = GnssMgr::new(device_name);
+    let mut gnss = GnssMgr::new(device_name, bitrate);
     // TODO: Check return code
 
-    
-    for l in 1..2 {
-        println!("*** {} **************************************************", l);
-        thread::sleep(time::Duration::from_millis(250));
-
-        // Check which subcommand was selected
-        match matches.subcommand() {
-            ("init", Some(m)) => run_init(m, &mut gnss),
-            ("config", Some(m)) => run_config(m, &mut gnss),
-            ("control", Some(m)) => run_control(m, &mut gnss),
-            ("sos", Some(m)) => run_sos(m, &mut gnss),
-            _ => Err("Unknown command".to_string()),
-        }.unwrap();
-    }
-/*
-    // Check which subcommand was selected
+    // Execute desired command, returns Result directly
     match matches.subcommand() {
         ("init", Some(m)) => run_init(m, &mut gnss),
         ("config", Some(m)) => run_config(m, &mut gnss),
@@ -160,18 +149,48 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
         ("sos", Some(m)) => run_sos(m, &mut gnss),
         _ => Err("Unknown command".to_string()),
     }
+}
+
+fn prepare_port(device_name: &str) -> Result<usize, String> {
+    // Check bitrate and change to 115'200 if different
+    let mut bit_rate_current;
+    
+    let mut detector = DetectBaudrate::new(device_name);
+    let res = detector.exec();
+    match res {
+        Ok(bitrate) => {
+            info!("detected bitrate {:?} bps", bitrate);
+            bit_rate_current = bitrate;
+        },
+        Err(e) => // return Err(String::from(e)),
+            return Err(format!("bitrate detection failed, {}", e).to_string()),
+    }
+
+    if bit_rate_current == 9600 {
+        info!("changing bitrate from {} to 115200 bps", bit_rate_current);
+
+        let mut gnss = GnssMgr::new(device_name, bit_rate_current);
+        gnss.set_baudrate(115200);
+        return Ok(115200);
+    }
+/*
+    else if bit_rate_current == 115200 {
+        info!("changing bitrate from {} to 115200 bps", bit_rate_current);
+
+        let mut gnss = GnssMgr::new(device_name, bit_rate_current);
+        gnss.set_baudrate(9600);
+        return Ok(9600);
+    }
+    else {
+        return Err("unsupported bitrate".to_string());
+    }
 */
-    Ok(())
+    else {
+        return Ok(115200);
+    }
 }
 
 fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
-    // TODO:
-    // Check bitrate, change if required
-
-
-
-
-
     // create /run/gnss/gnss0.config
     let runfile_path = build_runfile_path(&gnss.device_name);
 
@@ -179,21 +198,19 @@ fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
     let mut info: HashMap<&str, String> = HashMap::new();
     info.insert("vendor", String::from("ublox"));
 
+    // Get version information and ..
     gnss.version(&mut info);
     debug!("{:?}", info);
 
+    // .. create run file
     match write_runfile(&runfile_path, &info) {
         Ok(_) => info!("GNSS run file {} created", &runfile_path),
         Err(_) => { warn!("Error creating run file"); }, // TODO: return code on error
     }
 
     // Change protocol to NMEA 4.1
-    // TODO: add get method so we can check first
+    // set_nmea_protocol_version
     gnss.set_nmea_protocol_version(0x41);
-
-    // TODO: Move to sos ...
-    gnss.set_assistance_time();
-
 
     Ok(())
 }
@@ -237,7 +254,10 @@ fn run_sos(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
 
     match action {
         "save" => gnss.sos_save(),
-        "clear" => gnss.sos_clear(),
+        "clear" => {
+            gnss.set_assistance_time();
+            gnss.sos_clear();
+        },
         _ => return Err("Unknown command".to_string()),
     }
 
