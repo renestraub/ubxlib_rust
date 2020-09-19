@@ -1,80 +1,168 @@
-use std::{thread, time};
+use std::path::Path;
+use std::fs::File;
+use std::io::prelude::*;
 use std::collections::HashMap;
-use log::{debug, info};
-use chrono::prelude::*;
 
-use crate::config_file::{GnssMgrConfig, Xyz};
-use crate::server_tty::ServerTty;
-use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
-use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
-use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
-use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
-use crate::ubx_cfg_rst::UbxCfgRstAction;
-use crate::ubx_cfg_cfg::UbxCfgCfgAction;
-use crate::ubx_cfg_prt::{UbxCfgPrtPoll, UbxCfgPrtUart};
-use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
-use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
-use crate::ubx_upd_sos::UbxUpdSosAction;
-use crate::ubx_mga_init_time_utc::UbxMgaIniTimeUtc;
+use log::{debug, info, warn};
+use clap::{ArgMatches};
+
+use crate::neo_m8::NeoM8;
+use crate::config_file::{GnssMgrConfig};
+use crate::server_tty::DetectBaudrate;
 
 
-// TODO: Split away neom8 driver module
+static CURRENT_FW_VER: &str = "ADR 4.31";
 
-// TODO: define information struct for version() method
 
-// TODO: Implement !
 // TODO: Return error code from each function
 
 pub struct GnssMgr {
-    pub device_name: String,
-
-    server: ServerTty,
+    device_name: String,
+    modem: NeoM8,
 }
 
 impl GnssMgr {
-    // TODO: rename to open/create?
-    // TODO: Result return code
-    pub fn new(device: &str, bitrate: usize) -> Self {
+    pub fn new(device: &str) -> Self {
         Self {
             device_name: String::from(device),
-            server: ServerTty::new(device, bitrate),
+            modem: NeoM8::new(device),
         }
     }
 
-    pub fn version(&mut self, info: &mut HashMap<&str, String>) {
-        let mut ver_result = UbxMonVer::new();
-        let poll = UbxMonVerPoll::new();
+    pub fn prepare_port(&mut self) -> Result<usize, String> {
+        // NOTE: To be calledonly  before GnssMgr object is instantiated
+        // TODO: Refactor to use modem object of GnssMgr
 
-        // TODO: error check missing for sure
-        self.server.poll(&poll, &mut ver_result);
-        debug!("{:?}", ver_result);
-
-        // TODO: Don't assume fixed position for these entries
-        let fw_ver = String::from(ver_result.hw_extension[1].trim_start_matches("FWVER="));
-        let proto = String::from(ver_result.hw_extension[2].trim_start_matches("PROTVER="));
-        let model = String::from(ver_result.hw_extension[3].trim_start_matches("MOD="));
-
-        info.insert("model", model);
-        info.insert("sw_ver", ver_result.sw_version);
-        info.insert("hw_ver", ver_result.hw_version);
-        info.insert("fw_ver", fw_ver);
-        info.insert("protocol", proto);
-        info.insert("systems", String::from(&ver_result.hw_extension[5]));
-        info.insert("augmentation", String::from(&ver_result.hw_extension[6]));
+        // Check bitrate and change to 115'200 if different
+        let mut bit_rate_current;
+        
+        let mut detector = DetectBaudrate::new(&self.device_name);
+        let res = detector.exec();
+        match res {
+            Ok(bitrate) => {
+                info!("detected bitrate {:?} bps", bitrate);
+                bit_rate_current = bitrate;
+            },
+            Err(e) => // return Err(String::from(e)),
+                return Err(format!("bitrate detection failed, {}", e).to_string()),
+        }
+    
+        if bit_rate_current == 9600 {
+            info!("changing bitrate from {} to 115200 bps", bit_rate_current);
+    
+            let mut modem = NeoM8::new(&self.device_name);
+            modem.open(bit_rate_current)?;
+            modem.set_baudrate(115200);
+            return Ok(115200);
+        }
+/*
+        else if bit_rate_current == 115200 {
+            info!("changing bitrate from {} to 9600 bps", bit_rate_current);
+    
+            let mut modem = NeoM8::new(device_name);
+            modem.open(bit_rate_current);
+            modem.set_baudrate(9600);
+            return Ok(9600);
+        }
+        else {
+            return Err("unsupported bitrate".to_string());
+        }
+*/
+        else {
+            return Ok(115200);
+        }
     }
 
+    pub fn open(&mut self, bitrate: usize)-> Result<(), &'static str> {
+        self.modem.open(bitrate)
+    }
+
+    pub fn run_init(&mut self, _matches: &ArgMatches) -> Result<(), String> {
+        // create /run/gnss/gnss0.config
+        let runfile_path = build_runfile_path(&self.device_name);
+    
+        // vendor is always "ublox" when using this library
+        let mut info: HashMap<&str, String> = HashMap::new();
+        info.insert("vendor", String::from("ublox"));
+    
+        // Get version information and ..
+        self.modem.version(&mut info);
+        debug!("{:?}", info);
+    
+        // .. create run file
+        match write_runfile(&runfile_path, &info) {
+            Ok(_) => info!("GNSS run file {} created", &runfile_path),
+            Err(_) => { warn!("Error creating run file"); }, // TODO: return code on error
+        }
+    
+        // Change protocol to NMEA 4.1
+        // set_nmea_protocol_version
+        self.modem.set_nmea_protocol_version(0x41);
+    
+        Ok(())
+    }
+    
+    pub fn run_config(&mut self, matches: &ArgMatches) -> Result<(), String> {
+        // Check for optional config file name
+        let configfile_path = matches.value_of("configfile");
+        let configfile_path: String = match configfile_path {
+            Some(path) => path.to_string(),                     // path to file specified
+            _ => build_configfile_path(&self.device_name),      // left away, compute from device name
+        };
+    
+        info!("using configfile {}", configfile_path);
+    
+        // Get configuration from config file
+        let mut config: GnssMgrConfig = Default::default();
+        let _res = config.parse_config(&configfile_path)?;
+    
+        self.configure(&config);
+    
+        Ok(())
+    }
+    
+    pub fn run_control(&mut self, matches: &ArgMatches) -> Result<(), String> {
+        let action = matches.value_of("action").unwrap();
+        debug!("control action {:?}", action);
+    
+        match action {
+            "cold-start" => self.modem.cold_start(),
+            "factory-reset" => self.modem.factory_reset(),
+            "persist" => self.modem.persist(),
+            _ => return Err("Unknown command".to_string()),
+        }
+    
+        Ok(())
+    }
+    
+    pub fn run_sos(&mut self, matches: &ArgMatches) -> Result<(), String> {
+        let action = matches.value_of("action").unwrap();
+        debug!("sos action {:?}", action);
+    
+        match action {
+            "save" => self.modem.sos_save(),
+            "clear" => {
+                self.modem.set_assistance_time();
+                self.modem.sos_clear();
+            },
+            _ => return Err("Unknown command".to_string()),
+        }
+    
+        Ok(())
+    }
+    
     pub fn configure(&mut self, config: &GnssMgrConfig) {
         if config.update_rate.is_some() {
             let rate = config.update_rate.unwrap();
-            self.set_update_rate(rate);
+            self.modem.set_update_rate(rate);
         }
 
         // TODO: Overly complicated with these string types...
         match &config.mode {
             Some(mode) => {
                 match mode.as_str() {
-                    "stationary" => self.set_dynamic_mode(2),
-                    "vehicle" => self.set_dynamic_mode(4),
+                    "stationary" => self.modem.set_dynamic_mode(2),
+                    "vehicle" => self.modem.set_dynamic_mode(4),
                     _ => (),
                 }
             },
@@ -89,183 +177,78 @@ impl GnssMgr {
         if config.imu_yaw.is_some() &&
             config.imu_pitch.is_some() &&
             config.imu_roll.is_some() {
-            self.set_imu_angles(config.imu_yaw.unwrap(), config.imu_pitch.unwrap(), config.imu_roll.unwrap());
+            self.modem.set_imu_angles(config.imu_yaw.unwrap(), config.imu_pitch.unwrap(), config.imu_roll.unwrap());
         }
 
         // Lever Arms
         if config.vrp2antenna.is_some() {
             // TODO: replace 0 with a proper constant
-            self.set_lever_arm(0, &config.vrp2antenna.unwrap());
+            self.modem.set_lever_arm(0, &config.vrp2antenna.unwrap());
         }
 
         if config.vrp2imu.is_some() {
             // TODO: replace 1 with a proper constant
-            self.set_lever_arm(1, &config.vrp2imu.unwrap());
+            self.modem.set_lever_arm(1, &config.vrp2imu.unwrap());
         }
     }
+}
 
-    pub fn sos_save(&mut self) {
-        // Stop receiver
-        let set = UbxCfgRstAction::stop();
-        self.server.fire_and_forget(&set);
-        // Stop is not acknowledged, give receiver time to execute
-        // request before commanding next messages
-        thread::sleep(time::Duration::from_millis(200));
 
-        let set = UbxUpdSosAction::backup();
-        self.server.set(&set);
-        info!("Saving receiver state successfully performed");
+fn build_runfile_path(path: &str) -> String {
+    // Take devicename of form /dev/<name> to build /run/gnss/<name>.config
+    let path = &path.replace("/dev/", "/run/gnss/");
+    let mut path = String::from(path);
+    path.push_str(".config");
+    path
+    //let owner = Path::new(&path);
+    // path.as_ref()
+}
+
+fn write_runfile(path: &str, info: &HashMap<&str, String>) -> Result<(), &'static str> {
+    let path = Path::new(path);
+    // let display = path.display();
+    let mut file = match File::create(&path) {
+        Err(_) => return Err("Can't create GNSS run file"),
+        Ok(file) => file,
+    };
+
+    let deprecated = if info["fw_ver"] != CURRENT_FW_VER {
+        " (Deprecated)"
     }
+    else {
+        ""
+    };
 
-    pub fn sos_clear(&mut self) {
-        let set = UbxUpdSosAction::clear();
-        self.server.set(&set);
-        info!("Clearing receiver state successfully performed");
+    let text = format!(
+        "Vendor:                             {}\n\
+        Model:                              {}\n\
+        Firmware:                           {}{}\n\
+        ubx-Protocol:                       {}\n\
+        Supported Satellite Systems:        {}\n\
+        Supported Augmentation Services:    {}\n\
+        SW Version:                         {}\n\
+        HW Version:                         {}\n",
+        info["vendor"],
+        info["model"],
+        info["fw_ver"], deprecated,
+        info["protocol"],
+        info["systems"],
+        info["augmentation"],
+        info["sw_ver"],
+        info["hw_ver"],
+    );
+
+    match file.write_all(text.as_bytes()) {
+        Err(_) => Err("Can't write GNSS run file"),
+        Ok(_) => Ok(()),
     }
+}
 
-    pub fn cold_start(&mut self) {
-        let set = UbxCfgRstAction::cold_start();
-        self.server.fire_and_forget(&set);
-
-        info!("Cold boot of GNSS receiver triggered, let receiver start");
-
-        // Cold Start is not acknowledged, give receiver time to boot
-        // before commanding next message
-        thread::sleep(time::Duration::from_millis(200));
-    }
-
-    pub fn factory_reset(&mut self) {
-        let set = UbxCfgCfgAction::factory_reset();
-        self.server.fire_and_forget(&set);
-
-        info!("Reset GNSS receiver configuration to default, let receiver start with default config");
-
-        // Factory reset can lead to change of bitrate, no acknowledge can be received then
-        // Give receiver time before commanding next message
-        thread::sleep(time::Duration::from_millis(200));
-    }
-
-    pub fn persist(&mut self) {
-        info!("Persisting receiver configuration");
-
-        let set = UbxCfgCfgAction::persist();
-        self.server.set(&set);
-    }
-
-    pub fn set_baudrate(&mut self, baudrate: u32) {
-        let mut set = UbxCfgPrtUart::new();
-        let poll = UbxCfgPrtPoll::new();
-
-        self.server.poll(&poll, &mut set);
-        // debug!("current settings {:?}", set);
-
-        if set.data.baudrate != baudrate {
-            info!("setting baudrate {} bps", baudrate);
-            set.data.baudrate = baudrate;
-            debug!("new settings {:?}", set);
-
-            self.server.fire_and_forget(&set);
-            thread::sleep(time::Duration::from_millis(200));
-        }
-    }
-
-    fn set_update_rate(&mut self, rate: u16) {
-        let mut set = UbxCfgRate::new();
-        let poll = UbxCfgRatePoll::new();
-
-        self.server.poll(&poll, &mut set);
-        // debug!("current settings {:?}", set);
-
-        let new_time = 1000u16 / rate;
-        if set.data.meas_rate != new_time {
-            info!("setting update rate to {} ms", new_time);
-            set.data.meas_rate = new_time;
-            debug!("new settings {:?}", set);
-
-            self.server.set(&set);
-        }
-    }
-
-    // TODO: make all these public?
-    // TODO: Consider format of version parameter. The hex code is a bit too close to the UBX frame definition
-    // enum ? string ?
-    pub fn set_nmea_protocol_version(&mut self, version: u8) {
-        let mut set = UbxCfgNmea::new();
-        let poll = UbxCfgNmeaPoll::new();
-
-        self.server.poll(&poll, &mut set);
-        // debug!("current settings {:?}", set);
-
-        if set.data.nmea_version != version {
-            info!("setting NMEA protocol version to 0x{:02X}", version);
-            set.data.nmea_version = version;
-            debug!("new settings {:?}", set);
-            self.server.set(&set);
-        }
-    }
-
-    fn set_dynamic_mode(&mut self, model: u8) {
-        let mut set = UbxCfgNav5::new();
-        let poll = UbxCfgNav5Poll::new();
-
-        self.server.poll(&poll, &mut set);
-        // debug!("current settings {:?}", set.data);
-
-        if true || set.data.dyn_model != model {
-            info!("setting dynamic model to {}", model);
-            set.data.dyn_model = model;
-            debug!("new settings {:?}", set.data);
-            self.server.set(&set);
-        }
-    }
-
-    fn set_imu_angles(&mut self, yaw: u16, pitch: i16, roll: i16) {
-        assert!(yaw <= 360);
-        assert!(pitch >= -90 && pitch <= 90);
-        assert!(roll >= -180 && roll <= 180);
-
-        let mut set = UbxCfgEsfAlg::new();
-        let poll = UbxCfgEsfAlgPoll::new();
-
-        self.server.poll(&poll, &mut set);
-        debug!("current IMU settings {:?}", set.data);
-
-        set.data.yaw = yaw as u32 * 100;
-        set.data.pitch = pitch as i16 * 100;
-        set.data.roll = roll as i16 * 100;
-        debug!("new IMU settings {:?}", set.data);
-
-        self.server.set(&set);
-    }
-
-    // TODO const for arm type 0 = VRP-to-Ant, 1 = VRP_to_IMU
-    fn set_lever_arm(&mut self, armtype: u8, distances: &Xyz) {
-        let mut set = UbxCfgEsflaSet::new();
-
-        assert!(distances.x >= -20.0 && distances.x <= 20.0);
-        assert!(distances.y >= -10.0 && distances.y <= 10.0);
-        assert!(distances.z >= -10.0 && distances.z <= 10.0);
-
-        set.data.version = 0;
-        set.data.num_configs = 1;
-        set.data.leverarm_type = armtype;
-        set.data.leverarm_x = (distances.x * 100.0) as i16;
-        set.data.leverarm_y = (distances.y * 100.0) as i16;
-        set.data.leverarm_z = (distances.z * 100.0) as i16;
-        debug!("new lever arm settings {:?}", set.data);
-
-        self.server.set(&set);
-    }
-
-    pub fn set_assistance_time(&mut self) {
-        let utc: DateTime<Utc> = Utc::now();
-        debug!("Setting GNSS time to {:?}", utc);
-
-        let mut set = UbxMgaIniTimeUtc::new();
-        set.set_date_time(&utc);
-
-        self.server.fire_and_forget(&set);
-        // MGA messages are not acked by default
-        // Would have to enable with NAVX5 message
-    }
+// TODO: return Path instead of String
+fn build_configfile_path(path: &str) -> String {
+    // Take devicename of form /dev/<name> to build /etc/gnss/<name>
+    let path = &path.replace("/dev/", "/etc/gnss/");
+    let mut path = String::from(path);
+    path.push_str(".conf");
+    path
 }

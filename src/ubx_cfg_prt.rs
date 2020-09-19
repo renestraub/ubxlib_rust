@@ -163,7 +163,9 @@ mod tests {
     fn set() {
         let mut dut = UbxCfgPrtUart::new();
         assert_eq!(dut.name, "UBX-CFG-PRT");
+        dut.data.baudrate = 115200;
         let msg = dut.to_bin();
-        // assert_eq!(msg[6+1], 0x41);
+        assert_eq!(msg[0..6], [0xb5, 0x62, 0x06, 0x00, 20, 0]);
+        assert_eq!(msg[6+8..6+12], [0, 194, 1, 0]);
     }
 }

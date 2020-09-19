@@ -1,9 +1,9 @@
-// TODO: Is this defining of what files our exe is made?
 mod config_file;
 mod checksum;
 mod cid;
 mod frame;
 mod parser;
+mod neo_m8;
 mod gnss_mgr;
 mod server_tty;
 mod ubx_cfg_esfla;
@@ -20,72 +20,21 @@ mod ubx_mga_init_time_utc;
 
 use std::env;
 use std::path::Path;
-use std::fs::File;
-use std::io::prelude::*;
-use std::collections::HashMap;
 use std::process::Command;
 
-use log::{debug, info, warn};
 use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
 
 use crate::gnss_mgr::GnssMgr;
-use crate::server_tty::DetectBaudrate;
 
-use crate::config_file::GnssMgrConfig;
-
-
-static CURRENT_FW_VER: &str = "ADR 4.31";
-
-// TODO: Move away code to gnss-mgr module
 
 fn main() {
     env_logger::init();
 
-    let app = App::new("gnss manager utility")
-                .version(crate_version!())
-                .about("Operates and configures u-blox NEO GNSS modems")
-                .arg(Arg::with_name("verbose")
-                    .short("v")
-                    .conflicts_with("quiet")
-                    .help("Be verbose, show debug output"))
-                .arg(Arg::with_name("quiet")
-                    .short("q")
-                    .conflicts_with("verbose")
-                    .help("Be quiet, only show warnings and errors"))
-
-                    .arg(Arg::with_name("device")
-                    .required(true)
-                    .help("local serial device to which GNSS modem is connected (e.g. /dev/gnss0)"))
-
-                .subcommand(SubCommand::with_name("init")
-                    .about("Initializes GNSS"))
-
-                .subcommand(SubCommand::with_name("config")
-                    .about("Performs GNSS modem control function")
-                    .arg(Arg::with_name("configfile")
-                        .short("f")
-                        .long("file")
-                        .value_name("CONFIGFILE")
-                        // .default_value("/etc/gnss/gnss0.conf")      // TODO: dynamic based on device name
-                        .help("Path to configuration file")))
-
-                .subcommand(SubCommand::with_name("control")
-                    .about("Configures GNSS modem")
-                    .arg(Arg::with_name("action")
-                        .required(true)
-                        .possible_values(&["cold-start", "persist", "factory-reset"])
-                        .help("Selects action to perform")))
-
-                .subcommand(SubCommand::with_name("sos")
-                    .about("Save on shutdown operations")
-                    .arg(Arg::with_name("action")
-                        .required(true)
-                        .possible_values(&["save", "clear"])
-                        .help("Selects sos operation to perform")));
-
+    let app = setup_arg_parse();
     let matches = app.get_matches();
 
     let rc = run_app(matches);
+
     std::process::exit(match rc {
         Ok(_) => 0,
         Err(err) => { eprintln!("error: {}", err); 1 }
@@ -101,225 +50,103 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
         println!("quiet");
     }
     // TODO: See how we can map this to env_logger
-    // ENable logger only below this check and modify ENV before?
+    // Enable logger only below this check and modify ENV before?
 
     // Devicename
-    let device_name = matches.value_of("device").unwrap();  // unwrap must never fail here, as argument is required
+    // unwrap must never fail here, as argument is checked by parser already
+    let device_name = matches.value_of("device").unwrap();  
 
-    // Check that device exists
+    // Check that specified device exists
     let device_exists = Path::new(device_name).exists();
     if !device_exists {
         return Err(format!("Device {} does not exist", device_name).to_string());
+        // "Device does not exist"
+    // TODO: if not stat.S_ISCHR(os.stat(device_path)[stat.ST_MODE]):
+        // "Device is not a character device"
     }
 
-    // Check if device is already in use, if so abort
+    // Check if device is in use, if so abort
     let output = Command::new("fuser").args(&[device_name]).output();
     match output {
         Ok(o) => { 
             if o.stdout.len() > 0 {
                 let pid = String::from_utf8_lossy(&o.stdout);
                 let pid = pid.trim();
-                return Err(format!("device {} is in use by another process ({})", device_name, &pid).to_string());
+                return Err(format!("another process (PID:{}) is accessing the receiver", &pid).to_string());
             }
         },
         Err(e) => return Err(format!("error executing fuser command {:?}", e).to_string()),
     }
 
-    // The "init" command checks the current bitrate and changes it
-    // to 115200 if required.
+    let mut gnss = GnssMgr::new(device_name);
+
+    // The "init" command checks the current bitrate and changes to 115200 if required.
     let bitrate = match matches.subcommand() {
         ("init", Some(_)) => {
-            match prepare_port(&device_name) {
+            match gnss.prepare_port() {
                 Ok(br) => br,
-                _ => return Err(format!("xxxx").to_string()),
+                Err(e) => return Err(format!("{}", e).to_string()),
             }
         },
         _ => 115200,
     };
 
-    // TODO: Check return code
-    let mut gnss = GnssMgr::new(device_name, bitrate);
-    // TODO: Check return code
+    match gnss.open(bitrate) {
+        Ok(x) => x,
+        Err(e) => return Err(format!("error opening serial port {:?}", e).to_string()),
+    }
 
     // Execute desired command, returns Result directly
     match matches.subcommand() {
-        ("init", Some(m)) => run_init(m, &mut gnss),
-        ("config", Some(m)) => run_config(m, &mut gnss),
-        ("control", Some(m)) => run_control(m, &mut gnss),
-        ("sos", Some(m)) => run_sos(m, &mut gnss),
+        ("init", Some(m)) => gnss.run_init(m),
+        ("config", Some(m)) => gnss.run_config(m),
+        ("control", Some(m)) => gnss.run_control(m),
+        ("sos", Some(m)) => gnss.run_sos(m),
         _ => Err("Unknown command".to_string()),
     }
 }
 
-fn prepare_port(device_name: &str) -> Result<usize, String> {
-    // Check bitrate and change to 115'200 if different
-    let mut bit_rate_current;
-    
-    let mut detector = DetectBaudrate::new(device_name);
-    let res = detector.exec();
-    match res {
-        Ok(bitrate) => {
-            info!("detected bitrate {:?} bps", bitrate);
-            bit_rate_current = bitrate;
-        },
-        Err(e) => // return Err(String::from(e)),
-            return Err(format!("bitrate detection failed, {}", e).to_string()),
-    }
+fn setup_arg_parse() -> App<'static, 'static> {
+    let app = App::new("gnss manager utility")
+        .version(crate_version!())
+        .about("Operates and configures u-blox NEO GNSS modems")
+        .arg(Arg::with_name("verbose")
+            .short("v")
+            .conflicts_with("quiet")
+            .help("Be verbose, show debug output"))
+        .arg(Arg::with_name("quiet")
+            .short("q")
+            .conflicts_with("verbose")
+            .help("Be quiet, only show warnings and errors"))
 
-    if bit_rate_current == 9600 {
-        info!("changing bitrate from {} to 115200 bps", bit_rate_current);
+            .arg(Arg::with_name("device")
+            .required(true)
+            .help("local serial device to which GNSS modem is connected (e.g. /dev/gnss0)"))
 
-        let mut gnss = GnssMgr::new(device_name, bit_rate_current);
-        gnss.set_baudrate(115200);
-        return Ok(115200);
-    }
-/*
-    else if bit_rate_current == 115200 {
-        info!("changing bitrate from {} to 115200 bps", bit_rate_current);
+        .subcommand(SubCommand::with_name("init")
+            .about("Initializes GNSS"))
 
-        let mut gnss = GnssMgr::new(device_name, bit_rate_current);
-        gnss.set_baudrate(9600);
-        return Ok(9600);
-    }
-    else {
-        return Err("unsupported bitrate".to_string());
-    }
-*/
-    else {
-        return Ok(115200);
-    }
-}
+        .subcommand(SubCommand::with_name("config")
+            .about("Performs GNSS modem control function")
+            .arg(Arg::with_name("configfile")
+                .short("f")
+                .long("file")
+                .value_name("CONFIGFILE")
+                // .default_value("/etc/gnss/gnss0.conf")      // TODO: dynamic based on device name
+                .help("Path to configuration file")))
 
-fn run_init(_matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
-    // create /run/gnss/gnss0.config
-    let runfile_path = build_runfile_path(&gnss.device_name);
+        .subcommand(SubCommand::with_name("control")
+            .about("Configures GNSS modem")
+            .arg(Arg::with_name("action")
+                .required(true)
+                .possible_values(&["cold-start", "persist", "factory-reset"])
+                .help("Selects action to perform")))
 
-    // vendor is always "ublox" when using this library
-    let mut info: HashMap<&str, String> = HashMap::new();
-    info.insert("vendor", String::from("ublox"));
-
-    // Get version information and ..
-    gnss.version(&mut info);
-    debug!("{:?}", info);
-
-    // .. create run file
-    match write_runfile(&runfile_path, &info) {
-        Ok(_) => info!("GNSS run file {} created", &runfile_path),
-        Err(_) => { warn!("Error creating run file"); }, // TODO: return code on error
-    }
-
-    // Change protocol to NMEA 4.1
-    // set_nmea_protocol_version
-    gnss.set_nmea_protocol_version(0x41);
-
-    Ok(())
-}
-
-fn run_config(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
-    // Check for optional config file name
-    let configfile_path = matches.value_of("configfile");
-    let configfile_path: String = match configfile_path {
-        Some(path) => path.to_string(),                     // path to file specified
-        _ => build_configfile_path(&gnss.device_name),      // left away, compute from device name
-    };
-
-    info!("using configfile {}", configfile_path);
-
-    // Get configuration from config file
-    let mut config: GnssMgrConfig = Default::default();
-    let _res = config.parse_config(&configfile_path)?;
-
-    gnss.configure(&config);
-
-    Ok(())
-}
-
-fn run_control(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
-    let action = matches.value_of("action").unwrap();
-    debug!("control action {:?}", action);
-
-    match action {
-        "cold-start" => gnss.cold_start(),
-        "factory-reset" => gnss.factory_reset(),
-        "persist" => gnss.persist(),
-        _ => return Err("Unknown command".to_string()),
-    }
-
-    Ok(())
-}
-
-fn run_sos(matches: &ArgMatches, gnss: &mut GnssMgr) -> Result<(), String> {
-    let action = matches.value_of("action").unwrap();
-    debug!("sos action {:?}", action);
-
-    match action {
-        "save" => gnss.sos_save(),
-        "clear" => {
-            gnss.set_assistance_time();
-            gnss.sos_clear();
-        },
-        _ => return Err("Unknown command".to_string()),
-    }
-
-    Ok(())
-}
-
-
-// TODO: return Path instead of String
-fn build_configfile_path(path: &str) -> String {
-    // Take devicename of form /dev/<name> to build /etc/gnss/<name>
-    let path = &path.replace("/dev/", "/etc/gnss/");
-    let mut path = String::from(path);
-    path.push_str(".conf");
-    path
-}
-
-fn build_runfile_path(path: &str) -> String {
-    // Take devicename of form /dev/<name> to build /run/gnss/<name>.config
-    let path = &path.replace("/dev/", "/run/gnss/");
-    let mut path = String::from(path);
-    path.push_str(".config");
-    path
-    //let owner = Path::new(&path);
-    // path.as_ref()
-}
-
-fn write_runfile(path: &str, info: &HashMap<&str, String>) -> Result<(), &'static str> {
-    let path = Path::new(path);
-    // let display = path.display();
-    let mut file = match File::create(&path) {
-        Err(_) => return Err("Can't create GNSS run file"),
-        Ok(file) => file,
-    };
-
-    let deprecated = if info["fw_ver"] != CURRENT_FW_VER {
-        " (Deprecated)"
-    }
-    else {
-        ""
-    };
-
-    let text = format!(
-        "Vendor:                             {}\n\
-        Model:                              {}\n\
-        Firmware:                           {}{}\n\
-        ubx-Protocol:                       {}\n\
-        Supported Satellite Systems:        {}\n\
-        Supported Augmentation Services:    {}\n\
-        SW Version:                         {}\n\
-        HW Version:                         {}\n",
-        info["vendor"],
-        info["model"],
-        info["fw_ver"], deprecated,
-        info["protocol"],
-        info["systems"],
-        info["augmentation"],
-        info["sw_ver"],
-        info["hw_ver"],
-    );
-
-    match file.write_all(text.as_bytes()) {
-        Err(_) => Err("Can't write GNSS run file"),
-        Ok(_) => Ok(()),
-    }
+        .subcommand(SubCommand::with_name("sos")
+            .about("Save on shutdown operations")
+            .arg(Arg::with_name("action")
+                .required(true)
+                .possible_values(&["save", "clear"])
+                .help("Selects sos operation to perform")));
+    app
 }

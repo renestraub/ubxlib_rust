@@ -11,34 +11,47 @@ use crate::parser::{Parser, Packet};
 
 
 pub struct ServerTty {
-    // device_name: String,
+    device_name: String,
     parser: Parser,
-    serial_port: serial::SystemPort,
+    serial_port: Option<serial::SystemPort>,
 }
 
 impl ServerTty {
-    // TODO: Result return code to handle errors
-    pub fn new(device_name: &str, bitrate: usize) -> Self {
-        let mut obj = Self {
-            // device_name: String::from(device_name),
+    pub fn new(device_name: &str) -> Self {
+        let obj = Self {
+            device_name: String::from(device_name),
             parser: Parser::new(),
-            serial_port: serial::open(&device_name).unwrap(),   // TODO: How do we do error check here?
+            serial_port: None,
         };
-
-        // Port is configured for 115'200, 8N1
-        let settings: serial::PortSettings = serial::PortSettings {
-            baud_rate:    serial::BaudRate::from_speed(bitrate),
-            char_size:    serial::Bits8,
-            parity:       serial::ParityNone,
-            stop_bits:    serial::Stop1,
-            flow_control: serial::FlowNone,
-        };
-
-        // let mut port = serial::open(&self.device_name).unwrap(); // ?;
-        obj.serial_port.configure(&settings).unwrap(); // ?;
-        obj.serial_port.set_timeout(Duration::from_secs(1000)).unwrap(); //?;
-
         obj
+    }
+
+    pub fn open(&mut self, bitrate: usize)-> Result<(), &'static str> {
+        info!("opening {} with {} bps", self.device_name, bitrate);
+
+        // self.serial_port = serial::open(&self.device_name)?; // TODO: check ?
+        self.serial_port = serial::open(&self.device_name).ok();
+        if self.serial_port.is_none() {
+            return Err("cannot open serial port");
+        }
+
+        // configure port for desired bitrate
+        match self.serial_port.as_mut() {
+            Some(port) => {
+                let settings = serial::PortSettings {
+                    baud_rate:    serial::BaudRate::from_speed(bitrate),
+                    char_size:    serial::Bits8,
+                    parity:       serial::ParityNone,
+                    stop_bits:    serial::Stop1,
+                    flow_control: serial::FlowNone,
+                };
+
+                port.configure(&settings).unwrap();
+                port.set_timeout(Duration::from_millis(100)).unwrap();
+                return Ok(());
+            },
+            _ => return Err("cannot configure serial port"),
+        }
     }
 
     /*
@@ -111,7 +124,7 @@ impl ServerTty {
             Ok(packet) => {
                 debug!("ACK/NAK received {:?}", packet);
                 // TODO: Check ACK/NAK and CLS, ID in ACK
-                // f2.from_bin(packet.data);
+                // packet.from_bin(packet.data);
             },
             Err(_) => warn!("set: timeout"),
         }
@@ -139,13 +152,13 @@ impl ServerTty {
         }
     }
 
-
     /*** Private ***/
 
     fn send(&mut self, data: &Vec<u8>) -> Result<(), &'static str> {
         // debug!("{} bytes to send {:?}", data.len(), data);
+        let port = self.serial_port.as_mut().unwrap();
 
-        let res = self.serial_port.write(&data);
+        let res = port.write(&data);
         match res {
             Ok(bytes_written) => {
                 // debug!("{} bytes written", bytes_written);
@@ -162,18 +175,19 @@ impl ServerTty {
 
     fn wait(&mut self) -> Result<Packet, &'static str> {
         let mut read_buffer = [0u8; 1024];
+        let port = self.serial_port.as_mut().unwrap();
 
         let start = Instant::now();
         let mut elapsed = start.elapsed();
         while elapsed.as_millis() < 3000 {
             // Read data
             // TODO: Check why only 48 bytes are read at once
-            let res = self.serial_port.read(&mut read_buffer[..]);
+            let res = port.read(&mut read_buffer[..]);
             match res {
                 Ok(bytes_read) => {
                     // debug!("{} bytes read", bytes_read);
                     let data = read_buffer[0..bytes_read].to_vec();
-                    // debug!("{:?}", data);
+                    debug!("{:?}", data);
 
                     // process() places all decoded frames in response_queue
                     self.parser.process(&data);
@@ -199,7 +213,7 @@ impl ServerTty {
 }
 
 
-
+// TODO: Integrate in server_tty
 pub struct DetectBaudrate {
     device_name: String,
     serial_port: Option<serial::SystemPort>,
@@ -226,7 +240,7 @@ impl DetectBaudrate {
 
         for baud in BITRATES.iter() {
             info!("checking {} bps", baud);
-   
+
             // configure port for desired bitrate
             match self.serial_port.as_mut() {
                 Some(port) => {
@@ -239,7 +253,7 @@ impl DetectBaudrate {
                     };
 
                     port.configure(&settings).unwrap();
-                    port.set_timeout(Duration::from_secs(100)).unwrap();
+                    port.set_timeout(Duration::from_millis(100)).unwrap();
                 },
                 _ => return Err("cannot configure serial port"),
             }
