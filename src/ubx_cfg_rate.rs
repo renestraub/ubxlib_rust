@@ -1,5 +1,3 @@
-//use std::fmt;
-
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
@@ -60,11 +58,6 @@ impl UbxCfgRate {
             ..Default::default()
         }
     }
-
-    pub fn load(&mut self, data: &[u8]) {
-        assert!(data.len() == 6);
-        self.data = bincode::deserialize(&data).unwrap();
-    }
 }
 
 impl UbxFrameInfo for UbxCfgRate {
@@ -79,7 +72,6 @@ impl UbxFrameInfo for UbxCfgRate {
 
 impl UbxFrameSerialize for UbxCfgRate {
     fn to_bin(&self) -> Vec<u8> {
-        // let data = self.save();
         let data = bincode::serialize(&self.data).unwrap();
         UbxFrame::bytes(UbxCID::new(CLS, ID), data)
     }
@@ -87,22 +79,10 @@ impl UbxFrameSerialize for UbxCfgRate {
 
 impl UbxFrameDeSerialize for UbxCfgRate {
     fn from_bin(&mut self, data: Vec<u8>) {
-        self.load(&data);
+        assert_eq!(data.len(), 6);
+        self.data = bincode::deserialize(&data).unwrap();
     }
 }
-
-/*
-impl fmt::Debug for UbxCfgRate {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("UbxCfgRate")
-        .field("cid", &self.cid)
-        .field("measRate", &self.data.meas_rate)
-        .field("navRate", &self.data.nav_rate)
-        .field("timeRef", &self.data.time_ref)
-        .finish()
-    }
-}
-*/
 
 #[cfg(test)]
 mod tests {
@@ -120,7 +100,7 @@ mod tests {
     fn cfg_rate_load() {
         const DATA: [u8; 6] = [0xe8, 0x03, 0x01, 0x00, 0x34, 0x12];
         let mut dut = UbxCfgRate::new();
-        dut.load(&DATA.to_vec());
+        dut.from_bin(DATA.to_vec());
 
         assert_eq!(dut.data.meas_rate, 1000);
         assert_eq!(dut.data.nav_rate, 1);
@@ -132,7 +112,7 @@ mod tests {
     fn cfg_rate_load_too_few_values() {
         const DATA: [u8; 5] = [0xe8, 0x03, 0x01, 0x00, 0x34];
         let mut dut = UbxCfgRate::new();
-        dut.load(&DATA.to_vec());
+        dut.from_bin(DATA.to_vec());
 
         assert_eq!(dut.data.meas_rate, 1000);
         assert_eq!(dut.data.nav_rate, 1);
@@ -149,7 +129,6 @@ mod tests {
         dut.data.meas_rate = 1000;
         dut.data.nav_rate = 1;
         dut.data.time_ref = 0x1234;
-        // let data = dut.save();
         let data = dut.to_bin();
         assert_eq!(data[6..12], [0xE8, 3, 1, 0, 0x34, 0x12]);
     }

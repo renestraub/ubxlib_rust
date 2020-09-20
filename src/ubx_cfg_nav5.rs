@@ -74,12 +74,6 @@ impl UbxCfgNav5 {
             ..Default::default()
         }
     }
-
-    // TODO: Remove, write directly in UbxFrameDeSerialize
-    pub fn load(&mut self, data: &[u8]) {
-        assert!(data.len() == 36);
-        self.data = bincode::deserialize(&data).unwrap();
-    }
 }
 
 impl UbxFrameInfo for UbxCfgNav5 {
@@ -102,7 +96,8 @@ impl UbxFrameSerialize for UbxCfgNav5 {
 
 impl UbxFrameDeSerialize for UbxCfgNav5 {
     fn from_bin(&mut self, data: Vec<u8>) {
-        self.load(&data);
+        assert_eq!(data.len(), 36);
+        self.data = bincode::deserialize(&data).unwrap();
     }
 }
 
@@ -140,7 +135,7 @@ mod tests {
         dut.data.fix_mode = 0;
         dut.data.utc_standard = 0;
 
-        dut.load(&res[6..42]);
+        dut.from_bin(res[6..42].to_vec());
         assert_eq!(dut.data.mask, 0x1122);
         assert_eq!(dut.data.dyn_model, 4);
         assert_eq!(dut.data.fix_mode, 2);

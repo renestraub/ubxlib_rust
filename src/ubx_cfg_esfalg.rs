@@ -59,11 +59,6 @@ impl UbxCfgEsfAlg {
             ..Default::default()
         }
     }
-
-    pub fn load(&mut self, data: &[u8]) {
-        assert!(data.len() == 12);
-        self.data = bincode::deserialize(&data).unwrap();
-    }
 }
 
 impl UbxFrameInfo for UbxCfgEsfAlg {
@@ -85,7 +80,8 @@ impl UbxFrameSerialize for UbxCfgEsfAlg {
 
 impl UbxFrameDeSerialize for UbxCfgEsfAlg {
     fn from_bin(&mut self, data: Vec<u8>) {
-        self.load(&data);
+        assert_eq!(data.len(), 12);
+        self.data = bincode::deserialize(&data).unwrap();
     }
 }
 
@@ -106,7 +102,7 @@ mod tests {
     fn too_few_values() {
         const DATA: [u8; 5] = [0xe8, 0x03, 0x01, 0x00, 0x34];
         let mut dut = UbxCfgEsfAlg::new();
-        dut.load(&DATA.to_vec());
+        dut.from_bin(DATA.to_vec());
     }
 
     #[test]
@@ -115,7 +111,7 @@ mod tests {
             0xff, 0xfe, 0xfd, 0xfc, 0x04, 0x03, 0x02, 0x01, 0x08, 0x07, 0x06, 0x05,
         ];
         let mut dut = UbxCfgEsfAlg::new();
-        dut.load(&DATA.to_vec());
+        dut.from_bin(DATA.to_vec());
 
         assert_eq!(dut.data.bitfield, 0xfcfdfeffu32);
         assert_eq!(dut.data.yaw, 0x01020304u32);

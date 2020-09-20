@@ -66,11 +66,6 @@ impl UbxCfgNmea {
             ..Default::default()
         }
     }
-
-    pub fn load(&mut self, data: &[u8]) {
-        assert!(data.len() == 20);
-        self.data = bincode::deserialize(&data).unwrap();
-    }
 }
 
 impl UbxFrameInfo for UbxCfgNmea {
@@ -93,7 +88,8 @@ impl UbxFrameSerialize for UbxCfgNmea {
 
 impl UbxFrameDeSerialize for UbxCfgNmea {
     fn from_bin(&mut self, data: Vec<u8>) {
-        self.load(&data);
+        assert_eq!(data.len(), 20);
+        self.data = bincode::deserialize(&data).unwrap();    
     }
 }
 
