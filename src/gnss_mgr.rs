@@ -34,6 +34,7 @@ impl GnssMgr {
         // TODO: Refactor to use modem object of GnssMgr
 
         // Check bitrate and change to 115'200 if different
+        #![allow(unused_mut)] // rustc incorectly complains about "mut"
         let mut bit_rate_current;
         
         let mut detector = DetectBaudrate::new(&self.device_name);
@@ -79,7 +80,7 @@ impl GnssMgr {
 
     pub fn run_init(&mut self, _matches: &ArgMatches) -> Result<(), String> {
         // create /run/gnss/gnss0.config
-        let runfile_path = build_runfile_path(&self.device_name);
+        let runfile_path = Self::build_runfile_path(&self.device_name);
     
         // vendor is always "ublox" when using this library
         let mut info: HashMap<&str, String> = HashMap::new();
@@ -90,7 +91,7 @@ impl GnssMgr {
         debug!("{:?}", info);
     
         // .. create run file
-        match write_runfile(&runfile_path, &info) {
+        match Self::write_runfile(&runfile_path, &info) {
             Ok(_) => info!("GNSS run file {} created", &runfile_path),
             Err(_) => { warn!("Error creating run file"); }, // TODO: return code on error
         }
@@ -107,7 +108,7 @@ impl GnssMgr {
         let configfile_path = matches.value_of("configfile");
         let configfile_path: String = match configfile_path {
             Some(path) => path.to_string(),                     // path to file specified
-            _ => build_configfile_path(&self.device_name),      // left away, compute from device name
+            _ => Self::build_configfile_path(&self.device_name),      // left away, compute from device name
         };
     
         info!("using configfile {}", configfile_path);
@@ -191,64 +192,63 @@ impl GnssMgr {
             self.modem.set_lever_arm(1, &config.vrp2imu.unwrap());
         }
     }
-}
 
-
-fn build_runfile_path(path: &str) -> String {
-    // Take devicename of form /dev/<name> to build /run/gnss/<name>.config
-    let path = &path.replace("/dev/", "/run/gnss/");
-    let mut path = String::from(path);
-    path.push_str(".config");
-    path
-    //let owner = Path::new(&path);
-    // path.as_ref()
-}
-
-fn write_runfile(path: &str, info: &HashMap<&str, String>) -> Result<(), &'static str> {
-    let path = Path::new(path);
-    // let display = path.display();
-    let mut file = match File::create(&path) {
-        Err(_) => return Err("Can't create GNSS run file"),
-        Ok(file) => file,
-    };
-
-    let deprecated = if info["fw_ver"] != CURRENT_FW_VER {
-        " (Deprecated)"
+    fn build_runfile_path(path: &str) -> String {
+        // Take devicename of form /dev/<name> to build /run/gnss/<name>.config
+        let path = &path.replace("/dev/", "/run/gnss/");
+        let mut path = String::from(path);
+        path.push_str(".config");
+        path
+        //let owner = Path::new(&path);
+        // path.as_ref()
     }
-    else {
-        ""
-    };
-
-    let text = format!(
-        "Vendor:                             {}\n\
-        Model:                              {}\n\
-        Firmware:                           {}{}\n\
-        ubx-Protocol:                       {}\n\
-        Supported Satellite Systems:        {}\n\
-        Supported Augmentation Services:    {}\n\
-        SW Version:                         {}\n\
-        HW Version:                         {}\n",
-        info["vendor"],
-        info["model"],
-        info["fw_ver"], deprecated,
-        info["protocol"],
-        info["systems"],
-        info["augmentation"],
-        info["sw_ver"],
-        info["hw_ver"],
-    );
-
-    match file.write_all(text.as_bytes()) {
-        Err(_) => Err("Can't write GNSS run file"),
-        Ok(_) => Ok(()),
+    
+    fn write_runfile(path: &str, info: &HashMap<&str, String>) -> Result<(), &'static str> {
+        let path = Path::new(path);
+        // let display = path.display();
+        let mut file = match File::create(&path) {
+            Err(_) => return Err("Can't create GNSS run file"),
+            Ok(file) => file,
+        };
+    
+        let deprecated = if info["fw_ver"] != CURRENT_FW_VER {
+            " (Deprecated)"
+        }
+        else {
+            ""
+        };
+    
+        let text = format!(
+            "Vendor:                             {}\n\
+            Model:                              {}\n\
+            Firmware:                           {}{}\n\
+            ubx-Protocol:                       {}\n\
+            Supported Satellite Systems:        {}\n\
+            Supported Augmentation Services:    {}\n\
+            SW Version:                         {}\n\
+            HW Version:                         {}\n",
+            info["vendor"],
+            info["model"],
+            info["fw_ver"], deprecated,
+            info["protocol"],
+            info["systems"],
+            info["augmentation"],
+            info["sw_ver"],
+            info["hw_ver"],
+        );
+    
+        match file.write_all(text.as_bytes()) {
+            Err(_) => Err("Can't write GNSS run file"),
+            Ok(_) => Ok(()),
+        }
     }
-}
-
-// TODO: return Path instead of String
-fn build_configfile_path(path: &str) -> String {
-    // Take devicename of form /dev/<name> to build /etc/gnss/<name>
-    let path = &path.replace("/dev/", "/etc/gnss/");
-    let mut path = String::from(path);
-    path.push_str(".conf");
-    path
+    
+    // TODO: return Path instead of String
+    fn build_configfile_path(path: &str) -> String {
+        // Take devicename of form /dev/<name> to build /etc/gnss/<name>
+        let path = &path.replace("/dev/", "/etc/gnss/");
+        let mut path = String::from(path);
+        path.push_str(".conf");
+        path
+    }
 }
