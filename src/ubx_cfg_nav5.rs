@@ -32,9 +32,7 @@ impl UbxFrameInfo for UbxCfgNav5Poll {
 
 impl UbxFrameSerialize for UbxCfgNav5Poll {
     fn to_bin(&self) -> Vec<u8> {
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), [].to_vec());
-        let msg = frame.to_bytes();
-        msg
+        UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
     }
 }
 
@@ -82,12 +80,6 @@ impl UbxCfgNav5 {
         assert!(data.len() == 36);
         self.data = bincode::deserialize(&data).unwrap();
     }
-
-    // TODO: Remove, write directly in UbxFrameSerialize
-    pub fn save(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        data
-    }
 }
 
 impl UbxFrameInfo for UbxCfgNav5 {
@@ -102,13 +94,9 @@ impl UbxFrameInfo for UbxCfgNav5 {
 
 impl UbxFrameSerialize for UbxCfgNav5 {
     fn to_bin(&self) -> Vec<u8> {
-        let data = self.save();
-
-        // construct a frame with correct CID and payload
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-        let msg = frame.to_bytes();
-        msg
-        // TODO: Combine to one statement
+        // let data = self.save();
+        let data = bincode::serialize(&self.data).unwrap();
+        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
     }
 }
 
@@ -140,11 +128,11 @@ mod tests {
         dut.data.fix_mode = 2;
         dut.data.utc_standard = 3;
 
-        let res = dut.save();
-        assert_eq!(res.len(), 36);
-        assert_eq!(res[2], 4);
-        assert_eq!(res[3], 2);
-        assert_eq!(res[30], 3);
+        let res = dut.to_bin();
+        assert_eq!(res.len(), 36 + 8);
+        assert_eq!(res[6 + 2], 4);
+        assert_eq!(res[6 + 3], 2);
+        assert_eq!(res[6 + 30], 3);
 
         // invalidate data, to check load() is actually working
         dut.data.mask = 0x0000;
@@ -152,7 +140,7 @@ mod tests {
         dut.data.fix_mode = 0;
         dut.data.utc_standard = 0;
 
-        dut.load(&res);
+        dut.load(&res[6..42]);
         assert_eq!(dut.data.mask, 0x1122);
         assert_eq!(dut.data.dyn_model, 4);
         assert_eq!(dut.data.fix_mode, 2);

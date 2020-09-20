@@ -42,9 +42,7 @@ impl GnssMgr {
                 info!("detected bitrate {:?} bps", bitrate);
                 bit_rate_current = bitrate;
             }
-            Err(e) => {
-                return Err(format!("bitrate detection failed, {}", e).to_string())
-            }
+            Err(e) => return Err(format!("bitrate detection failed, {}", e).to_string()),
         }
 
         if bit_rate_current == 9600 {

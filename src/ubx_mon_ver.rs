@@ -30,10 +30,7 @@ impl UbxFrameInfo for UbxMonVerPoll {
 
 impl UbxFrameSerialize for UbxMonVerPoll {
     fn to_bin(&self) -> Vec<u8> {
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), [].to_vec());
-        let msg = frame.to_bytes();
-        msg
-        // TODO: simplify
+        UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
     }
 }
 

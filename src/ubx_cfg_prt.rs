@@ -104,12 +104,6 @@ impl UbxCfgPrtUart {
         assert!(data.len() == 20);
         self.data = bincode::deserialize(&data).unwrap();
     }
-
-    pub fn save(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        assert!(data.len() == 20);
-        data
-    }
 }
 
 impl UbxFrameInfo for UbxCfgPrtUart {
@@ -124,14 +118,9 @@ impl UbxFrameInfo for UbxCfgPrtUart {
 
 impl UbxFrameSerialize for UbxCfgPrtUart {
     fn to_bin(&self) -> Vec<u8> {
-        // update binary data in frame
-        let data = self.save();
-
-        // construct a frame with correct CID and payload
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-        let msg = frame.to_bytes();
-        msg
-        // TODO: Combine to one statement
+        let data = bincode::serialize(&self.data).unwrap();
+        assert_eq!(data.len(), 20);
+        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
     }
 }
 

@@ -1,5 +1,5 @@
 use ini::Ini;
-use log::{debug, info};
+use log::info;
 use std::path::Path;
 
 #[derive(Debug, Default)]

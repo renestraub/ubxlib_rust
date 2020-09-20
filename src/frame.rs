@@ -48,6 +48,12 @@ impl UbxFrame {
         }
     }
 
+    pub fn bytes(cid: UbxCID, data: Vec<u8>) -> Vec<u8> {
+        let frame = UbxFrame::construct(cid, data);
+        let msg = frame.to_bytes();
+        msg
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut checksum = Checksum::new();
         let mut msg = Vec::<u8>::new();

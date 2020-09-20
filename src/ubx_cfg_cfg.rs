@@ -50,12 +50,6 @@ impl UbxCfgCfgAction {
             data: Data::new(0, MASK_ALL, 0),
         }
     }
-
-    fn save(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        assert!(data.len() == 12);
-        data
-    }
 }
 
 impl UbxFrameInfo for UbxCfgCfgAction {
@@ -70,14 +64,9 @@ impl UbxFrameInfo for UbxCfgCfgAction {
 
 impl UbxFrameSerialize for UbxCfgCfgAction {
     fn to_bin(&self) -> Vec<u8> {
-        // update binary data in frame
-        let data = self.save();
-
-        // construct a frame with correct CID and payload
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-        let msg = frame.to_bytes();
-        msg
-        // TODO: Combine to one statement
+        let data = bincode::serialize(&self.data).unwrap();
+        assert_eq!(data.len(), 12);
+        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
     }
 }
 

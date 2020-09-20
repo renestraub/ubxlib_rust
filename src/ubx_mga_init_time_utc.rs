@@ -64,12 +64,6 @@ impl UbxMgaIniTimeUtc {
                                // Accuracy 0 taken from u-center example
                                // not sure whether this is correct
     }
-
-    fn save(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        assert!(data.len() == 24);
-        data
-    }
 }
 
 impl UbxFrameInfo for UbxMgaIniTimeUtc {
@@ -84,14 +78,9 @@ impl UbxFrameInfo for UbxMgaIniTimeUtc {
 
 impl UbxFrameSerialize for UbxMgaIniTimeUtc {
     fn to_bin(&self) -> Vec<u8> {
-        // update binary data in frame
-        let data = self.save();
-
-        // construct a frame with correct CID and payload
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-        let msg = frame.to_bytes();
-        msg
-        // TODO: Combine to one statement
+        let data = bincode::serialize(&self.data).unwrap();
+        assert_eq!(data.len(), 24);
+        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
     }
 }
 

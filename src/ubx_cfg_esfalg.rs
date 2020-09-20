@@ -32,9 +32,7 @@ impl UbxFrameInfo for UbxCfgEsfAlgPoll {
 
 impl UbxFrameSerialize for UbxCfgEsfAlgPoll {
     fn to_bin(&self) -> Vec<u8> {
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), [].to_vec());
-        let msg = frame.to_bytes();
-        msg
+        UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
     }
 }
 
@@ -66,11 +64,6 @@ impl UbxCfgEsfAlg {
         assert!(data.len() == 12);
         self.data = bincode::deserialize(&data).unwrap();
     }
-
-    pub fn save(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        data
-    }
 }
 
 impl UbxFrameInfo for UbxCfgEsfAlg {
@@ -85,12 +78,8 @@ impl UbxFrameInfo for UbxCfgEsfAlg {
 
 impl UbxFrameSerialize for UbxCfgEsfAlg {
     fn to_bin(&self) -> Vec<u8> {
-        let data = self.save();
-
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-        let msg = frame.to_bytes();
-        msg
-        // TODO: Combine to one statement
+        let data = bincode::serialize(&self.data).unwrap();
+        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
     }
 }
 

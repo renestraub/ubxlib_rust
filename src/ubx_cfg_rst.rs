@@ -78,12 +78,6 @@ impl UbxCfgRstAction {
             data: Data::new(BbrMask::HotStart, ResetMode::Stop),
         }
     }
-
-    fn save(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        //assert!(data.len() == 4);
-        data
-    }
 }
 
 impl UbxFrameInfo for UbxCfgRstAction {
@@ -98,13 +92,9 @@ impl UbxFrameInfo for UbxCfgRstAction {
 
 impl UbxFrameSerialize for UbxCfgRstAction {
     fn to_bin(&self) -> Vec<u8> {
-        // update binary data in frame
-        let data = self.save();
-
-        // construct a frame with correct CID and payload
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-        let msg = frame.to_bytes();
-        msg
+        let data = bincode::serialize(&self.data).unwrap();
+        assert_eq!(data.len(), 4);
+        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
     }
 }
 

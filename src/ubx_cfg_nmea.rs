@@ -32,9 +32,7 @@ impl UbxFrameInfo for UbxCfgNmeaPoll {
 
 impl UbxFrameSerialize for UbxCfgNmeaPoll {
     fn to_bin(&self) -> Vec<u8> {
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), [].to_vec());
-        let msg = frame.to_bytes();
-        msg
+        UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
     }
 }
 
@@ -73,12 +71,6 @@ impl UbxCfgNmea {
         assert!(data.len() == 20);
         self.data = bincode::deserialize(&data).unwrap();
     }
-
-    pub fn save(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        assert!(data.len() == 20);
-        data
-    }
 }
 
 impl UbxFrameInfo for UbxCfgNmea {
@@ -93,14 +85,9 @@ impl UbxFrameInfo for UbxCfgNmea {
 
 impl UbxFrameSerialize for UbxCfgNmea {
     fn to_bin(&self) -> Vec<u8> {
-        // update binary data in frame
-        let data = self.save();
-
-        // construct a frame with correct CID and payload
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-        let msg = frame.to_bytes();
-        msg
-        // TODO: Combine to one statement
+        let data = bincode::serialize(&self.data).unwrap();
+        assert_eq!(data.len(), 20);
+        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
     }
 }
 

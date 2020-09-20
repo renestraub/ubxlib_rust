@@ -34,9 +34,7 @@ impl UbxFrameInfo for UbxCfgRatePoll {
 
 impl UbxFrameSerialize for UbxCfgRatePoll {
     fn to_bin(&self) -> Vec<u8> {
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), [].to_vec());
-        let msg = frame.to_bytes();
-        msg
+        UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
     }
 }
 
@@ -67,11 +65,6 @@ impl UbxCfgRate {
         assert!(data.len() == 6);
         self.data = bincode::deserialize(&data).unwrap();
     }
-
-    pub fn save(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        data
-    }
 }
 
 impl UbxFrameInfo for UbxCfgRate {
@@ -86,12 +79,9 @@ impl UbxFrameInfo for UbxCfgRate {
 
 impl UbxFrameSerialize for UbxCfgRate {
     fn to_bin(&self) -> Vec<u8> {
-        let data = self.save();
-        // construct a frame with correct CID and payload
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-        let msg = frame.to_bytes();
-        msg
-        // TODO: Combine to one statement
+        // let data = self.save();
+        let data = bincode::serialize(&self.data).unwrap();
+        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
     }
 }
 
@@ -159,8 +149,9 @@ mod tests {
         dut.data.meas_rate = 1000;
         dut.data.nav_rate = 1;
         dut.data.time_ref = 0x1234;
-        let data = dut.save();
-        assert_eq!(data, [0xE8, 3, 1, 0, 0x34, 0x12]);
+        // let data = dut.save();
+        let data = dut.to_bin();
+        assert_eq!(data[6..12], [0xE8, 3, 1, 0, 0x34, 0x12]);
     }
 
     #[test]
