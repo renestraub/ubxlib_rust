@@ -32,6 +32,10 @@ impl NeoM8 {
             server: ServerTty::new(device),
         }
     }
+    
+    pub fn detect_baudrate(&mut self) -> Result<usize, &'static str> {
+        self.server.detect_baudrate()
+    }
 
     pub fn open(&mut self, bitrate: usize)-> Result<(), &'static str> {
         self.server.open(bitrate)

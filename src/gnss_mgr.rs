@@ -8,7 +8,6 @@ use clap::{ArgMatches};
 
 use crate::neo_m8::NeoM8;
 use crate::config_file::{GnssMgrConfig};
-use crate::server_tty::DetectBaudrate;
 
 
 static CURRENT_FW_VER: &str = "ADR 4.31";
@@ -37,8 +36,9 @@ impl GnssMgr {
         #![allow(unused_mut)] // rustc incorectly complains about "mut"
         let mut bit_rate_current;
         
-        let mut detector = DetectBaudrate::new(&self.device_name);
-        let res = detector.exec();
+        // let mut detector = DetectBaudrate::new(&self.device_name);
+        // let res = detector.exec();
+        let res = self.modem.detect_baudrate();
         match res {
             Ok(bitrate) => {
                 info!("detected bitrate {:?} bps", bitrate);
@@ -51,9 +51,8 @@ impl GnssMgr {
         if bit_rate_current == 9600 {
             info!("changing bitrate from {} to 115200 bps", bit_rate_current);
     
-            let mut modem = NeoM8::new(&self.device_name);
-            modem.open(bit_rate_current)?;
-            modem.set_baudrate(115200);
+            self.modem.open(bit_rate_current)?;
+            self.modem.set_baudrate(115200);
             return Ok(115200);
         }
 /*

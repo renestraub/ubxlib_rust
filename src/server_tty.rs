@@ -26,6 +26,47 @@ impl ServerTty {
         obj
     }
 
+    // TODO: combine with open so that there is only one call to serial_port open()?
+    pub fn detect_baudrate(&mut self) -> Result<usize, &'static str> {
+        const BITRATES: [usize; 2] = [115200, 9600];
+
+        self.serial_port = serial::open(&self.device_name).ok();
+        if self.serial_port.is_none() {
+            return Err("cannot open serial port");
+        }
+
+        for baud in BITRATES.iter() {
+            info!("checking {} bps", baud);
+
+            // configure port for desired bitrate
+            match self.serial_port.as_mut() {
+                Some(port) => {
+                    let settings = serial::PortSettings {
+                        baud_rate:    serial::BaudRate::from_speed(*baud),
+                        char_size:    serial::Bits8,
+                        parity:       serial::ParityNone,
+                        stop_bits:    serial::Stop1,
+                        flow_control: serial::FlowNone,
+                    };
+
+                    port.configure(&settings).unwrap();
+                    port.set_timeout(Duration::from_millis(100)).unwrap();
+                },
+                _ => return Err("cannot configure serial port"),
+            }
+
+            // try to receive ubx or NMEA frames
+            match self.scan() {
+                true => { return Ok(*baud); },
+                _ => { info!("bitrate {:?} not working", baud); (); },
+            }
+        }
+
+        // TODO: is serial port closed hereafter?
+
+        Err("cannot detect bitrate")
+    }
+
     pub fn open(&mut self, bitrate: usize)-> Result<(), &'static str> {
         info!("opening {} with {} bps", self.device_name, bitrate);
 
@@ -209,63 +250,6 @@ impl ServerTty {
         }
 
         Err("timeout")
-    }
-}
-
-
-// TODO: Integrate in server_tty
-pub struct DetectBaudrate {
-    device_name: String,
-    serial_port: Option<serial::SystemPort>,
-    parser: Parser,
-}
-
-impl DetectBaudrate {
-    pub fn new(device_name: &str) -> Self {
-        let obj = Self {
-            device_name: String::from(device_name),
-            serial_port: None,
-            parser: Parser::new(),
-        };
-        obj
-    }
-
-    pub fn exec(&mut self) -> Result<usize, &'static str> {
-        const BITRATES: [usize; 2] = [115200, 9600];
-
-        self.serial_port = serial::open(&self.device_name).ok();
-        if self.serial_port.is_none() {
-            return Err("cannot open serial port");
-        }
-
-        for baud in BITRATES.iter() {
-            info!("checking {} bps", baud);
-
-            // configure port for desired bitrate
-            match self.serial_port.as_mut() {
-                Some(port) => {
-                    let settings = serial::PortSettings {
-                        baud_rate:    serial::BaudRate::from_speed(*baud),
-                        char_size:    serial::Bits8,
-                        parity:       serial::ParityNone,
-                        stop_bits:    serial::Stop1,
-                        flow_control: serial::FlowNone,
-                    };
-
-                    port.configure(&settings).unwrap();
-                    port.set_timeout(Duration::from_millis(100)).unwrap();
-                },
-                _ => return Err("cannot configure serial port"),
-            }
-
-            // try to receive ubx or NMEA frames
-            match self.scan() {
-                true => { return Ok(*baud); },
-                _ => { info!("bitrate {:?} not working", baud); (); },
-            }
-        }
-
-        Err("cannot detect bitrate")
     }
 
     // TODO: result<bool, string>
