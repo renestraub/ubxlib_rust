@@ -1,12 +1,10 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
-
+use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x24;
-
 
 pub struct UbxCfgNav5Poll {
     pub name: &'static str,
@@ -39,7 +37,6 @@ impl UbxFrameSerialize for UbxCfgNav5Poll {
         msg
     }
 }
-
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -120,7 +117,6 @@ impl UbxFrameDeSerialize for UbxCfgNav5 {
         self.load(&data);
     }
 }
-
 
 #[cfg(test)]
 mod tests {

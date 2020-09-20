@@ -1,14 +1,12 @@
 //use std::fmt;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
-
+use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x08;
-
 
 pub struct UbxCfgRatePoll {
     pub name: &'static str,
@@ -42,11 +40,10 @@ impl UbxFrameSerialize for UbxCfgRatePoll {
     }
 }
 
-
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
-    pub meas_rate: u16,  // Time elapsed between two measuremnts in ms
-    pub nav_rate: u16,   // Number of measurements for NAV solution
+    pub meas_rate: u16, // Time elapsed between two measuremnts in ms
+    pub nav_rate: u16,  // Number of measurements for NAV solution
     pub time_ref: u16,
 }
 
@@ -117,7 +114,6 @@ impl fmt::Debug for UbxCfgRate {
 }
 */
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,7 +175,10 @@ mod tests {
         dut.data.time_ref = 0x1234;
 
         let data = dut.to_bin();
-        assert_eq!(data, [0xb5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x34, 0x12, 70, 177]);
+        assert_eq!(
+            data,
+            [0xb5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x34, 0x12, 70, 177]
+        );
     }
 
     #[test]

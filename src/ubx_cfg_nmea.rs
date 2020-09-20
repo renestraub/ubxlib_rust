@@ -1,12 +1,10 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
-
+use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x17;
-
 
 pub struct UbxCfgNmeaPoll {
     pub name: &'static str,
@@ -40,7 +38,6 @@ impl UbxFrameSerialize for UbxCfgNmeaPoll {
     }
 }
 
-
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
     pub filter: u8,
@@ -55,7 +52,6 @@ pub struct Data {
     pub bds_talker_id: [u8; 2],
     pub res1: [u8; 6],
 }
-
 
 #[derive(Default, Debug)]
 pub struct UbxCfgNmea {
@@ -82,7 +78,6 @@ impl UbxCfgNmea {
         let data = bincode::serialize(&self.data).unwrap();
         assert!(data.len() == 20);
         data
-
     }
 }
 
@@ -115,7 +110,6 @@ impl UbxFrameDeSerialize for UbxCfgNmea {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -134,6 +128,6 @@ mod tests {
         assert_eq!(dut.name, "UBX-CFG-NMEA");
         dut.data.nmea_version = 0x41;
         let msg = dut.to_bin();
-        assert_eq!(msg[6+1], 0x41);
+        assert_eq!(msg[6 + 1], 0x41);
     }
 }

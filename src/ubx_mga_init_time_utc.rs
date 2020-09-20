@@ -1,19 +1,17 @@
-use serde::{Serialize};
 use chrono::prelude::*;
+use serde::Serialize;
 
 use crate::cid::UbxCID;
 use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize};
 
-
 const CLS: u8 = 0x13;
 const ID: u8 = 0x40;
 
-
 #[derive(Default, Debug, Serialize)]
 pub struct Data {
-    pub msg_type: u8,           // Name type is a keyword that can't be used in Rust
+    pub msg_type: u8, // Name type is a keyword that can't be used in Rust
     pub msg_version: u8,
-    pub msg_ref: u8,      // Name ref is a keyword that can't be used in Rust
+    pub msg_ref: u8, // Name ref is a keyword that can't be used in Rust
 
     pub leap_secs: i8,
     pub year: u16,
@@ -29,7 +27,6 @@ pub struct Data {
     pub res2: [u8; 2],
     pub tacc_ns: u32,
 }
-
 
 #[derive(Default, Debug)]
 pub struct UbxMgaIniTimeUtc {
@@ -48,11 +45,11 @@ impl UbxMgaIniTimeUtc {
     }
 
     pub fn set_date_time(&mut self, utc: &DateTime<Utc>) {
-        self.data.msg_type = 0x10;      // 0x10 for UTC time format
+        self.data.msg_type = 0x10; // 0x10 for UTC time format
         self.data.msg_version = 0x00;
-        self.data.msg_ref = 0x00;        // receipt of message will be inaccurate
+        self.data.msg_ref = 0x00; // receipt of message will be inaccurate
 
-        self.data.leap_secs = -128;      // number of leap seconds is unknown
+        self.data.leap_secs = -128; // number of leap seconds is unknown
 
         self.data.year = utc.year() as u16;
         self.data.month = utc.month() as u8;
@@ -60,12 +57,12 @@ impl UbxMgaIniTimeUtc {
         self.data.hour = utc.hour() as u8;
         self.data.minute = utc.minute() as u8;
         self.data.second = utc.second() as u8;
-        self.data.ns = 0;   // dt.microsecond * 1000.0
+        self.data.ns = 0; // dt.microsecond * 1000.0
 
         self.data.tacc_s = 10;
-        self.data.tacc_ns = 0;      // 999999999
-        // Accuracy 0 taken from u-center example
-        // not sure whether this is correct
+        self.data.tacc_ns = 0; // 999999999
+                               // Accuracy 0 taken from u-center example
+                               // not sure whether this is correct
     }
 
     fn save(&self) -> Vec<u8> {
@@ -97,7 +94,6 @@ impl UbxFrameSerialize for UbxMgaIniTimeUtc {
         // TODO: Combine to one statement
     }
 }
-
 
 #[cfg(test)]
 mod tests {

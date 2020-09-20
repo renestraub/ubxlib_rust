@@ -1,8 +1,7 @@
-use serde::{Serialize}; // , Deserialize};
+use serde::Serialize;
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize};  // , UbxFrameDeSerialize};
-
+use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize};
 
 const CLS: u8 = 0x09;
 const ID: u8 = 0x14;
@@ -109,7 +108,6 @@ impl UbxFrameDeSerialize for UbxUpdSos {
 }
 */
 
-
 #[derive(Default, Debug, Serialize)]
 pub struct DataAction {
     pub cmd: u8,
@@ -124,7 +122,6 @@ impl DataAction {
         }
     }
 }
-
 
 #[derive(Default, Debug)]
 pub struct UbxUpdSosAction {
@@ -182,7 +179,6 @@ impl UbxFrameSerialize for UbxUpdSosAction {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -191,13 +187,13 @@ mod tests {
     fn backup() {
         let dut = UbxUpdSosAction::backup();
         let msg = dut.to_bin();
-        assert_eq!(msg[..10], [0xb5, 0x62, 0x09, 0x14, 4, 0,  0, 0, 0, 0]);
+        assert_eq!(msg[..10], [0xb5, 0x62, 0x09, 0x14, 4, 0, 0, 0, 0, 0]);
     }
 
     #[test]
     fn clear() {
         let dut = UbxUpdSosAction::clear();
         let msg = dut.to_bin();
-        assert_eq!(msg[..10], [0xb5, 0x62, 0x09, 0x14, 4, 0,  1, 0, 0, 0]);
+        assert_eq!(msg[..10], [0xb5, 0x62, 0x09, 0x14, 4, 0, 1, 0, 0, 0]);
     }
 }

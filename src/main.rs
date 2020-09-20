@@ -1,37 +1,37 @@
-mod config_file;
 mod checksum;
 mod cid;
+mod config_file;
 mod frame;
-mod parser;
-mod neo_m8;
 mod gnss_mgr;
+mod neo_m8;
+mod parser;
 mod server_tty;
-mod ubx_cfg_esfla;
-mod ubx_cfg_esfalg;
-mod ubx_cfg_nav5;
-mod ubx_cfg_rate;
-mod ubx_cfg_nmea;
-mod ubx_cfg_rst;
 mod ubx_cfg_cfg;
+mod ubx_cfg_esfalg;
+mod ubx_cfg_esfla;
+mod ubx_cfg_nav5;
+mod ubx_cfg_nmea;
 mod ubx_cfg_prt;
+mod ubx_cfg_rate;
+mod ubx_cfg_rst;
+mod ubx_mga_init_time_utc;
 mod ubx_mon_ver;
 mod ubx_upd_sos;
-mod ubx_mga_init_time_utc;
 
+use std::env;
 use std::fs;
 use std::os::unix::fs::FileTypeExt;
-use std::env;
 use std::path::Path;
 use std::process::Command;
 
-use clap::{crate_version, Arg, ArgMatches, App, SubCommand};
+use env_logger::Builder;
+use log::LevelFilter;
+
+use clap::{crate_version, App, Arg, ArgMatches, SubCommand};
 
 use crate::gnss_mgr::GnssMgr;
 
-
 fn main() {
-    env_logger::init();
-
     let app = setup_arg_parse();
     let matches = app.get_matches();
 
@@ -39,24 +39,26 @@ fn main() {
 
     std::process::exit(match rc {
         Ok(_) => 0,
-        Err(err) => { eprintln!("error: {}", err); 1 }
+        Err(err) => {
+            eprintln!("error: {}", err);
+            1
+        }
     });
 }
 
 fn run_app(matches: ArgMatches) -> Result<(), String> {
     // Parse logger options -v/-q (mutually exclusive)
+    let mut builder = Builder::new();
     if matches.is_present("verbose") {
-        println!("verbose");
+        builder.filter(None, LevelFilter::Debug).init();
+    } else if matches.is_present("quiet") {
+        builder.filter(None, LevelFilter::Warn).init();
+    } else {
+        builder.filter(None, LevelFilter::Info).init();
     }
-    if matches.is_present("quiet") {
-        println!("quiet");
-    }
-    // TODO: See how we can map this to env_logger
-    // Enable logger only below this check and modify ENV before?
 
-    // Devicename
     // unwrap must never fail here, as argument is checked by parser already
-    let device_name = matches.value_of("device").unwrap();  
+    let device_name = matches.value_of("device").unwrap();
 
     // Check that specified device exists
     let device_exists = Path::new(device_name).exists();
@@ -72,32 +74,33 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
             if !file_type.is_char_device() {
                 return Err(format!("Device {} is not a character device", device_name).to_string());
             }
-        },
+        }
         Err(_) => return Err(String::from("cannot determine device type")),
     }
 
     // Check if device is in use, if so abort
     let output = Command::new("fuser").args(&[device_name]).output();
     match output {
-        Ok(o) => { 
+        Ok(o) => {
             if o.stdout.len() > 0 {
                 let pid = String::from_utf8_lossy(&o.stdout);
                 let pid = pid.trim();
-                return Err(format!("another process (PID:{}) is accessing the receiver", &pid).to_string());
+                return Err(
+                    format!("another process (PID:{}) is accessing the receiver", &pid).to_string(),
+                );
             }
-        },
+        }
         Err(e) => return Err(format!("error executing fuser command {:?}", e).to_string()),
     }
 
     let mut gnss = GnssMgr::new(device_name);
 
     // The "init" command checks the current bitrate and changes to 115200 if required.
+    // all other subcommand use the modem at 115200.
     let bitrate = match matches.subcommand() {
-        ("init", Some(_)) => {
-            match gnss.prepare_port() {
-                Ok(br) => br,
-                Err(e) => return Err(format!("{}", e).to_string()),
-            }
+        ("init", Some(_)) => match gnss.prepare_port() {
+            Ok(br) => br,
+            Err(e) => return Err(format!("{}", e).to_string()),
         },
         _ => 115200,
     };
@@ -118,6 +121,7 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
 }
 
 fn setup_arg_parse() -> App<'static, 'static> {
+    #[rustfmt::skip]
     let app = App::new("gnss manager utility")
         .version(crate_version!())
         .about("Operates and configures u-blox NEO GNSS modems")
@@ -143,7 +147,6 @@ fn setup_arg_parse() -> App<'static, 'static> {
                 .short("f")
                 .long("file")
                 .value_name("CONFIGFILE")
-                // .default_value("/etc/gnss/gnss0.conf")      // TODO: dynamic based on device name
                 .help("Path to configuration file")))
 
         .subcommand(SubCommand::with_name("control")

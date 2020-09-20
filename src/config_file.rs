@@ -1,14 +1,12 @@
-use std::path::Path;
 use ini::Ini;
 use log::{debug, info};
-
+use std::path::Path;
 
 #[derive(Debug, Default)]
 pub struct GnssMgrConfig {
     pub update_rate: Option<u16>,
     pub mode: Option<String>,
     // pub systems: (array of) Strings (or enums)  GPS;Galileo;Beidou;SBAS
-
     pub imu_yaw: Option<u16>,
     pub imu_pitch: Option<i16>,
     pub imu_roll: Option<i16>,
@@ -18,7 +16,7 @@ pub struct GnssMgrConfig {
 }
 
 impl GnssMgrConfig {
-    pub fn parse_config(&mut self, path: &str)  -> Result<(), String> {
+    pub fn parse_config(&mut self, path: &str) -> Result<(), String> {
         // Check if configfile exists
         let config_exists = Path::new(&path).exists();
         if !config_exists {
@@ -40,20 +38,29 @@ impl GnssMgrConfig {
             _ => return Err("Invalid configuration file format/version".to_string()),
         };
 
-
         // TODO: Combine in a nice getter with range check
         // Return Some(number) with valid content
         // or Err("....")
         let keyname = "update-rate";
         let value = match sec_general.get(keyname) {
-            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
-            Some(x) => {
-                match x.parse::<u16>() {
-                    Ok(y) if y <= 2 => { info!("using {} for {}", x, keyname); Some(y) },
-                    Ok(_) | Err(_) => { info!("invalid value {} for key {}", x, keyname); None },
+            Some("") => {
+                info!("no value for {} specified, ignoring", keyname);
+                None
+            }
+            Some(x) => match x.parse::<u16>() {
+                Ok(y) if y <= 2 => {
+                    info!("using {} for {}", x, keyname);
+                    Some(y)
+                }
+                Ok(_) | Err(_) => {
+                    info!("invalid value {} for key {}", x, keyname);
+                    None
                 }
             },
-            _ => { info!("key '{}' not defined", keyname); None },
+            _ => {
+                info!("key '{}' not defined", keyname);
+                None
+            }
         };
         self.update_rate = value;
 
@@ -65,13 +72,20 @@ impl GnssMgrConfig {
         let keyname = "mode";
         let valid_args = vec!["stationary", "vehicle"];
         let value = match sec_navigation.get(keyname) {
-            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
-            Some(x) if valid_args.contains(&x) => { info!("using {} for {}", x, keyname); Some(String::from(x)) },
-            _ => { info!("key '{}' not defined", keyname); None },
+            Some("") => {
+                info!("no value for {} specified, ignoring", keyname);
+                None
+            }
+            Some(x) if valid_args.contains(&x) => {
+                info!("using {} for {}", x, keyname);
+                Some(String::from(x))
+            }
+            _ => {
+                info!("key '{}' not defined", keyname);
+                None
+            }
         };
         self.mode = value;
-
-
 
         let sec_installation = match conf.section(Some("installation")) {
             Some(sec) => sec,
@@ -80,65 +94,110 @@ impl GnssMgrConfig {
 
         let keyname = "yaw";
         let value = match sec_installation.get(keyname) {
-            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
-            Some(x) => {
-                match x.parse::<u16>() {
-                    Ok(y) if y <= 360 => { info!("using {} for {}", x, keyname); Some(y) },
-                    Ok(_) | Err(_) => { info!("invalid value {} for key {}", x, keyname); None },
+            Some("") => {
+                info!("no value for {} specified, ignoring", keyname);
+                None
+            }
+            Some(x) => match x.parse::<u16>() {
+                Ok(y) if y <= 360 => {
+                    info!("using {} for {}", x, keyname);
+                    Some(y)
+                }
+                Ok(_) | Err(_) => {
+                    info!("invalid value {} for key {}", x, keyname);
+                    None
                 }
             },
-            _ => { info!("key '{}' not defined", keyname); None },
+            _ => {
+                info!("key '{}' not defined", keyname);
+                None
+            }
         };
         self.imu_yaw = value;
 
         let keyname = "pitch";
         let value = match sec_installation.get(keyname) {
-            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
-            Some(x) => {
-                match x.parse::<i16>() {
-                    Ok(y) if y >= -90 && y <= 90 => { info!("using {} for {}", x, keyname); Some(y) },
-                    Ok(_) | Err(_) => { info!("invalid value {} for key {}", x, keyname); None },
+            Some("") => {
+                info!("no value for {} specified, ignoring", keyname);
+                None
+            }
+            Some(x) => match x.parse::<i16>() {
+                Ok(y) if y >= -90 && y <= 90 => {
+                    info!("using {} for {}", x, keyname);
+                    Some(y)
+                }
+                Ok(_) | Err(_) => {
+                    info!("invalid value {} for key {}", x, keyname);
+                    None
                 }
             },
-            _ => { info!("key '{}' not defined", keyname); None },
+            _ => {
+                info!("key '{}' not defined", keyname);
+                None
+            }
         };
         self.imu_pitch = value;
 
         let keyname = "roll";
         let value = match sec_installation.get(keyname) {
-            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
-            Some(x) => {
-                match x.parse::<i16>() {
-                    Ok(y) if y >= -180 && y <= 180 => { info!("using {} for {}", x, keyname); Some(y) },
-                    Ok(_) | Err(_) => { info!("invalid value {} for key {}", x, keyname); None },
+            Some("") => {
+                info!("no value for {} specified, ignoring", keyname);
+                None
+            }
+            Some(x) => match x.parse::<i16>() {
+                Ok(y) if y >= -180 && y <= 180 => {
+                    info!("using {} for {}", x, keyname);
+                    Some(y)
+                }
+                Ok(_) | Err(_) => {
+                    info!("invalid value {} for key {}", x, keyname);
+                    None
                 }
             },
-            _ => { info!("key '{}' not defined", keyname); None },
+            _ => {
+                info!("key '{}' not defined", keyname);
+                None
+            }
         };
         self.imu_roll = value;
 
-
-
         let keyname = "vrp2antenna";
         let value = match sec_installation.get(keyname) {
-            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
-            Some(x) => { info!("using {} for {}", x, keyname); Xyz::from_str(&x) },
-            _ => { info!("key '{}' not defined", keyname); None },
+            Some("") => {
+                info!("no value for {} specified, ignoring", keyname);
+                None
+            }
+            Some(x) => {
+                info!("using {} for {}", x, keyname);
+                Xyz::from_str(&x)
+            }
+            _ => {
+                info!("key '{}' not defined", keyname);
+                None
+            }
         };
         self.vrp2antenna = value;
 
         let keyname = "vrp2imu";
         let value = match sec_installation.get(keyname) {
-            Some("") => { info!("no value for {} specified, ignoring", keyname); None },
-            Some(x) => { info!("using {} for {}", x, keyname); Xyz::from_str(&x) },
-            _ => { info!("key '{}' not defined", keyname); None },
+            Some("") => {
+                info!("no value for {} specified, ignoring", keyname);
+                None
+            }
+            Some(x) => {
+                info!("using {} for {}", x, keyname);
+                Xyz::from_str(&x)
+            }
+            _ => {
+                info!("key '{}' not defined", keyname);
+                None
+            }
         };
         self.vrp2imu = value;
 
         Ok(())
     }
 }
-
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Xyz {
@@ -158,16 +217,16 @@ impl Xyz {
         }
 
         let mut obj: Self = Default::default();
-        let tokens:Vec<&str>= text.split(";").collect();
+        let tokens: Vec<&str> = text.split(";").collect();
         if tokens.len() != 3 {
             return None;
         }
 
-        debug!("x is {}",tokens[0]);
-        debug!("y is {}",tokens[1]);
-        debug!("z is {}",tokens[2]);
+        // debug!("x is {}", tokens[0]);
+        // debug!("y is {}", tokens[1]);
+        // debug!("z is {}", tokens[2]);
 
-        let x = Xyz::parse_float(tokens[0]);    // TODO: check here and return with error message (.or_else, ...)
+        let x = Xyz::parse_float(tokens[0]); // TODO: check here and return with error message (.or_else, ...)
         let y = Xyz::parse_float(tokens[1]);
         let z = Xyz::parse_float(tokens[2]);
         if x.is_ok() && y.is_ok() && z.is_ok() {
@@ -175,8 +234,7 @@ impl Xyz {
             obj.y = y.unwrap();
             obj.z = z.unwrap();
             Some(obj)
-        }
-        else {
+        } else {
             None
         }
     }
@@ -188,7 +246,6 @@ impl Xyz {
         }
     }
 }
-
 
 #[cfg(test)]
 mod xyz_reader {
@@ -248,7 +305,6 @@ mod xyz_reader {
     */
 }
 
-
 #[cfg(test)]
 mod file_and_format {
     use super::*;
@@ -281,7 +337,6 @@ mod file_and_format {
         assert_eq!(res.is_err(), true);
     }
 }
-
 
 #[cfg(test)]
 mod update_rate {
@@ -328,7 +383,6 @@ mod update_rate {
     }
 }
 
-
 #[cfg(test)]
 mod mode {
     use super::*;
@@ -372,7 +426,6 @@ mod mode {
         assert_eq!(config.mode.is_none(), true);
     }
 }
-
 
 #[cfg(test)]
 mod imu_angles {
@@ -424,7 +477,6 @@ mod imu_angles {
         assert_eq!(config.imu_roll, Some(45));
     }
 }
-
 
 #[cfg(test)]
 mod vrp_antenna {

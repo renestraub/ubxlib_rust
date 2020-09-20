@@ -1,10 +1,8 @@
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
-
+use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 
 const CLS: u8 = 0x0A;
 const ID: u8 = 0x04;
-
 
 pub struct UbxMonVerPoll {
     pub name: &'static str,
@@ -39,7 +37,6 @@ impl UbxFrameSerialize for UbxMonVerPoll {
     }
 }
 
-
 #[derive(Default, Debug)]
 pub struct UbxMonVer {
     pub name: &'static str,
@@ -72,7 +69,7 @@ impl UbxMonVer {
             let mut offset = 40;
             let size = 30;
             while offset < bytes {
-                let text = UbxMonVer::extract_string(&data[offset..offset+size]);
+                let text = UbxMonVer::extract_string(&data[offset..offset + size]);
                 self.hw_extension.push(text);
 
                 offset += size;
@@ -102,7 +99,6 @@ impl UbxFrameDeSerialize for UbxMonVer {
         self.load(&data);
     }
 }
-
 
 #[cfg(test)]
 mod tests {

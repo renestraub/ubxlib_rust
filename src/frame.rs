@@ -1,8 +1,7 @@
 use std::fmt;
 
-use crate::cid::UbxCID;
 use crate::checksum::Checksum;
-
+use crate::cid::UbxCID;
 
 pub trait UbxFrameInfo {
     fn name(&self) -> String;
@@ -17,15 +16,14 @@ pub trait UbxFrameDeSerialize {
     fn from_bin(&mut self, data: Vec<u8>);
 }
 
-
 #[derive(Default)]
 pub struct UbxFrame {
     pub cid: UbxCID,
-    pub data: Vec::<u8>,
+    pub data: Vec<u8>,
 }
 
 impl UbxFrame {
-    #[cfg(test)]    // only for test, remove later?
+    #[cfg(test)] // only for test, remove later?
     pub fn new() -> Self {
         //..Default::default()
         Self {
@@ -43,10 +41,10 @@ impl UbxFrame {
     }
     */
 
-    pub fn construct(cid: UbxCID, data: Vec::<u8>) -> Self {
+    pub fn construct(cid: UbxCID, data: Vec<u8>) -> Self {
         Self {
             cid: cid,
-            data: data
+            data: data,
         }
     }
 
@@ -65,8 +63,8 @@ impl UbxFrame {
         checksum.add(id);
 
         let length = self.data.len();
-        msg.push(((length >> 0) & 0xFF) as u8);   // TODO: proper pack/unpack crate
-        msg.push(((length >> 8) & 0xFF) as u8);   // TODO: there is surely one
+        msg.push(((length >> 0) & 0xFF) as u8); // TODO: proper pack/unpack crate
+        msg.push(((length >> 8) & 0xFF) as u8); // TODO: there is surely one
         checksum.add(((length >> 0) & 0xFF) as u8);
         checksum.add(((length >> 8) & 0xFF) as u8);
 
@@ -87,13 +85,12 @@ impl UbxFrame {
 impl fmt::Debug for UbxFrame {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Frame")
-         .field("cid", &self.cid)
-         .field("len", &self.data.len())
-         .field("data", &self.data)
-         .finish()
+            .field("cid", &self.cid)
+            .field("len", &self.data.len())
+            .field("data", &self.data)
+            .finish()
     }
 }
-
 
 #[cfg(test)]
 mod tests {

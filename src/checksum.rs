@@ -2,7 +2,7 @@
  * u-blox checksum computation
  */
 
- #[derive(Debug)]
+#[derive(Debug)]
 pub struct Checksum {
     cka: u8,
     ckb: u8,
@@ -18,7 +18,7 @@ impl Checksum {
     }
 
     pub fn matches(&self, cka: u8, ckb: u8) -> bool {
-        return self.cka == cka && self.ckb == ckb
+        return self.cka == cka && self.ckb == ckb;
     }
 
     pub fn reset(&mut self) {
@@ -31,7 +31,6 @@ impl Checksum {
         self.ckb = (self.ckb as usize + self.cka as usize) as u8;
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -55,14 +54,14 @@ mod tests {
         assert_eq!(ok, true);
     }
 
-
     #[test]
     fn calculation() {
         /* B5 62 13 40 18 00 10 00 00 12 E4 07 09 05 06 28 30 00 40 28 EF 0C 0A 00 00 00 00 00 00 00 51 AC   */
         /* hdr  | <--                                 checksum                                  --> | chksum */
-        let frame = vec![0x13, 0x40, 0x18, 0x00, 0x10, 0x00, 0x00, 0x12, 0xE4, 0x07, 0x09, 0x05,
-                         0x06, 0x28, 0x30, 0x00, 0x40, 0x28, 0xEF, 0x0C, 0x0A, 0x00, 0x00, 0x00,
-                         0x00, 0x00, 0x00, 0x00];
+        let frame = vec![
+            0x13, 0x40, 0x18, 0x00, 0x10, 0x00, 0x00, 0x12, 0xE4, 0x07, 0x09, 0x05, 0x06, 0x28,
+            0x30, 0x00, 0x40, 0x28, 0xEF, 0x0C, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
         let mut uut = Checksum::new();
         for byte in frame.iter() {
             uut.add(*byte);
@@ -72,69 +71,68 @@ mod tests {
     }
 
     /*
-    #[test]
-    fn calculation_2() {
-        /* UBX-NAV-VELECEF 20 */
-        /*      Cls Id| Len |  iTow     |  ecefVX   |  ecefVY   | ecefVZ    |  sAcc     |        */
-        /* B5 62 01 11 14 00 a8 a4 57 01 ff ff ff ff ff ff ff ff fe ff ff ff 19 00 00 00 B5 62   */
-        /*       01 11 14 00 f8 98 35 02 01 00 00 00 00 00 00 00 00 00 00 00 15 00 00 00 4d 75d */
+        #[test]
+        fn calculation_2() {
+            /* UBX-NAV-VELECEF 20 */
+            /*      Cls Id| Len |  iTow     |  ecefVX   |  ecefVY   | ecefVZ    |  sAcc     |        */
+            /* B5 62 01 11 14 00 a8 a4 57 01 ff ff ff ff ff ff ff ff fe ff ff ff 19 00 00 00 B5 62   */
+            /*       01 11 14 00 f8 98 35 02 01 00 00 00 00 00 00 00 00 00 00 00 15 00 00 00 4d 75d */
 
-        /* hdr  | <--                         checksum                              --> | chksum */
-        let frame = vec![0x01, 0x11, 0x00, 0x14, 0xa8, 0xa4, 0x57, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff,
-                         0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0x19, 0x00, 0x00, 0x00];
-        let mut uut = Checksum::new();
-        for byte in frame.iter() {
-            uut.add(*byte);
+            /* hdr  | <--                         checksum                              --> | chksum */
+            let frame = vec![0x01, 0x11, 0x00, 0x14, 0xa8, 0xa4, 0x57, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff,
+                             0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0x19, 0x00, 0x00, 0x00];
+            let mut uut = Checksum::new();
+            for byte in frame.iter() {
+                uut.add(*byte);
+            }
+            let (a,b) = uut.value();
+            println!("{:02x} {:02x}", a, b);    // --> d6 (214), 9c (156)
+            let ok = uut.matches(0x51, 0xAC);
+            assert_eq!(ok, true);
         }
-        let (a,b) = uut.value();
-        println!("{:02x} {:02x}", a, b);    // --> d6 (214), 9c (156)
-        let ok = uut.matches(0x51, 0xAC);
-        assert_eq!(ok, true);
-    }
 
 
-    #[test]
-    fn calculation_3() {
-        /* UBX-NAV-DOP (0x01 0x04) ? */
-        /*      Cls Id| Len |           |           |           |           |     |      */
-        /* B5 62 01 00 12 00 a8 a4 57 01 f3 00 d3 00 79 00 c1 00 54 00 3d 00 3a 00 86 55 */
-        /* hdr  | <--                         checksum                              --> | chksum */
-        let frame = vec![0x01, 0x00, 0x12, 0x00, 0xa8, 0xa4, 0x57, 0x01, 0xf3, 0x00, 0xd3,
-                         0x00, 0x79, 0x00, 0xc1, 0x00, 0x54, 0x00, 0x3d, 0x00, 0x3a, 0x00, 0x86, 0x55];
-        let mut uut = Checksum::new();
-        for byte in frame.iter() {
-            uut.add(*byte);
+        #[test]
+        fn calculation_3() {
+            /* UBX-NAV-DOP (0x01 0x04) ? */
+            /*      Cls Id| Len |           |           |           |           |     |      */
+            /* B5 62 01 00 12 00 a8 a4 57 01 f3 00 d3 00 79 00 c1 00 54 00 3d 00 3a 00 86 55 */
+            /* hdr  | <--                         checksum                              --> | chksum */
+            let frame = vec![0x01, 0x00, 0x12, 0x00, 0xa8, 0xa4, 0x57, 0x01, 0xf3, 0x00, 0xd3,
+                             0x00, 0x79, 0x00, 0xc1, 0x00, 0x54, 0x00, 0x3d, 0x00, 0x3a, 0x00, 0x86, 0x55];
+            let mut uut = Checksum::new();
+            for byte in frame.iter() {
+                uut.add(*byte);
+            }
+            let (a,b) = uut.value();
+            println!("{:02x} {:02x}", a, b);    // --> d6 (214), 9c (156)
+            let ok = uut.matches(0x51, 0xAC);
+            assert_eq!(ok, true);
         }
-        let (a,b) = uut.value();
-        println!("{:02x} {:02x}", a, b);    // --> d6 (214), 9c (156)
-        let ok = uut.matches(0x51, 0xAC);
-        assert_eq!(ok, true);
-    }
 
-    #[test]
-    fn calculation_4() {
-        /* UBX-NAV-POSECEF */
-        /* checksum computed (90, 79) */
-        /*      Cls Id| Len |           |           |           |           |           |        */
-        /* B5 62 01 01 14 00 f8 59 78 03 12 48 00 19 f7 f8 94 03 af 34 d0 1b b0 01 00 00 236 75  */
-        /* hdr  | <--                         checksum                              --> | chksum */
-        let frame = vec![0x01, 0x01, 0x14, 0x00, 0xf8, 0x59, 0x78, 0x03, 0x12, 0x48, 0x00, 0x19, 0xf7, 0xf8, 0x94, 0x03, 0xaf, 0x34, 0xd0, 0x1b, 0xb0, 0x01, 0x00, 0x00];
-        let mut uut = Checksum::new();
-        for byte in frame.iter() {
-            uut.add(*byte);
+        #[test]
+        fn calculation_4() {
+            /* UBX-NAV-POSECEF */
+            /* checksum computed (90, 79) */
+            /*      Cls Id| Len |           |           |           |           |           |        */
+            /* B5 62 01 01 14 00 f8 59 78 03 12 48 00 19 f7 f8 94 03 af 34 d0 1b b0 01 00 00 236 75  */
+            /* hdr  | <--                         checksum                              --> | chksum */
+            let frame = vec![0x01, 0x01, 0x14, 0x00, 0xf8, 0x59, 0x78, 0x03, 0x12, 0x48, 0x00, 0x19, 0xf7, 0xf8, 0x94, 0x03, 0xaf, 0x34, 0xd0, 0x1b, 0xb0, 0x01, 0x00, 0x00];
+            let mut uut = Checksum::new();
+            for byte in frame.iter() {
+                uut.add(*byte);
+            }
+            let (a,b) = uut.value();
+            println!("{:02x} {:02x}", a, b);    // --> 0x5a (90), 0x4f (79) -> Ok, but payload checksum is wrong: 0xEC (236), 0x4B (75)
+            let ok = uut.matches(0x51, 0xAC);
+            assert_eq!(ok, true);
+
+            // 0x4B   0100 1011    0x5A  0101 1010
+            // 0x4F   0100 1111    0xEC  1110 1100
+            //              ^
         }
-        let (a,b) = uut.value();
-        println!("{:02x} {:02x}", a, b);    // --> 0x5a (90), 0x4f (79) -> Ok, but payload checksum is wrong: 0xEC (236), 0x4B (75)
-        let ok = uut.matches(0x51, 0xAC);
-        assert_eq!(ok, true);
-
-        // 0x4B   0100 1011    0x5A  0101 1010
-        // 0x4F   0100 1111    0xEC  1110 1100
-        //              ^
-    }
-*/
+    */
 }
-
 
 /*
 UBX-NAV-POSECEF

@@ -1,14 +1,12 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
-
+use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x00;
 
 const PORTID_UART: u8 = 1;
-
 
 #[derive(Default, Debug, Serialize)]
 pub struct DataPoll {
@@ -22,7 +20,6 @@ impl DataPoll {
         }
     }
 }
-
 
 #[derive(Default, Debug)]
 pub struct UbxCfgPrtPoll {
@@ -59,7 +56,6 @@ impl UbxFrameSerialize for UbxCfgPrtPoll {
         msg
     }
 }
-
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -145,7 +141,6 @@ impl UbxFrameDeSerialize for UbxCfgPrtUart {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -166,6 +161,6 @@ mod tests {
         dut.data.baudrate = 115200;
         let msg = dut.to_bin();
         assert_eq!(msg[0..6], [0xb5, 0x62, 0x06, 0x00, 20, 0]);
-        assert_eq!(msg[6+8..6+12], [0, 194, 1, 0]);
+        assert_eq!(msg[6 + 8..6 + 12], [0, 194, 1, 0]);
     }
 }

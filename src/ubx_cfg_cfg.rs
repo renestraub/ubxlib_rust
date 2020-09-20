@@ -1,15 +1,12 @@
-use serde::{Serialize};
+use serde::Serialize;
 
 use crate::cid::UbxCID;
 use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize};
 
-
 const CLS: u8 = 0x06;
 const ID: u8 = 0x09;
 
-
 const MASK_ALL: u32 = 0x00001F1F;
-
 
 #[derive(Default, Debug, Serialize)]
 pub struct Data {
@@ -29,7 +26,6 @@ impl Data {
         }
     }
 }
-
 
 #[derive(Default, Debug)]
 pub struct UbxCfgCfgAction {
@@ -85,7 +81,6 @@ impl UbxFrameSerialize for UbxCfgCfgAction {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -94,7 +89,13 @@ mod tests {
     fn factory_reset() {
         let dut = UbxCfgCfgAction::factory_reset();
         let msg = dut.to_bin();
-        assert_eq!(msg[0..18], [0xb5, 0x62, 0x06, 0x09, 12, 0, 0x1f, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x1f, 0x00, 0x00]);
+        assert_eq!(
+            msg[0..18],
+            [
+                0xb5, 0x62, 0x06, 0x09, 12, 0, 0x1f, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x1f, 0x1f, 0x00, 0x00
+            ]
+        );
         //                      B5      62    06    09  0D 00  FF      FB    00    00    00    00    00    00    FF    FF    00    00   17  2B 7E
     }
 
@@ -102,7 +103,13 @@ mod tests {
     fn persist() {
         let dut = UbxCfgCfgAction::persist();
         let msg = dut.to_bin();
-        assert_eq!(msg[..18], [0xb5, 0x62, 0x06, 0x09, 12, 0, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        assert_eq!(
+            msg[..18],
+            [
+                0xb5, 0x62, 0x06, 0x09, 12, 0, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x1f, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00
+            ]
+        );
         //                       B5    62    06    09  0D 00    00    00    00    00    FF    FF    00    00    00    00    00    00   17   31 BF
     }
 }

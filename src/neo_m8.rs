@@ -1,22 +1,21 @@
-use std::{thread, time};
-use std::collections::HashMap;
-use log::{debug, info};
 use chrono::prelude::*;
+use log::{debug, info};
+use std::collections::HashMap;
+use std::{thread, time};
 
-use crate::config_file::{Xyz};
+use crate::config_file::Xyz;
 use crate::server_tty::ServerTty;
-use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
-use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
-use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
-use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
-use crate::ubx_cfg_rst::UbxCfgRstAction;
 use crate::ubx_cfg_cfg::UbxCfgCfgAction;
-use crate::ubx_cfg_prt::{UbxCfgPrtPoll, UbxCfgPrtUart};
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
-use crate::ubx_upd_sos::UbxUpdSosAction;
+use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
+use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
+use crate::ubx_cfg_prt::{UbxCfgPrtPoll, UbxCfgPrtUart};
+use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
+use crate::ubx_cfg_rst::UbxCfgRstAction;
 use crate::ubx_mga_init_time_utc::UbxMgaIniTimeUtc;
-
+use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
+use crate::ubx_upd_sos::UbxUpdSosAction;
 
 // TODO: Return error code from each function
 
@@ -32,12 +31,12 @@ impl NeoM8 {
             server: ServerTty::new(device),
         }
     }
-    
+
     pub fn detect_baudrate(&mut self) -> Result<usize, &'static str> {
         self.server.detect_baudrate()
     }
 
-    pub fn open(&mut self, bitrate: usize)-> Result<(), &'static str> {
+    pub fn open(&mut self, bitrate: usize) -> Result<(), &'static str> {
         self.server.open(bitrate)
     }
 
@@ -97,7 +96,9 @@ impl NeoM8 {
         let set = UbxCfgCfgAction::factory_reset();
         self.server.fire_and_forget(&set);
 
-        info!("Reset GNSS receiver configuration to default, let receiver start with default config");
+        info!(
+            "Reset GNSS receiver configuration to default, let receiver start with default config"
+        );
 
         // Factory reset can lead to change of bitrate, no acknowledge can be received then
         // Give receiver time before commanding next message

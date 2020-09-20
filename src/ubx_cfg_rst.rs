@@ -1,8 +1,7 @@
-use serde::{Serialize};
+use serde::Serialize;
 
 use crate::cid::UbxCID;
 use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize};
-
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x04;
@@ -51,7 +50,6 @@ const SW_RESET: u8 = 0x01;
 const STOP: u8 = 0x08;
 // const START: u8 = 0x09;
 
-
 #[derive(Default, Debug, Serialize)]
 pub struct Data {
     // pub nav_bbr_mask: BbrMask,
@@ -70,7 +68,6 @@ impl Data {
         }
     }
 }
-
 
 #[derive(Default, Debug)]
 pub struct UbxCfgRstAction {
@@ -96,27 +93,26 @@ impl UbxCfgRstAction {
         }
     }
 
-
     // TODO: Realize the following as constructors
     // simper to use, just a bit more code here
-/*
-    pub fn warm_start(&mut self) {
-        self.data.reset_mode = SW_RESET;
-        self.data.nav_bbr_mask = WARM_START;
-    }
-*/
+    /*
+        pub fn warm_start(&mut self) {
+            self.data.reset_mode = SW_RESET;
+            self.data.nav_bbr_mask = WARM_START;
+        }
+    */
 
-/*
-    pub fn start(&mut self) {
-        self.data.reset_mode = START;
-        self.data.nav_bbr_mask = HOT_START;
-    }
+    /*
+        pub fn start(&mut self) {
+            self.data.reset_mode = START;
+            self.data.nav_bbr_mask = HOT_START;
+        }
 
-    pub fn stop(&mut self) {
-        self.data.reset_mode = STOP;
-        self.data.nav_bbr_mask = HOT_START;
-    }
-*/
+        pub fn stop(&mut self) {
+            self.data.reset_mode = STOP;
+            self.data.nav_bbr_mask = HOT_START;
+        }
+    */
 
     fn save(&self) -> Vec<u8> {
         let data = bincode::serialize(&self.data).unwrap();
@@ -148,7 +144,6 @@ impl UbxFrameSerialize for UbxCfgRstAction {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,13 +152,19 @@ mod tests {
     fn cold_start() {
         let dut = UbxCfgRstAction::cold_start();
         let msg = dut.to_bin();
-        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x04, 4, 0,  0xFF, 0xFF, 0x01, 0, 13, 95]);
+        assert_eq!(
+            msg,
+            [0xb5, 0x62, 0x06, 0x04, 4, 0, 0xFF, 0xFF, 0x01, 0, 13, 95]
+        );
     }
 
     #[test]
     fn stop() {
         let dut = UbxCfgRstAction::stop();
         let msg = dut.to_bin();
-        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x04, 4, 0,  0x00, 0x00, 0x08, 0, 22, 116]);
+        assert_eq!(
+            msg,
+            [0xb5, 0x62, 0x06, 0x04, 4, 0, 0x00, 0x00, 0x08, 0, 22, 116]
+        );
     }
 }

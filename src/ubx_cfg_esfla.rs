@@ -3,10 +3,8 @@ use serde::Serialize;
 use crate::cid::UbxCID;
 use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize};
 
-
 const CLS: u8 = 0x06;
 const ID: u8 = 0x2F;
-
 
 #[derive(Default, Debug, Serialize)]
 pub struct Data {
@@ -30,7 +28,6 @@ impl Data {
         }
     }
 }
-
 
 #[derive(Default, Debug)]
 pub struct UbxCfgEsflaSet {
@@ -77,7 +74,6 @@ impl UbxFrameSerialize for UbxCfgEsflaSet {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -92,7 +88,13 @@ mod tests {
         dut.data.leverarm_z = 1000;
 
         let msg = dut.to_bin();
-        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x2F, 12, 0, 0x00, 0x01, 0x00, 0x00, 2, 0x00, 127, 0, 255, 0, 0xe8, 0x03, 173, 173]);
+        assert_eq!(
+            msg,
+            [
+                0xb5, 0x62, 0x06, 0x2F, 12, 0, 0x00, 0x01, 0x00, 0x00, 2, 0x00, 127, 0, 255, 0,
+                0xe8, 0x03, 173, 173
+            ]
+        );
     }
 
     #[test]
@@ -105,6 +107,12 @@ mod tests {
         dut.data.leverarm_z = -1000;
 
         let msg = dut.to_bin();
-        assert_eq!(msg, [0xb5, 0x62, 0x06, 0x2F, 12, 0, 0x00, 0x01, 0x00, 0x00, 3, 0x00, 129, 255, 1, 255, 24, 252, 217, 26]);
+        assert_eq!(
+            msg,
+            [
+                0xb5, 0x62, 0x06, 0x2F, 12, 0, 0x00, 0x01, 0x00, 0x00, 3, 0x00, 129, 255, 1, 255,
+                24, 252, 217, 26
+            ]
+        );
     }
 }

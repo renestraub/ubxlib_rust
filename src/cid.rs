@@ -1,8 +1,6 @@
 use std::fmt;
 
-#[derive(Default)]
-#[derive(Hash, Eq)]
-#[derive(Clone, Copy)]
+#[derive(Default, Hash, Eq, Clone, Copy)]
 pub struct UbxCID {
     cls: u8,
     id: u8,
@@ -30,10 +28,9 @@ impl PartialEq for UbxCID {
 
 impl fmt::Debug for UbxCID {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-         write!(f, "CID: 0x{:02x} 0x{:02x}", self.cls, self.id)
+        write!(f, "CID: 0x{:02x} 0x{:02x}", self.cls, self.id)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

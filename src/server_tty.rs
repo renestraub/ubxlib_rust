@@ -1,14 +1,13 @@
 use std::io::prelude::*;
-use std::time::Instant;
 use std::time::Duration;
+use std::time::Instant;
 
 use log::{debug, info, warn};
 use serial::prelude::*;
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
-use crate::parser::{Parser, Packet};
-
+use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
+use crate::parser::{Packet, Parser};
 
 pub struct ServerTty {
     device_name: String,
@@ -42,23 +41,28 @@ impl ServerTty {
             match self.serial_port.as_mut() {
                 Some(port) => {
                     let settings = serial::PortSettings {
-                        baud_rate:    serial::BaudRate::from_speed(*baud),
-                        char_size:    serial::Bits8,
-                        parity:       serial::ParityNone,
-                        stop_bits:    serial::Stop1,
+                        baud_rate: serial::BaudRate::from_speed(*baud),
+                        char_size: serial::Bits8,
+                        parity: serial::ParityNone,
+                        stop_bits: serial::Stop1,
                         flow_control: serial::FlowNone,
                     };
 
                     port.configure(&settings).unwrap();
                     port.set_timeout(Duration::from_millis(100)).unwrap();
-                },
+                }
                 _ => return Err("cannot configure serial port"),
             }
 
             // try to receive ubx or NMEA frames
             match self.scan() {
-                true => { return Ok(*baud); },
-                _ => { info!("bitrate {:?} not working", baud); (); },
+                true => {
+                    return Ok(*baud);
+                }
+                _ => {
+                    info!("bitrate {:?} not working", baud);
+                    ();
+                }
             }
         }
 
@@ -67,7 +71,7 @@ impl ServerTty {
         Err("cannot detect bitrate")
     }
 
-    pub fn open(&mut self, bitrate: usize)-> Result<(), &'static str> {
+    pub fn open(&mut self, bitrate: usize) -> Result<(), &'static str> {
         info!("opening {} with {} bps", self.device_name, bitrate);
 
         // self.serial_port = serial::open(&self.device_name)?; // TODO: check ?
@@ -80,17 +84,17 @@ impl ServerTty {
         match self.serial_port.as_mut() {
             Some(port) => {
                 let settings = serial::PortSettings {
-                    baud_rate:    serial::BaudRate::from_speed(bitrate),
-                    char_size:    serial::Bits8,
-                    parity:       serial::ParityNone,
-                    stop_bits:    serial::Stop1,
+                    baud_rate: serial::BaudRate::from_speed(bitrate),
+                    char_size: serial::Bits8,
+                    parity: serial::ParityNone,
+                    stop_bits: serial::Stop1,
                     flow_control: serial::FlowNone,
                 };
 
                 port.configure(&settings).unwrap();
                 port.set_timeout(Duration::from_millis(100)).unwrap();
                 return Ok(());
-            },
+            }
             _ => return Err("cannot configure serial port"),
         }
     }
@@ -103,8 +107,11 @@ impl ServerTty {
     ((- retries in case no answer is received))
     */
     // TODO: Return code caller must handle
-    pub fn poll<TPoll: UbxFrameInfo + UbxFrameSerialize, TAnswer: UbxFrameDeSerialize>(&mut self, frame_poll: &TPoll, frame_result: &mut TAnswer)
-    {
+    pub fn poll<TPoll: UbxFrameInfo + UbxFrameSerialize, TAnswer: UbxFrameDeSerialize>(
+        &mut self,
+        frame_poll: &TPoll,
+        frame_result: &mut TAnswer,
+    ) {
         debug!("polling {}", frame_poll.name());
 
         // We expect a response frame with the exact same CID
@@ -118,7 +125,7 @@ impl ServerTty {
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => warn!("poll: {}", e),    // TODO: Abort here? What about clear_filter()?
+            Err(e) => warn!("poll: {}", e), // TODO: Abort here? What about clear_filter()?
         }
 
         let payload = self.wait();
@@ -126,7 +133,7 @@ impl ServerTty {
             Ok(packet) => {
                 debug!("result received {:?}", packet.data);
                 frame_result.from_bin(packet.data);
-            },
+            }
             // BUG: clear_filter call not executed
             Err(_) => warn!("poll: timeout"),
         }
@@ -156,7 +163,7 @@ impl ServerTty {
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => warn!("set: {}", e),    // TODO: Abort here? What about clear_filter()?
+            Err(e) => warn!("set: {}", e), // TODO: Abort here? What about clear_filter()?
         }
 
         // Check proper response (ACK/NAK)
@@ -166,7 +173,7 @@ impl ServerTty {
                 debug!("ACK/NAK received {:?}", packet);
                 // TODO: Check ACK/NAK and CLS, ID in ACK
                 // packet.from_bin(packet.data);
-            },
+            }
             Err(_) => warn!("set: timeout"),
         }
 
@@ -189,7 +196,7 @@ impl ServerTty {
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => warn!("set: {}", e),    // TODO: Abort here? What about clear_filter()?
+            Err(e) => warn!("set: {}", e), // TODO: Abort here? What about clear_filter()?
         }
     }
 
@@ -205,11 +212,10 @@ impl ServerTty {
                 // debug!("{} bytes written", bytes_written);
                 if bytes_written == data.len() {
                     Ok(())
-                }
-                else {
+                } else {
                     Err("Write error, not all data written")
                 }
-            },
+            }
             Err(_) => Err("Write error"),
         }
     }
@@ -232,8 +238,8 @@ impl ServerTty {
 
                     // process() places all decoded frames in response_queue
                     self.parser.process(&data);
-                },
-                Err(_) => (),   // no data, just continue
+                }
+                Err(_) => (), // no data, just continue
             }
 
             // Check if a packet could be decoded already
@@ -243,7 +249,7 @@ impl ServerTty {
                     // debug!("got desired packet {:?}", p);
                     return Ok(p);
                 }
-                _ => ()     // No packet decoded so far, no problem just continue
+                _ => (), // No packet decoded so far, no problem just continue
             }
 
             elapsed = start.elapsed();
@@ -256,7 +262,7 @@ impl ServerTty {
     fn scan(&mut self) -> bool {
         let port = self.serial_port.as_mut().unwrap();
         // TODO: move to (dummy) parser_nmea module
-        let mut nmea_buffer = String::new();    // hold combined string from all received data
+        let mut nmea_buffer = String::new(); // hold combined string from all received data
 
         let start = Instant::now();
         let mut elapsed = start.elapsed();
@@ -278,8 +284,8 @@ impl ServerTty {
                         nmea_buffer.push_str(&nmea.unwrap());
                         // debug!("{:?}", nmea_buffer);
                     }
-                },
-                Err(_) => (),   // no data, just continue
+                }
+                Err(_) => (), // no data, just continue
             }
 
             let _res = self.parser.packet();

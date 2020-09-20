@@ -1,12 +1,10 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize, UbxFrameDeSerialize};
-
+use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x56;
-
 
 pub struct UbxCfgEsfAlgPoll {
     pub name: &'static str,
@@ -40,13 +38,12 @@ impl UbxFrameSerialize for UbxCfgEsfAlgPoll {
     }
 }
 
-
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
-    pub bitfield: u32,  // u-blox describes as U4, bit is X4
-    pub yaw: u32,       // 1e-2, 0..360°
-    pub pitch: i16,     // 1e-2, -90..90°
-    pub roll: i16,      // 1e-2, -180..180°
+    pub bitfield: u32, // u-blox describes as U4, bit is X4
+    pub yaw: u32,      // 1e-2, 0..360°
+    pub pitch: i16,    // 1e-2, -90..90°
+    pub roll: i16,     // 1e-2, -180..180°
 }
 
 #[derive(Default, Debug)]
@@ -125,7 +122,9 @@ mod tests {
 
     #[test]
     fn load() {
-        const DATA: [u8; 12] = [0xff, 0xfe, 0xfd, 0xfc, 0x04, 0x03, 0x02, 0x01, 0x08, 0x07, 0x06, 0x05];
+        const DATA: [u8; 12] = [
+            0xff, 0xfe, 0xfd, 0xfc, 0x04, 0x03, 0x02, 0x01, 0x08, 0x07, 0x06, 0x05,
+        ];
         let mut dut = UbxCfgEsfAlg::new();
         dut.load(&DATA.to_vec());
 
