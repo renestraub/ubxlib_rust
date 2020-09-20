@@ -97,7 +97,7 @@ impl GnssMgr {
     
         // Change protocol to NMEA 4.1
         // set_nmea_protocol_version
-        self.modem.set_nmea_protocol_version(0x41);
+        self.modem.set_nmea_protocol_version("4.1");
     
         Ok(())
     }

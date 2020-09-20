@@ -151,9 +151,13 @@ impl NeoM8 {
 
     // TODO: Consider format of version parameter. The hex code is a bit too close to the UBX frame definition
     // enum ? string ?
-    pub fn set_nmea_protocol_version(&mut self, version: u8) {
-        assert!(version == 0x40 || version == 0x41 || version == 0x4b);
-        //                4.0                4.10               4.11
+    pub fn set_nmea_protocol_version(&mut self, version: &str) {
+        let ubx_ver = match version {
+            "4.0" => 0x40,
+            "4.1" => 0x41,
+            "4.11" => 0x4b,
+            _ => panic!("invalid nmea protocol version"),
+        };
 
         let mut set = UbxCfgNmea::new();
         let poll = UbxCfgNmeaPoll::new();
@@ -161,9 +165,9 @@ impl NeoM8 {
         self.server.poll(&poll, &mut set);
         // debug!("current settings {:?}", set);
 
-        if set.data.nmea_version != version {
-            info!("setting NMEA protocol version to 0x{:02X}", version);
-            set.data.nmea_version = version;
+        if set.data.nmea_version != ubx_ver {
+            info!("setting NMEA protocol version to {}", version);
+            set.data.nmea_version = ubx_ver;
             debug!("new settings {:?}", set);
             self.server.set(&set);
         }
