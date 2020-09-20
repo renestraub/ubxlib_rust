@@ -18,6 +18,8 @@ mod ubx_mon_ver;
 mod ubx_upd_sos;
 mod ubx_mga_init_time_utc;
 
+use std::fs;
+use std::os::unix::fs::FileTypeExt;
 use std::env;
 use std::path::Path;
 use std::process::Command;
@@ -60,9 +62,18 @@ fn run_app(matches: ArgMatches) -> Result<(), String> {
     let device_exists = Path::new(device_name).exists();
     if !device_exists {
         return Err(format!("Device {} does not exist", device_name).to_string());
-        // "Device does not exist"
-    // TODO: if not stat.S_ISCHR(os.stat(device_path)[stat.ST_MODE]):
-        // "Device is not a character device"
+    }
+
+    // Check that it's a character device (or i.e. no block device)
+    let meta = fs::metadata(device_name);
+    match meta {
+        Ok(m) => {
+            let file_type = m.file_type();
+            if !file_type.is_char_device() {
+                return Err(format!("Device {} is not a character device", device_name).to_string());
+            }
+        },
+        Err(_) => return Err(String::from("cannot determine device type")),
     }
 
     // Check if device is in use, if so abort
