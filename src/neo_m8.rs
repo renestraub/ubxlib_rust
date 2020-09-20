@@ -108,6 +108,8 @@ impl NeoM8 {
     }
 
     pub fn set_baudrate(&mut self, baudrate: u32) {
+        assert!(baudrate == 115200 || baudrate == 9600);
+
         let mut set = UbxCfgPrtUart::new();
         let poll = UbxCfgPrtPoll::new();
 
@@ -124,14 +126,16 @@ impl NeoM8 {
         }
     }
 
-    pub fn set_update_rate(&mut self, rate: u16) {
+    pub fn set_update_rate(&mut self, rate_in_hz: u16) {
+        assert!(rate_in_hz >= 1 && rate_in_hz <= 10);
+
         let mut set = UbxCfgRate::new();
         let poll = UbxCfgRatePoll::new();
 
         self.server.poll(&poll, &mut set);
         // debug!("current settings {:?}", set);
 
-        let new_time = 1000u16 / rate;
+        let new_time = 1000u16 / rate_in_hz;
         if set.data.meas_rate != new_time {
             info!("setting update rate to {} ms", new_time);
             set.data.meas_rate = new_time;
@@ -141,10 +145,12 @@ impl NeoM8 {
         }
     }
 
-    // TODO: make all these public?
     // TODO: Consider format of version parameter. The hex code is a bit too close to the UBX frame definition
     // enum ? string ?
     pub fn set_nmea_protocol_version(&mut self, version: u8) {
+        assert!(version == 0x40 || version == 0x41 || version == 0x4b);
+        //                4.0                4.10               4.11
+
         let mut set = UbxCfgNmea::new();
         let poll = UbxCfgNmeaPoll::new();
 
@@ -160,13 +166,15 @@ impl NeoM8 {
     }
 
     pub fn set_dynamic_mode(&mut self, model: u8) {
+        assert!(model <= 10 && model != 1);
+
         let mut set = UbxCfgNav5::new();
         let poll = UbxCfgNav5Poll::new();
 
         self.server.poll(&poll, &mut set);
         // debug!("current settings {:?}", set.data);
 
-        if true || set.data.dyn_model != model {
+        if set.data.dyn_model != model {
             info!("setting dynamic model to {}", model);
             set.data.dyn_model = model;
             debug!("new settings {:?}", set.data);
@@ -197,7 +205,7 @@ impl NeoM8 {
     pub fn set_lever_arm(&mut self, armtype: u8, distances: &Xyz) {
         let mut set = UbxCfgEsflaSet::new();
 
-        assert!(distances.x >= -20.0 && distances.x <= 20.0);
+        assert!(distances.x >= -30.0 && distances.x <= 30.0);
         assert!(distances.y >= -10.0 && distances.y <= 10.0);
         assert!(distances.z >= -10.0 && distances.z <= 10.0);
 
