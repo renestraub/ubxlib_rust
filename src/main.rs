@@ -9,6 +9,7 @@ mod server_tty;
 mod ubx_cfg_cfg;
 mod ubx_cfg_esfalg;
 mod ubx_cfg_esfla;
+mod ubx_cfg_gnss;
 mod ubx_cfg_nav5;
 mod ubx_cfg_nmea;
 mod ubx_cfg_prt;

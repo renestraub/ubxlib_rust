@@ -6,7 +6,7 @@ use std::path::Path;
 pub struct GnssMgrConfig {
     pub update_rate: Option<u16>,
     pub mode: Option<String>,
-    // pub systems: (array of) Strings (or enums)  GPS;Galileo;Beidou;SBAS
+    pub systems: Option<Vec<String>>,
     pub imu_yaw: Option<u16>,
     pub imu_pitch: Option<i16>,
     pub imu_roll: Option<i16>,
@@ -86,6 +86,26 @@ impl GnssMgrConfig {
             }
         };
         self.mode = value;
+
+        let keyname = "systems";
+        let value = match sec_navigation.get(keyname) {
+            Some("") => {
+                info!("no value for {} specified, ignoring", keyname);
+                None
+            }
+            Some(x) => {
+                info!("using {} for {}", x, keyname);
+                let res: Vec<String> = x.split(";").map(|s| s.to_string().to_lowercase()).collect();
+                // TODO: println!("split {:?}", res);
+                Some(res)
+            }
+            _ => {
+                info!("key '{}' not defined", keyname);
+                None
+            }
+        };
+        self.systems = value;
+
 
         let sec_installation = match conf.section(Some("installation")) {
             Some(sec) => sec,
@@ -492,5 +512,25 @@ mod vrp_antenna {
         assert_eq!(xyz.x, 1.0);
         assert_eq!(xyz.y, 1.5);
         assert_eq!(xyz.z, 0.3);
+    }
+}
+
+#[cfg(test)]
+mod sat_systems {
+    use super::*;
+
+    #[test]
+    fn ok() {
+        let mut config: GnssMgrConfig = Default::default();
+        let res = config.parse_config("test_files/gnss0_systems_ok.conf");
+        assert_eq!(res.is_ok(), true);
+
+        let systems = config.systems.unwrap();
+        assert!(systems.contains(&String::from("gps")));
+        assert!(systems.contains(&String::from("galileo")));
+        assert!(systems.contains(&String::from("beidou")));
+        assert!(systems.contains(&String::from("sbas")));
+        assert!(!systems.contains(&String::from("qzss")));
+        assert!(!systems.contains(&String::from("glonass")));
     }
 }
