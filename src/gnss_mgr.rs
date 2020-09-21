@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -226,6 +227,11 @@ impl GnssMgr {
     }
 
     fn write_runfile(path: &str, info: &HashMap<&str, String>) -> Result<(), &'static str> {
+        match fs::create_dir_all("/run/gnss/")  {
+            Err(_) => return Err("Can't create GNSS run file folder"),
+            Ok(_) => (),
+        }
+
         let path = Path::new(path);
         // let display = path.display();
         let mut file = match File::create(&path) {
