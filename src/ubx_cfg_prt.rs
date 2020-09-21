@@ -71,19 +71,6 @@ pub struct Data {
     pub res2: [u8; 2],
 }
 
-/*
-        self.f.add(U1('PortId'))
-        self.f.add(Padding(1, 'res1'))
-        self.f.add(X2('txReady'))
-        self.f.add(X4_Mode('mode'))
-        self.f.add(U4('baudRate'))
-
-        self.f.add(X2_Proto('inProtoMask'))
-        self.f.add(X2_Proto('outProtoMask'))
-        self.f.add(X2('flags'))
-        self.f.add(Padding(2, 'res2'))
-*/
-
 #[derive(Default, Debug)]
 pub struct UbxCfgPrtUart {
     pub name: &'static str,

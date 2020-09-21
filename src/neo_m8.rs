@@ -8,6 +8,7 @@ use crate::server_tty::ServerTty;
 use crate::ubx_cfg_cfg::UbxCfgCfgAction;
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
+use crate::ubx_cfg_gnss::{UbxCfgGnss, UbxCfgGnssPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
 use crate::ubx_cfg_prt::{UbxCfgPrtPoll, UbxCfgPrtUart};
@@ -17,7 +18,6 @@ use crate::ubx_mga_init_time_utc::UbxMgaIniTimeUtc;
 use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
 use crate::ubx_upd_sos::UbxUpdSosAction;
 
-// TODO: Return error code from each function
 
 pub struct NeoM8 {
     pub device_name: String,
@@ -40,12 +40,13 @@ impl NeoM8 {
         self.server.open(bitrate)
     }
 
-    pub fn version(&mut self, info: &mut HashMap<&str, String>) {
+    pub fn version(&mut self, info: &mut HashMap<&str, String>) -> Result<(), &'static str> {
         let mut ver_result = UbxMonVer::new();
         let poll = UbxMonVerPoll::new();
-
-        // TODO: error check missing for sure
-        self.server.poll(&poll, &mut ver_result);
+        match self.server.poll(&poll, &mut ver_result) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
         debug!("{:?}", ver_result);
 
         // TODO: Don't assume fixed position for these entries
@@ -60,9 +61,11 @@ impl NeoM8 {
         info.insert("protocol", proto);
         info.insert("systems", String::from(&ver_result.hw_extension[5]));
         info.insert("augmentation", String::from(&ver_result.hw_extension[6]));
+
+        Ok(())
     }
 
-    pub fn sos_save(&mut self) {
+    pub fn sos_save(&mut self) -> Result<(), &'static str>  {
         // Stop receiver
         let set = UbxCfgRstAction::stop();
         self.server.fire_and_forget(&set);
@@ -73,15 +76,19 @@ impl NeoM8 {
         let set = UbxUpdSosAction::backup();
         self.server.set(&set);
         info!("Saving receiver state successfully performed");
+
+        Ok(())
     }
 
-    pub fn sos_clear(&mut self) {
+    pub fn sos_clear(&mut self) -> Result<(), &'static str>  {
         let set = UbxUpdSosAction::clear();
         self.server.set(&set);
         info!("Clearing receiver state successfully performed");
+
+        Ok(())
     }
 
-    pub fn cold_start(&mut self) {
+    pub fn cold_start(&mut self) -> Result<(), &'static str>  {
         let set = UbxCfgRstAction::cold_start();
         self.server.fire_and_forget(&set);
 
@@ -90,9 +97,11 @@ impl NeoM8 {
         // Cold Start is not acknowledged, give receiver time to boot
         // before commanding next message
         thread::sleep(time::Duration::from_millis(200));
+
+        Ok(())
     }
 
-    pub fn factory_reset(&mut self) {
+    pub fn factory_reset(&mut self) -> Result<(), &'static str>  {
         let set = UbxCfgCfgAction::factory_reset();
         self.server.fire_and_forget(&set);
 
@@ -103,22 +112,28 @@ impl NeoM8 {
         // Factory reset can lead to change of bitrate, no acknowledge can be received then
         // Give receiver time before commanding next message
         thread::sleep(time::Duration::from_millis(200));
+
+        Ok(())
     }
 
-    pub fn persist(&mut self) {
+    pub fn persist(&mut self) -> Result<(), &'static str>  {
         info!("Persisting receiver configuration");
 
         let set = UbxCfgCfgAction::persist();
         self.server.set(&set);
+
+        Ok(())
     }
 
-    pub fn set_baudrate(&mut self, baudrate: u32) {
+    pub fn set_baudrate(&mut self, baudrate: u32) -> Result<(), &'static str>  {
         assert!(baudrate == 115200 || baudrate == 9600);
 
         let mut set = UbxCfgPrtUart::new();
         let poll = UbxCfgPrtPoll::new();
-
-        self.server.poll(&poll, &mut set);
+        match self.server.poll(&poll, &mut set) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
         // debug!("current settings {:?}", set);
 
         if set.data.baudrate != baudrate {
@@ -129,15 +144,19 @@ impl NeoM8 {
             self.server.fire_and_forget(&set);
             thread::sleep(time::Duration::from_millis(200));
         }
+
+        Ok(())
     }
 
-    pub fn set_update_rate(&mut self, rate_in_hz: u16) {
+    pub fn set_update_rate(&mut self, rate_in_hz: u16) -> Result<(), &'static str> {
         assert!(rate_in_hz >= 1 && rate_in_hz <= 10);
 
         let mut set = UbxCfgRate::new();
         let poll = UbxCfgRatePoll::new();
-
-        self.server.poll(&poll, &mut set);
+        match self.server.poll(&poll, &mut set) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
         // debug!("current settings {:?}", set);
 
         let new_time = 1000u16 / rate_in_hz;
@@ -148,11 +167,11 @@ impl NeoM8 {
 
             self.server.set(&set);
         }
+
+        Ok(())
     }
 
-    // TODO: Consider format of version parameter. The hex code is a bit too close to the UBX frame definition
-    // enum ? string ?
-    pub fn set_nmea_protocol_version(&mut self, version: &str) {
+    pub fn set_nmea_protocol_version(&mut self, version: &str) -> Result<(), &'static str> {
         let ubx_ver = match version {
             "4.0" => 0x40,
             "4.1" => 0x41,
@@ -162,8 +181,10 @@ impl NeoM8 {
 
         let mut set = UbxCfgNmea::new();
         let poll = UbxCfgNmeaPoll::new();
-
-        self.server.poll(&poll, &mut set);
+        match self.server.poll(&poll, &mut set) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
         // debug!("current settings {:?}", set);
 
         if set.data.nmea_version != ubx_ver {
@@ -172,15 +193,19 @@ impl NeoM8 {
             debug!("new settings {:?}", set);
             self.server.set(&set);
         }
+
+        Ok(())
     }
 
-    pub fn set_dynamic_mode(&mut self, model: u8) {
+    pub fn set_dynamic_mode(&mut self, model: u8) -> Result<(), &'static str> {
         assert!(model <= 10 && model != 1);
 
         let mut set = UbxCfgNav5::new();
         let poll = UbxCfgNav5Poll::new();
-
-        self.server.poll(&poll, &mut set);
+        match self.server.poll(&poll, &mut set) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
         // debug!("current settings {:?}", set.data);
 
         if set.data.dyn_model != model {
@@ -189,18 +214,66 @@ impl NeoM8 {
             debug!("new settings {:?}", set.data);
             self.server.set(&set);
         }
+
+        Ok(())
     }
 
-    pub fn set_imu_angles(&mut self, yaw: u16, pitch: i16, roll: i16) {
+    pub fn set_systems(&mut self, systems: &Vec<String>) -> Result<(), &'static str> {
+        let mut set = UbxCfgGnss::new();
+        let poll = UbxCfgGnssPoll::new();
+        match self.server.poll(&poll, &mut set) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+
+        // info!("current settings {:?}", set.header);
+        // info!("current settings {:?}", set.configs);
+
+        info!("setting navigation systems {:?}", systems);
+
+        set.disable_all();
+        if systems.contains(&String::from("gps")) {
+            set.enable(0);
+        }
+        if systems.contains(&String::from("sbas")) {
+            set.enable(1);
+        }
+        if systems.contains(&String::from("galileo")) {
+            set.enable(2);
+        }
+        if systems.contains(&String::from("beidou")) {
+            set.enable(3);
+        }
+        if systems.contains(&String::from("imes")) {
+            set.enable(4);
+        }
+        if systems.contains(&String::from("qzss")) {
+            set.enable(5);
+        }
+        if systems.contains(&String::from("glonass")) {
+            set.enable(6);
+        }
+
+        // TODO: error check, here we can really try to configure unspported
+        // solutions that will be NAK'ed.
+        self.server.set(&set);
+
+        Ok(())
+    }
+
+
+    pub fn set_imu_angles(&mut self, yaw: u16, pitch: i16, roll: i16) -> Result<(), &'static str> {
         assert!(yaw <= 360);
         assert!(pitch >= -90 && pitch <= 90);
         assert!(roll >= -180 && roll <= 180);
 
         let mut set = UbxCfgEsfAlg::new();
         let poll = UbxCfgEsfAlgPoll::new();
-
-        self.server.poll(&poll, &mut set);
-        debug!("current IMU settings {:?}", set.data);
+        match self.server.poll(&poll, &mut set) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
+        //  debug!("current IMU settings {:?}", set.data);
 
         set.data.yaw = yaw as u32 * 100;
         set.data.pitch = pitch as i16 * 100;
@@ -208,16 +281,17 @@ impl NeoM8 {
         debug!("new IMU settings {:?}", set.data);
 
         self.server.set(&set);
+
+        Ok(())
     }
 
     // TODO const for arm type 0 = VRP-to-Ant, 1 = VRP_to_IMU
-    pub fn set_lever_arm(&mut self, armtype: u8, distances: &Xyz) {
-        let mut set = UbxCfgEsflaSet::new();
-
+    pub fn set_lever_arm(&mut self, armtype: u8, distances: &Xyz) -> Result<(), &'static str> {
         assert!(distances.x >= -30.0 && distances.x <= 30.0);
         assert!(distances.y >= -10.0 && distances.y <= 10.0);
         assert!(distances.z >= -10.0 && distances.z <= 10.0);
 
+        let mut set = UbxCfgEsflaSet::new();
         set.data.version = 0;
         set.data.num_configs = 1;
         set.data.leverarm_type = armtype;
@@ -227,9 +301,11 @@ impl NeoM8 {
         debug!("new lever arm settings {:?}", set.data);
 
         self.server.set(&set);
+
+        Ok(())
     }
 
-    pub fn set_assistance_time(&mut self) {
+    pub fn set_assistance_time(&mut self) -> Result<(), &'static str> {
         let utc: DateTime<Utc> = Utc::now();
         debug!("Setting GNSS time to {:?}", utc);
 
@@ -239,5 +315,7 @@ impl NeoM8 {
         self.server.fire_and_forget(&set);
         // MGA messages are not acked by default
         // Would have to enable with NAVX5 message
+
+        Ok(())
     }
 }

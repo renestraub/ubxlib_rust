@@ -11,7 +11,6 @@ use crate::neo_m8::NeoM8;
 
 static CURRENT_FW_VER: &str = "ADR 4.31";
 
-// TODO: Return error code from each function
 
 pub struct GnssMgr {
     device_name: String,
@@ -49,7 +48,7 @@ impl GnssMgr {
             info!("changing bitrate from {} to 115200 bps", bit_rate_current);
 
             self.modem.open(bit_rate_current)?;
-            self.modem.set_baudrate(115200);
+            self.modem.set_baudrate(115200)?;
             return Ok(115200);
         }
         /*
@@ -82,8 +81,18 @@ impl GnssMgr {
         let mut info: HashMap<&str, String> = HashMap::new();
         info.insert("vendor", String::from("ublox"));
 
+
         // Get version information and ..
-        self.modem.version(&mut info);
+        // TODO: Check at what level error messages are defined/wrapped into human readable messages
+        // - gnss-mgr
+        // - neo_m8
+        // - server_tty
+        // Goal: allow use of ? operator, w/o exposing to low level error messages
+        // self.modem.version(&mut info)?;
+        match self.modem.version(&mut info) {
+            Ok(_) => (),
+            Err(_) => return Err(String::from("Can't get modem information")),
+        }
         debug!("{:?}", info);
 
         // .. create run file
@@ -96,8 +105,10 @@ impl GnssMgr {
 
         // Change protocol to NMEA 4.1
         // set_nmea_protocol_version
-        self.modem.set_nmea_protocol_version("4.1");
-
+        match self.modem.set_nmea_protocol_version("4.1") {
+            Ok(_) => (),
+            Err(_) => return Err(String::from("Can't set NMEA protocol version")),
+        }
         Ok(())
     }
 
@@ -125,11 +136,11 @@ impl GnssMgr {
         debug!("control action {:?}", action);
 
         match action {
-            "cold-start" => self.modem.cold_start(),
-            "factory-reset" => self.modem.factory_reset(),
-            "persist" => self.modem.persist(),
+            "cold-start" => self.modem.cold_start().ok(),
+            "factory-reset" => self.modem.factory_reset().ok(),
+            "persist" => self.modem.persist().ok(),
             _ => return Err("Unknown command".to_string()),
-        }
+        };
 
         Ok(())
     }
@@ -139,34 +150,49 @@ impl GnssMgr {
         debug!("sos action {:?}", action);
 
         match action {
-            "save" => self.modem.sos_save(),
+            "save" => self.modem.sos_save().ok(),
             "clear" => {
-                self.modem.set_assistance_time();
-                self.modem.sos_clear();
-            }
+                self.modem.set_assistance_time().ok();
+                self.modem.sos_clear().ok();
+                Some(())
+            },
             _ => return Err("Unknown command".to_string()),
-        }
+        };
 
         Ok(())
     }
 
-    pub fn configure(&mut self, config: &GnssMgrConfig) {
+    // TODO: Return error code from each function
+    fn configure(&mut self, config: &GnssMgrConfig) {
+        /*
+         * Configure modem as defined by config
+         * - Elements that are set (Some(x)) are applied, others are left as is
+         * - Modem set methods are allowed to fail -> .ok()
+         */
+
         if config.update_rate.is_some() {
             let rate = config.update_rate.unwrap();
-            self.modem.set_update_rate(rate);
+            self.modem.set_update_rate(rate).ok();
         }
 
         // TODO: Overly complicated with these string types...
         match &config.mode {
             Some(mode) => match mode.as_str() {
-                "stationary" => self.modem.set_dynamic_mode(2),
-                "vehicle" => self.modem.set_dynamic_mode(4),
+                // TODO: This should go nicer
+                "stationary" => { self.modem.set_dynamic_mode(2).ok(); () },
+                "vehicle" => { self.modem.set_dynamic_mode(4).ok(); () },
                 _ => (),
             },
             _ => (),
         }
 
-        // TODO: Sat Systems
+        // Sat Satellite systems
+        match &config.systems {
+            Some(sys) => {
+                self.modem.set_systems(sys).ok();
+            },
+            _ => (),
+        }
 
         // TODO: Combine IMU angles in a struct, this is ugly
         if config.imu_yaw.is_some() && config.imu_pitch.is_some() && config.imu_roll.is_some() {
@@ -174,18 +200,18 @@ impl GnssMgr {
                 config.imu_yaw.unwrap(),
                 config.imu_pitch.unwrap(),
                 config.imu_roll.unwrap(),
-            );
+            ).ok();
         }
 
         // Lever Arms
         if config.vrp2antenna.is_some() {
             // TODO: replace 0 with a proper constant
-            self.modem.set_lever_arm(0, &config.vrp2antenna.unwrap());
+            self.modem.set_lever_arm(0, &config.vrp2antenna.unwrap()).ok();
         }
 
         if config.vrp2imu.is_some() {
             // TODO: replace 1 with a proper constant
-            self.modem.set_lever_arm(1, &config.vrp2imu.unwrap());
+            self.modem.set_lever_arm(1, &config.vrp2imu.unwrap()).ok();
         }
     }
 

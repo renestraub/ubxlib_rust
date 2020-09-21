@@ -111,7 +111,7 @@ impl ServerTty {
         &mut self,
         frame_poll: &TPoll,
         frame_result: &mut TAnswer,
-    ) {
+    ) -> Result<(), &'static str> {
         debug!("polling {}", frame_poll.name());
 
         // We expect a response frame with the exact same CID
@@ -125,7 +125,10 @@ impl ServerTty {
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => warn!("poll: {}", e), // TODO: Abort here? What about clear_filter()?
+            Err(e) => {
+                warn!("poll: {}", e);
+                return Err(e);    // TODO: What about clear_filter()?
+            },
         }
 
         let payload = self.wait();
@@ -135,10 +138,14 @@ impl ServerTty {
                 frame_result.from_bin(packet.data);
             }
             // BUG: clear_filter call not executed
-            Err(_) => warn!("poll: timeout"),
+            Err(e) => { 
+                warn!("poll: timeout");
+                return Err(e);    // TODO: What about clear_filter()?
+            },
         }
-
         self.parser.clear_filter();
+
+        Ok(())
     }
 
     /*
@@ -228,7 +235,6 @@ impl ServerTty {
         let mut elapsed = start.elapsed();
         while elapsed.as_millis() < 3000 {
             // Read data
-            // TODO: Check why only 48 bytes are read at once
             let res = port.read(&mut read_buffer[..]);
             match res {
                 Ok(bytes_read) => {
@@ -268,7 +274,7 @@ impl ServerTty {
         let mut elapsed = start.elapsed();
         let ubx_frames = self.parser.frames_received();
 
-        while elapsed.as_millis() < 1500 {
+        while elapsed.as_millis() < 2000 {
             let mut read_buffer = [0u8; 1024];
             let res = port.read(&mut read_buffer[..]);
             match res {
