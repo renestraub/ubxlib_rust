@@ -13,17 +13,11 @@ use log::{debug, warn};
 
 use crate::checksum::Checksum;
 use crate::cid::UbxCID;
-
-// TODO: Isn't this the same as UbxFrame?
-#[derive(Debug)]
-pub struct Packet {
-    pub cid: UbxCID,
-    pub data: Vec<u8>, // mgt struct on stack, data on heap
-}
+use crate::frame::UbxFrame;
 
 pub struct Parser {
     crc_error_cid: UbxCID,
-    rx_queue: VecDeque<Packet>,
+    rx_queue: VecDeque<UbxFrame>,
     wait_cids: HashSet<UbxCID>,
     checksum: Checksum,
 
@@ -104,8 +98,8 @@ impl Parser {
         self.rx_queue.clear();
     }
 
-    pub fn packet(&mut self) -> Option<Packet> {
-        self.rx_queue.pop_front() // Some(Packet) or None
+    pub fn packet(&mut self) -> Option<UbxFrame> {
+        self.rx_queue.pop_front() // Some(UbxFrame) or None
     }
 
     // TODO: CHange to plain array instead of vector
@@ -209,7 +203,7 @@ impl Parser {
                 // .. send CID and data as tuple to server
                 // TODO: Here comes the fun part.
                 // We have to copy over the buffer to the packet by value
-                let packet = Packet {
+                let packet = UbxFrame {
                     cid: cid,
                     data: self.msg_data.clone(),
                 };
@@ -221,7 +215,7 @@ impl Parser {
             warn!("checksum error in frame, discarding");
             // debug!("computed {:?}", self.checksum);
             // debug!("{self.msg_class:02x} {self.msg_id:02x} {binascii.hexlify(self.msg_data)}')
-            let crc_error_message = Packet {
+            let crc_error_message = UbxFrame {
                 cid: self.crc_error_cid,
                 data: vec![],
             };
@@ -271,7 +265,7 @@ mod tests {
             uut.process_byte(*byte);
         }
 
-        let res = uut.packet(); // Some(Packet)
+        let res = uut.packet();
         let packet = res.unwrap(); // panics if None
         assert_eq!(packet.cid, UbxCID::new(0x13, 0x40));
     }
@@ -282,7 +276,7 @@ mod tests {
         uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1.to_vec());
 
-        let res = uut.packet(); // Some(Packet)
+        let res = uut.packet();
         let packet = res.unwrap(); // panics if None
         assert_eq!(packet.cid, UbxCID::new(0x13, 0x40));
     }
@@ -293,7 +287,7 @@ mod tests {
         uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1.to_vec());
 
-        let res = uut.packet(); // Some(Packet)
+        let res = uut.packet();
         let packet = res.unwrap(); // panics if None
         assert_eq!(packet.cid, UbxCID::new(0x13, 0x40));
     }
@@ -327,7 +321,7 @@ mod tests {
         uut.add_filter(UbxCID::new(0xFF, 0x00));
         uut.process(&FRAME_1.to_vec());
 
-        let res = uut.packet(); // Some(Packet)
+        let res = uut.packet();
         let packet = res.unwrap(); // panics if None
         assert_eq!(packet.cid, UbxCID::new(0x13, 0x40));
     }

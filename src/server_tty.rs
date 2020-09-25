@@ -7,7 +7,8 @@ use serial::prelude::*;
 
 use crate::cid::UbxCID;
 use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
-use crate::parser::{Packet, Parser};
+use crate::frame::UbxFrame;
+use crate::parser::Parser;
 
 pub struct ServerTty {
     device_name: String,
@@ -237,8 +238,8 @@ impl ServerTty {
         }
     }
 
-    fn wait(&mut self) -> Result<Packet, &'static str> {
-        let mut read_buffer = [0u8; 1024];
+    fn wait(&mut self) -> Result<UbxFrame, &'static str> {
+            let mut read_buffer = [0u8; 1024];
         let port = self.serial_port.as_mut().unwrap();
 
         let start = Instant::now();
