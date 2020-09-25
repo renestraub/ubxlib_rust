@@ -53,6 +53,17 @@ impl UbxMonVer {
         }
     }
 
+    pub fn get_info(&self, key: &str) -> String {
+        for info in &self.hw_extension {
+            if info.starts_with(key) {
+                let result = String::from(info);
+                let result = result.trim_start_matches(key);
+                return result.to_string();
+            }
+        }
+        String::from("")
+    }
+
     pub fn load(&mut self, data: &[u8]) {
         let bytes = data.len();
         assert!(bytes >= 40);
@@ -77,8 +88,6 @@ impl UbxMonVer {
     fn extract_string(data: &[u8]) -> String {
         String::from_utf8_lossy(&data).replace(|c: char| c == '\0', "")
     }
-
-    // TODO: Decoder function for "FWVER=" etc.
 }
 
 impl UbxFrameInfo for UbxMonVer {

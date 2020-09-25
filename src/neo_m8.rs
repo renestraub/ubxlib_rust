@@ -47,12 +47,12 @@ impl NeoM8 {
             Ok(_) => (),
             Err(e) => return Err(e),
         }
-        debug!("{:?}", ver_result);
 
-        // TODO: Don't assume fixed position for these entries
-        let fw_ver = String::from(ver_result.hw_extension[1].trim_start_matches("FWVER="));
-        let proto = String::from(ver_result.hw_extension[2].trim_start_matches("PROTVER="));
-        let model = String::from(ver_result.hw_extension[3].trim_start_matches("MOD="));
+        let fw_ver = ver_result.get_info("FWVER=");
+        let proto = ver_result.get_info("PROTVER=");
+        let model = ver_result.get_info("MOD=");
+
+        assert_eq!(fw_ver, "ADR 4.21"); // TODO: Remove
 
         info.insert("model", model);
         info.insert("sw_ver", ver_result.sw_version);
