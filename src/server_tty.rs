@@ -13,6 +13,8 @@ pub struct ServerTty {
     device_name: String,
     parser: Parser,
     serial_port: Option<serial::SystemPort>,
+    crc_error_cid: UbxCID,
+    max_retries: usize,
 }
 
 impl ServerTty {
@@ -21,6 +23,8 @@ impl ServerTty {
             device_name: String::from(device_name),
             parser: Parser::new(),
             serial_port: None,
+            crc_error_cid: UbxCID::new(0x00, 0x02),
+            max_retries: 5,
         };
         obj
     }
@@ -123,28 +127,35 @@ impl ServerTty {
         // Serialize polling frame payload.
         // Only a few polling frames required payload, most come w/o.
         let data = frame_poll.to_bin();
-        let res = self.send(&data);
-        match res {
-            Ok(_) => (),
-            Err(e) => {
-                warn!("poll: {}", e);
-                return Err(e);    // TODO: What about clear_filter()?
-            },
+
+        // TODO: Check some while let() control flow
+        let mut success = false;
+        for retry in 1..self.max_retries {
+            let res = self.send(&data);
+            match res {
+                Ok(_) => (),
+                Err(e) => {
+                    warn!("poll: {}", e);
+                    return Err(e);
+                },
+            }
+
+            match self.wait() {
+                Ok(packet) => {
+                    debug!("result received {:?} {:?}", packet.cid, packet.data);
+                    frame_result.from_bin(packet.data);
+                    success = true;
+                    break;
+                },
+                Err(_) => { 
+                    warn!("poll: timeout, retrying {}", retry);
+                },
+            }
         }
 
-        let payload = self.wait();
-        match payload {
-            Ok(packet) => {
-                debug!("result received {:?}", packet.data);
-                frame_result.from_bin(packet.data);
-            }
-            // BUG: clear_filter call not executed
-            Err(e) => { 
-                warn!("poll: timeout");
-                return Err(e);    // TODO: What about clear_filter()?
-            },
+        if !success {
+            return Err("poll: failed");
         }
-        self.parser.clear_filter();
 
         Ok(())
     }
