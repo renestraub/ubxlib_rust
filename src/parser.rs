@@ -22,7 +22,7 @@ pub struct Packet {
 }
 
 pub struct Parser {
-    /* TODO: crc_error_cid */
+    crc_error_cid: UbxCID,
     rx_queue: VecDeque<Packet>,
     wait_cids: HashSet<UbxCID>,
     checksum: Checksum,
@@ -41,7 +41,7 @@ pub struct Parser {
 
 const MAX_MESSAGE_LENGTH: usize = 1000;
 
-/* TODO: Check all upper case */
+#[derive(Debug)]
 enum State {
     Init,
     Sync1,
@@ -57,6 +57,7 @@ enum State {
 impl Parser {
     pub fn new() -> Self {
         let mut obj = Self {
+            crc_error_cid: UbxCID::new(0x00, 0x02),
             rx_queue: VecDeque::with_capacity(10),
             wait_cids: HashSet::<UbxCID>::new(),
             checksum: Checksum::new(),
@@ -74,6 +75,11 @@ impl Parser {
         obj
     }
 
+    pub fn restart(&mut self) {
+        // debug!("restarting from state {:?}", self.state);
+        self.state = State::Init;
+    }
+
     pub fn frames_received(&self) -> usize {
         return self.frames_rx;
     }
@@ -84,6 +90,13 @@ impl Parser {
 
     pub fn add_filter(&mut self, cid: UbxCID) {
         self.wait_cids.insert(cid);
+        debug!("acceptance CID {:?}", self.wait_cids);
+    }
+
+    pub fn set_filters(&mut self, cids: &[UbxCID]) {
+        // Build HashSet from provided array
+        let cid_set: HashSet<UbxCID> = cids.iter().cloned().collect();
+        self.wait_cids = cid_set;
         debug!("acceptance CID {:?}", self.wait_cids);
     }
 
@@ -208,16 +221,11 @@ impl Parser {
             warn!("checksum error in frame, discarding");
             // debug!("computed {:?}", self.checksum);
             // debug!("{self.msg_class:02x} {self.msg_id:02x} {binascii.hexlify(self.msg_data)}')
-
-            // TODO: Move to ctor argument
-            let crc_cid = UbxCID::new(0x00, 0x02);
             let crc_error_message = Packet {
-                cid: crc_cid,
+                cid: self.crc_error_cid,
                 data: vec![],
             };
             self.rx_queue.push_back(crc_error_message);
-
-            // panic!("CRC ERROR");
         }
 
         self.state = State::Init;
@@ -366,5 +374,25 @@ mod tests {
         uut.process(&frame.to_vec());
         let res = uut.packet(); // Should be None because frame is too long (MAX_MESSAGE_LENGTH)
         assert_eq!(res.is_none(), true);
+    }
+
+    #[test]
+    fn filters() {
+        let mut uut = Parser::new();
+
+        uut.add_filter(UbxCID::new(0x05, 0x01));
+        uut.add_filter(UbxCID::new(0x05, 0x00));
+        assert_eq!(uut.wait_cids.len(), 2);
+        assert!(uut.wait_cids.contains(&UbxCID::new(0x05, 0x00)));
+        assert!(uut.wait_cids.contains(&UbxCID::new(0x05, 0x01)));
+
+        let cids = [UbxCID::new(0x05, 0x00), UbxCID::new(0x05, 0x01)];
+        uut.set_filters(&cids);
+        assert_eq!(uut.wait_cids.len(), 2);
+        assert!(uut.wait_cids.contains(&UbxCID::new(0x05, 0x00)));
+        assert!(uut.wait_cids.contains(&UbxCID::new(0x05, 0x01)));
+
+        uut.clear_filter();
+        assert_eq!(uut.wait_cids.len(), 0);
     }
 }

@@ -117,6 +117,7 @@ impl ServerTty {
         // We expect a response frame with the exact same CID
         let wait_cid = frame_poll.cid();
         self.parser.empty_queue();
+        self.parser.clear_filter(); // TODO: Change to use set_filters or a later fn set_filter (singular)
         self.parser.add_filter(wait_cid);
 
         // Serialize polling frame payload.
@@ -161,8 +162,8 @@ impl ServerTty {
 
         // Wait for ACK-ACK and ACK-NAK
         self.parser.empty_queue();
-        self.parser.add_filter(UbxCID::new(0x05, 0x01));
-        self.parser.add_filter(UbxCID::new(0x05, 0x00));
+        let cids = [UbxCID::new(0x05, 0x00), UbxCID::new(0x05, 0x01)];
+        self.parser.set_filters(&cids);
 
         // Get frame data (header, cls, id, len, payload, checksum a/b)
         let data = frame_set.to_bin();
@@ -170,7 +171,7 @@ impl ServerTty {
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => warn!("set: {}", e), // TODO: Abort here? What about clear_filter()?
+            Err(e) => warn!("set: {}", e),
         }
 
         // Check proper response (ACK/NAK)
@@ -183,8 +184,6 @@ impl ServerTty {
             }
             Err(_) => warn!("set: timeout"),
         }
-
-        self.parser.clear_filter();
     }
 
     /*
@@ -203,7 +202,7 @@ impl ServerTty {
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => warn!("set: {}", e), // TODO: Abort here? What about clear_filter()?
+            Err(e) => warn!("set: {}", e),
         }
     }
 
@@ -233,6 +232,8 @@ impl ServerTty {
 
         let start = Instant::now();
         let mut elapsed = start.elapsed();
+
+        self.parser.restart();
         while elapsed.as_millis() < 3000 {
             // Read data
             let res = port.read(&mut read_buffer[..]);
@@ -252,8 +253,12 @@ impl ServerTty {
             let res = self.parser.packet();
             match res {
                 Some(p) => {
-                    // debug!("got desired packet {:?}", p);
-                    return Ok(p);
+                    if p.cid != self.crc_error_cid {
+                        // debug!("got desired packet {:?}", p);
+                        return Ok(p);
+                    } else {
+                        warn!("checksum error in frame, discarding");
+                    }
                 }
                 _ => (), // No packet decoded so far, no problem just continue
             }
@@ -274,6 +279,7 @@ impl ServerTty {
         let mut elapsed = start.elapsed();
         let ubx_frames = self.parser.frames_received();
 
+        self.parser.restart();
         while elapsed.as_millis() < 2000 {
             let mut read_buffer = [0u8; 1024];
             let res = port.read(&mut read_buffer[..]);
