@@ -17,15 +17,11 @@ pub struct GnssMgrConfig {
 
 impl GnssMgrConfig {
     pub fn parse_config(&mut self, path: &str) -> Result<(), String> {
-        // Check if configfile exists
-        let config_exists = Path::new(&path).exists();
-        if !config_exists {
-            return Err(format!("Configuration file {} not found", path).to_string());
-        }
-
         // Import whole file, check for syntax errors
-        // TODO: Proper error handling
-        let conf = Ini::load_from_file(path).unwrap();
+        let conf = match Ini::load_from_file(path) {
+            Ok(c) => c,
+            _ => return Err(format!("configuration file {} not found", path).to_string()),
+        };
 
         // Check for version 2 format
         let sec_general = match conf.section(Some("default")) {
