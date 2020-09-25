@@ -8,11 +8,11 @@ use serial::prelude::*;
 use crate::cid::UbxCID;
 use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 use crate::frame::UbxFrame;
-use crate::parser::Parser;
+use crate::parser_ubx::ParserUbx;
 
 pub struct ServerTty {
     device_name: String,
-    parser: Parser,
+    parser: ParserUbx,
     serial_port: Option<serial::SystemPort>,
     crc_error_cid: UbxCID,
     max_retries: usize,
@@ -22,7 +22,7 @@ impl ServerTty {
     pub fn new(device_name: &str) -> Self {
         let obj = Self {
             device_name: String::from(device_name),
-            parser: Parser::new(),
+            parser: ParserUbx::new(),
             serial_port: None,
             crc_error_cid: UbxCID::new(0x00, 0x02),
             max_retries: 5,

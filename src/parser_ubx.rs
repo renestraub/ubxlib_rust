@@ -15,7 +15,7 @@ use crate::checksum::Checksum;
 use crate::cid::UbxCID;
 use crate::frame::UbxFrame;
 
-pub struct Parser {
+pub struct ParserUbx {
     crc_error_cid: UbxCID,
     rx_queue: VecDeque<UbxFrame>,
     wait_cids: HashSet<UbxCID>,
@@ -48,7 +48,7 @@ enum State {
     CRC2,
 }
 
-impl Parser {
+impl ParserUbx {
     pub fn new() -> Self {
         let mut obj = Self {
             crc_error_cid: UbxCID::new(0x00, 0x02),
@@ -252,14 +252,14 @@ mod tests {
     #[test]
     #[should_panic]
     fn no_frames() {
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         let res = uut.packet(); // None
         let _packet = res.unwrap(); // should panic
     }
 
     #[test]
     fn process_byte() {
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         uut.add_filter(UbxCID::new(0x13, 0x40));
         for byte in FRAME_1.iter() {
             uut.process_byte(*byte);
@@ -272,7 +272,7 @@ mod tests {
 
     #[test]
     fn process_array() {
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1.to_vec());
 
@@ -283,7 +283,7 @@ mod tests {
 
     #[test]
     fn passes_filter() {
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1.to_vec());
 
@@ -294,7 +294,7 @@ mod tests {
 
     #[test]
     fn dropped_cls() {
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         uut.add_filter(UbxCID::new(0x12, 0x40));
         uut.process(&FRAME_1.to_vec());
 
@@ -304,7 +304,7 @@ mod tests {
 
     #[test]
     fn dropped_id() {
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         uut.add_filter(UbxCID::new(0x13, 0x41));
         uut.process(&FRAME_1.to_vec());
 
@@ -314,7 +314,7 @@ mod tests {
 
     #[test]
     fn multiple_filters() {
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         uut.add_filter(UbxCID::new(0x12, 0x12));
         uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.add_filter(UbxCID::new(0xFF, 0x00));
@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn clear_filter() {
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1.to_vec());
         let res = uut.packet();
@@ -347,7 +347,7 @@ mod tests {
         let frame: [u8; 32] = [0xB5, 0x62, 0x13, 0x40, 0x18, 0x00, 0x10, 0x00, 0x00, 0x12, 0xE4, 0x07, 0x09, 0x05,
                                0x06, 0x28, 0x30, 0x00, 0x40, 0x28, 0xEF, 0x0C, 0x0A, 0x00, 0x00, 0x00,
                                0x00, 0x00, 0x00, 0x00, 0x51, 0xAC+1];
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&frame.to_vec());
         let res = uut.packet(); // crc packet
@@ -363,7 +363,7 @@ mod tests {
             0x06, 0x28, 0x30, 0x00, 0x40, 0x28, 0xEF, 0x0C, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x51, 0xAC,
         ];
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
         uut.add_filter(UbxCID::new(0x13, 0x40));
         uut.process(&frame.to_vec());
         let res = uut.packet(); // Should be None because frame is too long (MAX_MESSAGE_LENGTH)
@@ -372,7 +372,7 @@ mod tests {
 
     #[test]
     fn filters() {
-        let mut uut = Parser::new();
+        let mut uut = ParserUbx::new();
 
         uut.add_filter(UbxCID::new(0x05, 0x01));
         uut.add_filter(UbxCID::new(0x05, 0x00));
