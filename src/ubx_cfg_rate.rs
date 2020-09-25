@@ -151,14 +151,39 @@ mod tests {
         );
     }
 
+/*
     #[test]
     fn cfg_rate_deserialize() {
         const DATA: [u8; 6] = [0xE8, 0x03, 0x01, 0x00, 0x34, 0x12];
 
         let mut dut = UbxCfgRate::new();
-        dut.load(&DATA);
+        dut.from_bin2(&DATA);
         assert_eq!(dut.data.meas_rate, 1000);
         assert_eq!(dut.data.nav_rate, 1);
         assert_eq!(dut.data.time_ref, 0x1234);
     }
+
+    #[test]
+    fn test11() {
+        // const DATA: [u8; 6] = [0xE8, 0x03, 0x01, 0x00, 0x34, 0x12];
+       
+        let mut dut = UbxCfgRatePoll2::new();
+        println!("{:?}", dut);
+
+        test22(&dut);
+        test23(&dut);
+
+        assert_eq!(1,2);
+    }
+
+    fn test22<T: UbxFrameInfo>(fi: &T) {
+        println!("{:?}", fi.name());
+        println!("{:?}", fi.cid());
+    }
+
+    fn test23<T: UbxFrameSerialize>(fser: &T) {
+        let data = fser.to_bin();
+        println!("{:?}", data);
+    }
+*/
 }
