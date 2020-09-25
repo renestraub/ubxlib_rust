@@ -118,4 +118,18 @@ mod tests {
         assert_eq!(dut.data.pitch, 0x0708i16);
         assert_eq!(dut.data.roll, 0x0506i16);
     }
+
+    #[test]
+    fn serialize() {
+        let mut dut = UbxCfgEsfAlg::new();
+        dut.data.yaw = 180 as u32 * 100;
+        dut.data.pitch = -45 as i16 * 100;
+        dut.data.roll = 45 as i16 * 100;
+
+        let data = dut.to_bin();
+        assert_eq!(
+            data[0..18],
+            [0xb5, 0x62, 0x06, 0x56, 12, 0, 0x00, 0x00, 0x00, 0x00, 0x50, 0x46, 0x00, 0x00, 0x6C, 0xEE, 0x94, 0x11]
+        );
+    }
 }
