@@ -1,11 +1,85 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
+use crate::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x08;
 
+
+/*
+pub trait UbxFrameDeSerialize2 {
+    fn from_bin2(&mut self, data: &[u8] /*Vec<u8>*/);
+}
+
+impl<'a, T> UbxFrameDeSerialize2 for UbxFrameWithData<T>
+where T: Deserialize<'a>
+{
+    fn from_bin2(&mut self, data: &[u8] /*Vec<u8>*/) {
+        let mut data2: T;
+
+        println!("data {:?}", data);
+
+        self.data_frame = data.to_vec();
+        // self.data = bincode::deserialize(&self.data_frame).unwrap();
+    }
+}
+*/
+
+/**************************************************************/
+/*
+pub struct UbxCfgRate { }
+      
+impl UbxCfgRate { 
+    pub fn new() -> UbxFrameWithData<Data> {
+        UbxFrameWithData::new("UBX-CFG-RATE", UbxCID::new(CLS, ID))
+    }
+}
+
+impl UbxFrameDeSerialize for UbxFrameWithData<Data> {
+    fn from_bin(&mut self, data: Vec<u8>) {
+        self.data = bincode::deserialize(&data).unwrap();
+    }
+}
+
+pub struct UbxCfgRatePoll { }
+      
+impl UbxCfgRatePoll { 
+    pub fn new() -> UbxFrameWithData<DataPoll> {
+        UbxFrameWithData::new("UBX-CFG-RATE-POLL", UbxCID::new(CLS, ID))
+    }
+}
+
+/**************************************************************/
+
+#[derive(Default, Debug, Serialize, Deserialize)]
+pub struct DataPoll {
+}
+*/
+
+#[derive(Default, Debug, Serialize)]
+pub struct DataPoll {
+}
+
+pub struct UbxCfgRatePoll { }
+      
+impl UbxCfgRatePoll { 
+    pub fn new() -> UbxFrameWithData<DataPoll> {
+        UbxFrameWithData::new("UBX-CFG-RATE-POLL", UbxCID::new(CLS, ID))
+    }
+}
+
+pub struct UbxCfgRate { }
+      
+impl UbxCfgRate { 
+    pub fn new() -> UbxFrameWithData<Data> {
+        UbxFrameWithData::new("UBX-CFG-RATE", UbxCID::new(CLS, ID))
+    }
+}
+
+
+/**************************************************************/
+/*
 pub struct UbxCfgRatePoll {
     pub name: &'static str,
     cid: UbxCID,
@@ -35,6 +109,7 @@ impl UbxFrameSerialize for UbxCfgRatePoll {
         UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
     }
 }
+*/
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -43,6 +118,7 @@ pub struct Data {
     pub time_ref: u16,
 }
 
+/*
 #[derive(Default, Debug)]
 pub struct UbxCfgRate {
     pub name: &'static str,
@@ -83,9 +159,11 @@ impl UbxFrameDeSerialize for UbxCfgRate {
         self.data = bincode::deserialize(&data).unwrap();
     }
 }
+*/
 
 #[cfg(test)]
 mod tests {
+    use crate::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
     use super::*;
 
     #[test]
@@ -151,39 +229,14 @@ mod tests {
         );
     }
 
-/*
     #[test]
     fn cfg_rate_deserialize() {
         const DATA: [u8; 6] = [0xE8, 0x03, 0x01, 0x00, 0x34, 0x12];
 
         let mut dut = UbxCfgRate::new();
-        dut.from_bin2(&DATA);
+        dut.from_bin(DATA.to_vec());
         assert_eq!(dut.data.meas_rate, 1000);
         assert_eq!(dut.data.nav_rate, 1);
         assert_eq!(dut.data.time_ref, 0x1234);
     }
-
-    #[test]
-    fn test11() {
-        // const DATA: [u8; 6] = [0xE8, 0x03, 0x01, 0x00, 0x34, 0x12];
-       
-        let mut dut = UbxCfgRatePoll2::new();
-        println!("{:?}", dut);
-
-        test22(&dut);
-        test23(&dut);
-
-        assert_eq!(1,2);
-    }
-
-    fn test22<T: UbxFrameInfo>(fi: &T) {
-        println!("{:?}", fi.name());
-        println!("{:?}", fi.cid());
-    }
-
-    fn test23<T: UbxFrameSerialize>(fser: &T) {
-        let data = fser.to_bin();
-        println!("{:?}", data);
-    }
-*/
 }
