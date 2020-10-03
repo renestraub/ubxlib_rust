@@ -8,7 +8,7 @@ use crate::server_tty::ServerTty;
 use crate::ubx_cfg_cfg::UbxCfgCfgAction;
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
-use crate::ubx_cfg_gnss::{UbxCfgGnss, UbxCfgGnssPoll};
+use crate::ubx_cfg_gnss::{UbxCfgGnss, UbxCfgGnssPoll, SystemName};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
 use crate::ubx_cfg_prt::{UbxCfgPrtPoll, UbxCfgPrtUart};
@@ -238,25 +238,25 @@ impl NeoM8 {
 
         set.disable_all();
         if systems.contains(&String::from("gps")) {
-            set.enable(0);
+            set.enable(SystemName::Gps);
         }
         if systems.contains(&String::from("sbas")) {
-            set.enable(1);
+            set.enable(SystemName::Sbas);
         }
         if systems.contains(&String::from("galileo")) {
-            set.enable(2);
+            set.enable(SystemName::Galileo);
         }
         if systems.contains(&String::from("beidou")) {
-            set.enable(3);
+            set.enable(SystemName::Beidou);
         }
         if systems.contains(&String::from("imes")) {
-            set.enable(4);
+            set.enable(SystemName::Imes);
         }
         if systems.contains(&String::from("qzss")) {
-            set.enable(5);
+            set.enable(SystemName::Qzss);
         }
         if systems.contains(&String::from("glonass")) {
-            set.enable(6);
+            set.enable(SystemName::Glonass);
         }
 
         // TODO: error check, here we can really try to configure unspported

@@ -6,7 +6,16 @@ use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerializ
 const CLS: u8 = 0x06;
 const ID: u8 = 0x3E;
 
-// gnss_system_names = ['gps', 'sbas', 'galileo', 'beidou', 'imes', 'qzss', 'glonass', 'irnss']
+#[derive(Copy, Clone)]
+pub enum SystemName {
+    Gps = 0,
+    Sbas = 1,
+    Galileo = 2,
+    Beidou = 3,
+    Imes = 4,
+    Qzss = 5,
+    Glonass = 6,
+}
 
 
 pub struct UbxCfgGnssPoll {
@@ -73,14 +82,14 @@ impl UbxCfgGnss {
         }
     }
 
-    pub fn enable(&mut self, system: usize) {
+    pub fn enable(&mut self, system: SystemName) {
         if let Some(cfg) = self.find_config(system) {
             cfg.flags |= 1;
         }
     }
 
     #[cfg(test)]
-    pub fn disable(&mut self, system: usize) {
+    pub fn disable(&mut self, system: SystemName) {
         if let Some(cfg) = self.find_config(system) {
             cfg.flags &= !1;
         }
@@ -126,8 +135,8 @@ impl UbxCfgGnss {
         data
     }
 
-    fn find_config(&mut self, system: usize) -> Option<&mut CfgBlock> {
-        self.configs.iter_mut().find(|c| c.gnss_id as usize == system)
+    fn find_config(&mut self, system: SystemName) -> Option<&mut CfgBlock> {
+        self.configs.iter_mut().find(|c| c.gnss_id as usize == system as usize)
     }
 }
 
@@ -242,20 +251,19 @@ mod tests {
         let mut dut = UbxCfgGnss::new();
         dut.from_bin(DATA.to_vec());
 
-        dut.enable(3);
+        dut.enable(SystemName::Beidou);
         let cfg = &dut.configs[0];
         assert_eq!(cfg.flags & 1, 1);
 
-        dut.disable(3);
+        dut.disable(SystemName::Beidou);
         let cfg = &dut.configs[0];
-        // let cfg = &dut.configs[0];
         assert_eq!(cfg.flags & 1, 0);
 
-        dut.disable(2);
+        dut.disable(SystemName::Galileo);
         let cfg = &dut.configs[1];
         assert_eq!(cfg.flags & 1, 0);
 
-        dut.enable(2);
+        dut.enable(SystemName::Galileo);
         let cfg = &dut.configs[1];
         assert_eq!(cfg.flags & 1, 1);
 
@@ -282,8 +290,8 @@ mod tests {
         let mut dut = UbxCfgGnss::new();
         dut.from_bin(DATA.to_vec());
 
-        dut.enable(3);
-        dut.disable(2);
+        dut.enable(SystemName::Beidou);
+        dut.disable(SystemName::Galileo);
 
         let res = dut.to_bin();
         assert_eq!(res.len(), 6 + 4 + 16 + 2);
