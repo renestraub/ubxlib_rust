@@ -1,40 +1,22 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
+use crate::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x56;
 
-pub struct UbxCfgEsfAlgPoll {
-    pub name: &'static str,
-    cid: UbxCID,
-}
+#[derive(Default, Debug, Serialize)]
+pub struct DataPoll { }
 
-impl UbxCfgEsfAlgPoll {
-    pub fn new() -> Self {
-        Self {
-            name: "UBX-CFG-ESFALG-POLL",
-            cid: UbxCID::new(CLS, ID),
-        }
+pub struct UbxCfgEsfAlgPoll { }
+
+impl UbxCfgEsfAlgPoll { 
+    pub fn new() -> UbxFrameWithData<DataPoll> {
+        UbxFrameWithData::new("UBX-CFG-ESFALG-POLL", UbxCID::new(CLS, ID))
     }
 }
 
-impl UbxFrameInfo for UbxCfgEsfAlgPoll {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgEsfAlgPoll {
-    fn to_bin(&self) -> Vec<u8> {
-        UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
-    }
-}
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -44,50 +26,19 @@ pub struct Data {
     pub roll: i16,     // 1e-2, -180..180°
 }
 
-#[derive(Default, Debug)]
-pub struct UbxCfgEsfAlg {
-    pub name: &'static str,
-    cid: UbxCID,
-    pub data: Data,
-}
-
-impl UbxCfgEsfAlg {
-    pub fn new() -> Self {
-        Self {
-            name: "UBX-CFG-ESFALG",
-            cid: UbxCID::new(CLS, ID),
-            ..Default::default()
-        }
+pub struct UbxCfgEsfAlg { }
+      
+impl UbxCfgEsfAlg { 
+    pub fn new() -> UbxFrameWithData<Data> {
+        UbxFrameWithData::new("UBX-CFG-ESFALG", UbxCID::new(CLS, ID))
     }
 }
 
-impl UbxFrameInfo for UbxCfgEsfAlg {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgEsfAlg {
-    fn to_bin(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
-    }
-}
-
-impl UbxFrameDeSerialize for UbxCfgEsfAlg {
-    fn from_bin(&mut self, data: Vec<u8>) {
-        assert_eq!(data.len(), 12);
-        self.data = bincode::deserialize(&data).unwrap();
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
 
     #[test]
     fn poll() {
@@ -122,6 +73,7 @@ mod tests {
     #[test]
     fn serialize() {
         let mut dut = UbxCfgEsfAlg::new();
+        assert_eq!(dut.name, "UBX-CFG-ESFALG");
         dut.data.yaw = 180 as u32 * 100;
         dut.data.pitch = -45 as i16 * 100;
         dut.data.roll = 45 as i16 * 100;
