@@ -43,10 +43,13 @@ impl NeoM8 {
     pub fn version(&mut self, info: &mut HashMap<&str, String>) -> Result<(), &'static str> {
         let mut ver_result = UbxMonVer::new();
         let poll = UbxMonVerPoll::new();
+
+        // TODO: Check if this is truly working ... It seems the problem "poll: timeout" is not handled here.
         match self.server.poll(&poll, &mut ver_result) {
             Ok(_) => (),
             Err(e) => return Err(e),
         }
+        debug!("{:#?}", ver_result);
 
         let fw_ver = ver_result.get_info("FWVER=");
         let proto = ver_result.get_info("PROTVER=");
@@ -127,6 +130,8 @@ impl NeoM8 {
 
     pub fn set_baudrate(&mut self, baudrate: u32) -> Result<(), &'static str>  {
         assert!(baudrate == 115200 || baudrate == 9600);
+
+        info!("checking current baudrate");
 
         let mut set = UbxCfgPrtUart::new();
         let poll = UbxCfgPrtPoll::new();

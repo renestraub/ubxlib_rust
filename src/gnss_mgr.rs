@@ -27,8 +27,7 @@ impl GnssMgr {
     }
 
     pub fn prepare_port(&mut self) -> Result<usize, String> {
-        // NOTE: To be calledonly  before GnssMgr object is instantiated
-        // TODO: Refactor to use modem object of GnssMgr
+        // NOTE: To be called only before GnssMgr object is instantiated
 
         // Check bitrate and change to 115'200 if different
         #![allow(unused_mut)] // rustc incorectly complains about "mut"
@@ -82,7 +81,7 @@ impl GnssMgr {
         let mut info: HashMap<&str, String> = HashMap::new();
         info.insert("vendor", String::from("ublox"));
 
-
+        info!("getting modem information");
         // Get version information and ..
         // TODO: Check at what level error messages are defined/wrapped into human readable messages
         // - gnss-mgr
@@ -94,7 +93,6 @@ impl GnssMgr {
             Ok(_) => (),
             Err(_) => return Err(String::from("Can't get modem information")),
         }
-        debug!("{:?}", info);
 
         // .. create run file
         match Self::write_runfile(&runfile_path, &info) {
@@ -106,10 +104,12 @@ impl GnssMgr {
 
         // Change protocol to NMEA 4.1
         // set_nmea_protocol_version
+        info!("checking nmea version");
         match self.modem.set_nmea_protocol_version("4.1") {
             Ok(_) => (),
             Err(_) => return Err(String::from("Can't set NMEA protocol version")),
         }
+
         Ok(())
     }
 

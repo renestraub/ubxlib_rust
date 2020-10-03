@@ -1,6 +1,5 @@
 use ini::Ini;
 use log::info;
-use std::path::Path;
 
 #[derive(Debug, Default)]
 pub struct GnssMgrConfig {

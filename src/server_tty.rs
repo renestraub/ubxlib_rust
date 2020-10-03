@@ -111,7 +111,6 @@ impl ServerTty {
     - waits for receiver message with same class/id as poll message
     ((- retries in case no answer is received))
     */
-    // TODO: Return code caller must handle
     pub fn poll<TPoll: UbxFrameInfo + UbxFrameSerialize, TAnswer: UbxFrameDeSerialize>(
         &mut self,
         frame_poll: &TPoll,
@@ -148,7 +147,7 @@ impl ServerTty {
                     success = true;
                     break;
                 },
-                Err(_) => { 
+                Err(_) => {
                     warn!("poll: timeout, retrying {}", retry);
                 },
             }
@@ -214,7 +213,7 @@ impl ServerTty {
         let res = self.send(&data);
         match res {
             Ok(_) => (),
-            Err(e) => warn!("set: {}", e),
+            Err(e) => warn!("fire: {}", e),
         }
     }
 
@@ -239,7 +238,7 @@ impl ServerTty {
     }
 
     fn wait(&mut self) -> Result<UbxFrame, &'static str> {
-            let mut read_buffer = [0u8; 1024];
+        let mut read_buffer = [0u8; 1024];
         let port = self.serial_port.as_mut().unwrap();
 
         let start = Instant::now();
