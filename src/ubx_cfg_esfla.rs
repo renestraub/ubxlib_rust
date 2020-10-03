@@ -1,12 +1,14 @@
 use serde::Serialize;
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize};
+use crate::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x2F;
 
 #[derive(Default, Debug, Serialize)]
+// Note that this is a frame variant that sets exactly one lever arm.
+// Use multiple times to configure several arm settings.
 pub struct Data {
     pub version: u8,
     pub num_configs: u8,
@@ -29,45 +31,19 @@ impl Data {
     }
 }
 
-#[derive(Default, Debug)]
-pub struct UbxCfgEsflaSet {
-    pub name: &'static str,
-    cid: UbxCID,
-    pub data: Data,
-}
-
-impl UbxCfgEsflaSet {
-    pub fn new() -> Self {
-        Self {
-            name: "UBX-CFG-ESFLA",
-            cid: UbxCID::new(CLS, ID),
-            data: Data::new(),
-            ..Default::default()
-        }
+pub struct UbxCfgEsflaSet { }
+      
+impl UbxCfgEsflaSet { 
+    pub fn new() -> UbxFrameWithData<Data> {
+        UbxFrameWithData::init("UBX-CFG-ESFLA", UbxCID::new(CLS, ID), Data::new())
     }
 }
 
-impl UbxFrameInfo for UbxCfgEsflaSet {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgEsflaSet {
-    fn to_bin(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        assert_eq!(data.len(), 12);
-        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::frame::UbxFrameSerialize;
 
     #[test]
     fn positive_values() {

@@ -11,7 +11,7 @@ const ID: u8 = 0x3E;
 
 pub struct UbxCfgGnssPoll {
     pub name: &'static str,
-    cid: UbxCID,
+    pub cid: UbxCID,
 }
 
 impl UbxCfgGnssPoll {
@@ -24,8 +24,8 @@ impl UbxCfgGnssPoll {
 }
 
 impl UbxFrameInfo for UbxCfgGnssPoll {
-    fn name(&self) -> String {
-        String::from(self.name)
+    fn name(&self) -> &'static str {
+        self.name
     }
 
     fn cid(&self) -> UbxCID {
@@ -59,7 +59,7 @@ pub struct CfgBlock {
 #[derive(Default, Debug)]
 pub struct UbxCfgGnss {
     pub name: &'static str,
-    cid: UbxCID,
+    pub cid: UbxCID,
     pub header: Header,
     pub configs: Vec<CfgBlock>,
 }
@@ -132,8 +132,8 @@ impl UbxCfgGnss {
 }
 
 impl UbxFrameInfo for UbxCfgGnss {
-    fn name(&self) -> String {
-        String::from(self.name)
+    fn name(&self) -> &'static str {
+        self.name
     }
 
     fn cid(&self) -> UbxCID {

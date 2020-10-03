@@ -1,10 +1,13 @@
 use std::fmt;
+use serde::Serialize;
+use serde::de::DeserializeOwned; 
 
 use crate::checksum::Checksum;
 use crate::cid::UbxCID;
 
+
 pub trait UbxFrameInfo {
-    fn name(&self) -> String;
+    fn name(&self) -> &'static str;
     fn cid(&self) -> UbxCID;
 }
 
@@ -14,7 +17,67 @@ pub trait UbxFrameSerialize {
 
 pub trait UbxFrameDeSerialize {
     fn from_bin(&mut self, data: Vec<u8>);
+    // TODO: Consider data: &[u8]
 }
+
+
+// Generic implementation for ubx frames that can be directly (de)serialized
+#[derive(Default, Debug)]
+pub struct UbxFrameWithData<T> {
+    pub name: &'static str,
+    pub cid: UbxCID,
+    pub data: T,
+}
+
+impl<T> UbxFrameWithData<T>
+    where T: Default
+{
+    // TODO: cid or CLS, ID? Would allow to remove dependancy on UbxCID from frames
+    pub fn new(name: &'static str, cid: UbxCID) -> Self {
+        Self {
+            name: name,
+            cid: cid,
+            ..Default::default()
+        }
+    }
+
+    pub fn init(name: &'static str, cid: UbxCID, data: T) -> Self {
+        Self {
+            name: name,
+            cid: cid,
+            data: data
+        }
+    }
+}
+
+impl<T> UbxFrameInfo for UbxFrameWithData<T> {
+    fn name(&self) -> &'static str {
+        self.name
+    }
+
+    fn cid(&self) -> UbxCID {
+        self.cid
+    }
+}
+
+impl<T> UbxFrameSerialize for UbxFrameWithData<T>
+    where T: Serialize
+{
+    fn to_bin(&self) -> Vec<u8> 
+    {
+        let data = bincode::serialize(&self.data).unwrap();
+        UbxFrame::bytes(self.cid(), data)
+    }
+}
+
+impl<T> UbxFrameDeSerialize for UbxFrameWithData<T> 
+    where T: DeserializeOwned
+{
+    fn from_bin(&mut self, data: Vec<u8>) {
+        self.data = bincode::deserialize(&data).unwrap();
+    }
+}
+
 
 #[derive(Default)]
 pub struct UbxFrame {
@@ -23,24 +86,6 @@ pub struct UbxFrame {
 }
 
 impl UbxFrame {
-    #[cfg(test)] // only for test, remove later?
-    pub fn new() -> Self {
-        //..Default::default()
-        Self {
-            cid: UbxCID::new(0, 0),
-            data: Vec::<u8>::new(),
-        }
-    }
-
-    /*
-    pub fn construct_empty(cid: UbxCID) -> Self {
-        Self {
-            cid: cid,
-            data: Vec::<u8>::new(),
-        }
-    }
-    */
-
     pub fn construct(cid: UbxCID, data: Vec<u8>) -> Self {
         Self {
             cid: cid,
@@ -54,7 +99,7 @@ impl UbxFrame {
         msg
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+    fn to_bytes(&self) -> Vec<u8> {
         let mut checksum = Checksum::new();
         let mut msg = Vec::<u8>::new();
 
@@ -79,7 +124,6 @@ impl UbxFrame {
             checksum.add(*d)
         }
 
-        // let checksum = self._calc_checksum();
         let (cka, ckb) = checksum.value();
         msg.push(cka);
         msg.push(ckb);
@@ -101,13 +145,6 @@ impl fmt::Debug for UbxFrame {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn dummy_frame() {
-        let dut = UbxFrame::new();
-        let msg = dut.to_bytes();
-        assert_eq!(msg, [0xb5, 0x62, 0, 0, 0, 0, 0, 0]);
-    }
 
     #[test]
     fn ack_frame() {

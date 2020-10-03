@@ -1,18 +1,18 @@
 use serde::Serialize;
+use serde_repr::Serialize_repr;
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameInfo, UbxFrameSerialize};
+use crate::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x04;
 
-use serde_repr::Serialize_repr;
 
 #[derive(Serialize_repr, Debug)]
 #[repr(u16)]
 pub enum BbrMask {
     HotStart = 0x0000,
-    // WarmStart = 0x0001,
+    _WarmStart = 0x0001,
     ColdStart = 0xFFFF,
 }
 
@@ -22,14 +22,15 @@ impl Default for BbrMask {
     }
 }
 
+
 #[derive(Serialize_repr, Debug)]
 #[repr(u8)]
 pub enum ResetMode {
     ImmediateHwReset = 0x00,
     SwReset = 0x01,
-    // HwReset = 0x04,
+    _HwReset = 0x04,
     Stop = 0x08,
-    // Start = 0x09,
+    _Start = 0x09,
 }
 
 impl Default for ResetMode {
@@ -37,6 +38,7 @@ impl Default for ResetMode {
         ResetMode::ImmediateHwReset
     }
 }
+
 
 #[derive(Default, Debug, Serialize)]
 pub struct Data {
@@ -55,56 +57,28 @@ impl Data {
     }
 }
 
-#[derive(Default, Debug)]
-pub struct UbxCfgRstAction {
-    pub name: &'static str,
-    cid: UbxCID,
-    pub data: Data,
-}
+pub struct UbxCfgRstAction { }
 
-impl UbxCfgRstAction {
-    pub fn cold_start() -> Self {
-        Self {
-            name: "UBX-CFG-RST",
-            cid: UbxCID::new(CLS, ID),
-            data: Data::new(BbrMask::ColdStart, ResetMode::SwReset),
-        }
+impl UbxCfgRstAction { 
+    pub fn cold_start() -> UbxFrameWithData<Data> {
+        UbxFrameWithData::init("UBX-CFG-RST", UbxCID::new(CLS, ID), Data::new(BbrMask::ColdStart, ResetMode::SwReset))
     }
 
-    pub fn stop() -> Self {
-        Self {
-            name: "UBX-CFG-RST",
-            cid: UbxCID::new(CLS, ID),
-            data: Data::new(BbrMask::HotStart, ResetMode::Stop),
-        }
+    pub fn stop() -> UbxFrameWithData<Data> {
+        UbxFrameWithData::init("UBX-CFG-RST", UbxCID::new(CLS, ID), Data::new(BbrMask::HotStart, ResetMode::Stop))
     }
 }
 
-impl UbxFrameInfo for UbxCfgRstAction {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgRstAction {
-    fn to_bin(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        assert_eq!(data.len(), 4);
-        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::frame::UbxFrameSerialize;
 
     #[test]
     fn cold_start() {
         let dut = UbxCfgRstAction::cold_start();
+        assert_eq!(dut.name, "UBX-CFG-RST");
         let msg = dut.to_bin();
         assert_eq!(
             msg,
@@ -115,6 +89,7 @@ mod tests {
     #[test]
     fn stop() {
         let dut = UbxCfgRstAction::stop();
+        assert_eq!(dut.name, "UBX-CFG-RST");
         let msg = dut.to_bin();
         assert_eq!(
             msg,

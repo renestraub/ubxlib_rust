@@ -1,40 +1,23 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
+use crate::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x24;
 
-pub struct UbxCfgNav5Poll {
-    pub name: &'static str,
-    cid: UbxCID,
-}
 
-impl UbxCfgNav5Poll {
-    pub fn new() -> Self {
-        Self {
-            name: "UBX-CFG-NAV5-POLL",
-            cid: UbxCID::new(CLS, ID),
-        }
+#[derive(Default, Debug, Serialize)]
+pub struct DataPoll { }
+
+pub struct UbxCfgNav5Poll { }
+
+impl UbxCfgNav5Poll { 
+    pub fn new() -> UbxFrameWithData<DataPoll> {
+        UbxFrameWithData::new("UBX-CFG-NAV5-POLL", UbxCID::new(CLS, ID))
     }
 }
 
-impl UbxFrameInfo for UbxCfgNav5Poll {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgNav5Poll {
-    fn to_bin(&self) -> Vec<u8> {
-        UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
-    }
-}
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -59,51 +42,19 @@ pub struct Data {
     pub res: [u8; 5],
 }
 
-#[derive(Default, Debug)]
-pub struct UbxCfgNav5 {
-    pub name: &'static str,
-    cid: UbxCID,
-    pub data: Data,
-}
+pub struct UbxCfgNav5 { }
 
-impl UbxCfgNav5 {
-    pub fn new() -> Self {
-        Self {
-            name: "UBX-CFG-NAV5",
-            cid: UbxCID::new(CLS, ID),
-            ..Default::default()
-        }
+impl UbxCfgNav5 { 
+    pub fn new() -> UbxFrameWithData<Data> {
+        UbxFrameWithData::new("UBX-CFG-NAV5", UbxCID::new(CLS, ID))
     }
 }
 
-impl UbxFrameInfo for UbxCfgNav5 {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgNav5 {
-    fn to_bin(&self) -> Vec<u8> {
-        // let data = self.save();
-        let data = bincode::serialize(&self.data).unwrap();
-        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
-    }
-}
-
-impl UbxFrameDeSerialize for UbxCfgNav5 {
-    fn from_bin(&mut self, data: Vec<u8>) {
-        assert_eq!(data.len(), 36);
-        self.data = bincode::deserialize(&data).unwrap();
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
 
     #[test]
     fn poll() {
@@ -140,5 +91,20 @@ mod tests {
         assert_eq!(dut.data.dyn_model, 4);
         assert_eq!(dut.data.fix_mode, 2);
         assert_eq!(dut.data.utc_standard, 3);
+    }
+
+    #[test]
+    fn deser() {
+        const DATA: [u8; 36] = [255, 255, 4, 3, 0, 0, 0, 0, 16, 39, 0, 0, 10, 0, 250, 0, 250, 0, 100, 0, 94, 1, 0, 60, 0, 0, 16, 39, 0, 0, 0, 0, 0, 0, 0, 0];
+        let mut dut = UbxCfgNav5::new();
+        assert_eq!(dut.name, "UBX-CFG-NAV5");
+
+        dut.from_bin(DATA.to_vec());
+        assert_eq!(dut.data.dyn_model, 4);
+        assert_eq!(dut.data.fix_mode, 3);
+        assert_eq!(dut.data.pdop, 250);
+        assert_eq!(dut.data.cno_thresh_num_svs, 0);
+        assert_eq!(dut.data.cno_thresh, 0);
+        assert_eq!(dut.data.utc_standard, 0);
     }
 }
