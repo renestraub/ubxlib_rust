@@ -58,12 +58,12 @@ impl NeoM8 {
         assert_eq!(fw_ver, "ADR 4.21"); // TODO: Remove
 
         info.insert("model", model);
-        info.insert("sw_ver", ver_result.sw_version);
-        info.insert("hw_ver", ver_result.hw_version);
+        info.insert("sw_ver", ver_result.sw_version());
+        info.insert("hw_ver", ver_result.hw_version());
         info.insert("fw_ver", fw_ver);
         info.insert("protocol", proto);
-        info.insert("systems", String::from(&ver_result.hw_extension[5]));
-        info.insert("augmentation", String::from(&ver_result.hw_extension[6]));
+        info.insert("systems", String::from(&ver_result.get_ext(5)));
+        info.insert("augmentation", String::from(&ver_result.get_ext(6)));
 
         Ok(())
     }
