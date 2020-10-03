@@ -64,7 +64,7 @@ impl UbxMgaIniTimeUtc {
 }
 
 impl UbxFrameInfo for UbxMgaIniTimeUtc {
-    fn name(&self) -> String {
+    fn name(&self) -> &'static str {
         self.frame.name()
     }
 

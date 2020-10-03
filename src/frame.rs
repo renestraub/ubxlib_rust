@@ -1,6 +1,5 @@
 use std::fmt;
 use serde::Serialize;
-//use serde::Deserialize;
 use serde::de::DeserializeOwned; 
 
 use crate::checksum::Checksum;
@@ -8,7 +7,7 @@ use crate::cid::UbxCID;
 
 
 pub trait UbxFrameInfo {
-    fn name(&self) -> String;
+    fn name(&self) -> &'static str;
     fn cid(&self) -> UbxCID;
 }
 
@@ -22,18 +21,18 @@ pub trait UbxFrameDeSerialize {
 }
 
 
-/**************************************************************/
-// Generic implemenation for ubx frames
-
+// Generic implementation for ubx frames that can be directly (de)serialized
 #[derive(Default, Debug)]
 pub struct UbxFrameWithData<T> {
     pub name: &'static str,
     pub cid: UbxCID,
     pub data: T,
-    // data_frame: Vec<u8>,
 }
 
-impl<T: Default> UbxFrameWithData<T> {
+impl<T> UbxFrameWithData<T>
+    where T: Default
+{
+    // TODO: cid or CLS, ID? Would allow to remove dependancy on UbxCID from frames
     pub fn new(name: &'static str, cid: UbxCID) -> Self {
         Self {
             name: name,
@@ -41,11 +40,19 @@ impl<T: Default> UbxFrameWithData<T> {
             ..Default::default()
         }
     }
+
+    pub fn init(name: &'static str, cid: UbxCID, data: T) -> Self {
+        Self {
+            name: name,
+            cid: cid,
+            data: data
+        }
+    }
 }
 
 impl<T> UbxFrameInfo for UbxFrameWithData<T> {
-    fn name(&self) -> String {
-        String::from(self.name)
+    fn name(&self) -> &'static str {
+        self.name
     }
 
     fn cid(&self) -> UbxCID {
@@ -64,30 +71,13 @@ impl<T> UbxFrameSerialize for UbxFrameWithData<T>
 }
 
 impl<T> UbxFrameDeSerialize for UbxFrameWithData<T> 
-    where T: Default + DeserializeOwned
+    where T: DeserializeOwned
 {
     fn from_bin(&mut self, data: Vec<u8>) {
         self.data = bincode::deserialize(&data).unwrap();
     }
-/*
-    fn des(&mut self, indata: &[u8]) {
-        println!("in data {}", self.id);
-        // let data = T::default();
-        // println!("{:#?}", data);
-
-        // const data_frame: [u8; 4] = [1,2,3,4];
-        // let data2:T = bincode::deserialize(&data_frame).unwrap();
-        let data2:T = bincode::deserialize(&indata).unwrap();
-        println!("{:#?}", data2);
-
-        // self.data = data2;
-        self.data = bincode::deserialize(&indata).unwrap();
-    }
-*/
 }
 
-
-/**************************************************************/
 
 #[derive(Default)]
 pub struct UbxFrame {
@@ -109,7 +99,7 @@ impl UbxFrame {
         msg
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+    fn to_bytes(&self) -> Vec<u8> {
         let mut checksum = Checksum::new();
         let mut msg = Vec::<u8>::new();
 

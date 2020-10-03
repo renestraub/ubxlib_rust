@@ -94,7 +94,7 @@ impl UbxMonVer {
 }
 
 impl UbxFrameInfo for UbxMonVer {
-    fn name(&self) -> String {
+    fn name(&self) -> &'static str {
         self.frame.name()
     }
 
