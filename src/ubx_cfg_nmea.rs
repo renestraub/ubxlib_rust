@@ -1,40 +1,23 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
+use crate::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x17;
 
-pub struct UbxCfgNmeaPoll {
-    pub name: &'static str,
-    cid: UbxCID,
-}
 
-impl UbxCfgNmeaPoll {
-    pub fn new() -> Self {
-        Self {
-            name: "UBX-CFG-NMEA-POLL",
-            cid: UbxCID::new(CLS, ID),
-        }
+#[derive(Default, Debug, Serialize)]
+pub struct DataPoll { }
+
+pub struct UbxCfgNmeaPoll { }
+      
+impl UbxCfgNmeaPoll { 
+    pub fn new() -> UbxFrameWithData<DataPoll> {
+        UbxFrameWithData::new("UBX-CFG-NMEA-POLL", UbxCID::new(CLS, ID))
     }
 }
 
-impl UbxFrameInfo for UbxCfgNmeaPoll {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgNmeaPoll {
-    fn to_bin(&self) -> Vec<u8> {
-        UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
-    }
-}
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -51,51 +34,18 @@ pub struct Data {
     pub res1: [u8; 6],
 }
 
-#[derive(Default, Debug)]
-pub struct UbxCfgNmea {
-    pub name: &'static str,
-    cid: UbxCID,
-    pub data: Data,
-}
-
-impl UbxCfgNmea {
-    pub fn new() -> Self {
-        Self {
-            name: "UBX-CFG-NMEA",
-            cid: UbxCID::new(CLS, ID),
-            ..Default::default()
-        }
-    }
-}
-
-impl UbxFrameInfo for UbxCfgNmea {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgNmea {
-    fn to_bin(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        assert_eq!(data.len(), 20);
-        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
-    }
-}
-
-impl UbxFrameDeSerialize for UbxCfgNmea {
-    fn from_bin(&mut self, data: Vec<u8>) {
-        assert_eq!(data.len(), 20);
-        self.data = bincode::deserialize(&data).unwrap();    
+pub struct UbxCfgNmea { }
+      
+impl UbxCfgNmea { 
+    pub fn new() -> UbxFrameWithData<Data> {
+        UbxFrameWithData::new("UBX-CFG-NMEA", UbxCID::new(CLS, ID))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
 
     #[test]
     fn poll() {
@@ -103,6 +53,15 @@ mod tests {
         assert_eq!(dut.name, "UBX-CFG-NMEA-POLL");
         let msg = dut.to_bin();
         assert_eq!(msg, [0xb5, 0x62, 0x06, 0x17, 0, 0, 29, 93]);
+    }
+
+    #[test]
+    fn deserialize() {
+        const DATA: [u8; 20] = [0, 64, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
+        let mut dut = UbxCfgNmea::new();
+        dut.from_bin(DATA.to_vec());
+
+        assert_eq!(dut.data.nmea_version, 0x40);
     }
 
     #[test]
