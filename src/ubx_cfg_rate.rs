@@ -52,6 +52,7 @@ mod tests {
     fn deserialize() {
         const DATA: [u8; 6] = [0xe8, 0x03, 0x01, 0x00, 0x34, 0x12];
         let mut dut = UbxCfgRate::new();
+        assert_eq!(dut.name, "UBX-CFG-RATE");
         dut.from_bin(DATA.to_vec());
 
         assert_eq!(dut.data.meas_rate, 1000);

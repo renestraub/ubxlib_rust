@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
+use crate::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x00;
@@ -21,41 +21,14 @@ impl DataPoll {
     }
 }
 
-#[derive(Default, Debug)]
-pub struct UbxCfgPrtPoll {
-    pub name: &'static str,
-    cid: UbxCID,
-    pub data: DataPoll,
-}
-
-impl UbxCfgPrtPoll {
-    pub fn new() -> Self {
-        Self {
-            name: "UBX-CFG-PRT-POLL",
-            cid: UbxCID::new(CLS, ID),
-            data: DataPoll::new(),
-        }
+pub struct UbxCfgPrtPoll { }
+      
+impl UbxCfgPrtPoll { 
+    pub fn new() -> UbxFrameWithData<DataPoll> {
+        UbxFrameWithData::init("UBX-CFG-PRT-POLL", UbxCID::new(CLS, ID), DataPoll::new())
     }
 }
 
-impl UbxFrameInfo for UbxCfgPrtPoll {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgPrtPoll {
-    fn to_bin(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        let frame = UbxFrame::construct(UbxCID::new(CLS, ID), data);
-        let msg = frame.to_bytes();
-        msg
-    }
-}
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -71,51 +44,19 @@ pub struct Data {
     pub res2: [u8; 2],
 }
 
-#[derive(Default, Debug)]
-pub struct UbxCfgPrtUart {
-    pub name: &'static str,
-    cid: UbxCID,
-    pub data: Data,
-}
+pub struct UbxCfgPrtUart { }
 
-impl UbxCfgPrtUart {
-    pub fn new() -> Self {
-        Self {
-            name: "UBX-CFG-PRT",
-            cid: UbxCID::new(CLS, ID),
-            ..Default::default()
-        }
+impl UbxCfgPrtUart { 
+    pub fn new() -> UbxFrameWithData<Data> {
+        UbxFrameWithData::new("UBX-CFG-PRT", UbxCID::new(CLS, ID))
     }
 }
 
-impl UbxFrameInfo for UbxCfgPrtUart {
-    fn name(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn cid(&self) -> UbxCID {
-        self.cid
-    }
-}
-
-impl UbxFrameSerialize for UbxCfgPrtUart {
-    fn to_bin(&self) -> Vec<u8> {
-        let data = bincode::serialize(&self.data).unwrap();
-        assert_eq!(data.len(), 20);
-        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
-    }
-}
-
-impl UbxFrameDeSerialize for UbxCfgPrtUart {
-    fn from_bin(&mut self, data: Vec<u8>) {
-        assert_eq!(data.len(), 20);
-        self.data = bincode::deserialize(&data).unwrap();
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
 
     #[test]
     fn poll() {
@@ -124,6 +65,19 @@ mod tests {
         assert_eq!(dut.data.port_id, 1);
         let msg = dut.to_bin();
         assert_eq!(msg, [0xb5, 0x62, 0x06, 0x00, 1, 0, 1, 8, 34]);
+    }
+
+    #[test]
+    fn deserialize() {
+        const DATA: [u8; 20] = [1, 0, 0, 0, 192, 8, 0, 0, 128, 37, 0, 0, 7, 0, 3, 0, 0, 0, 0, 0];
+        let mut dut = UbxCfgPrtUart::new();
+        assert_eq!(dut.name, "UBX-CFG-PRT");
+        dut.from_bin(DATA.to_vec());
+
+        assert_eq!(dut.data.port_id, 1);
+        assert_eq!(dut.data.baudrate, 9600);
+        assert_eq!(dut.data.in_proto_mask, 7);
+        assert_eq!(dut.data.out_proto_mask, 3);
     }
 
     #[test]
