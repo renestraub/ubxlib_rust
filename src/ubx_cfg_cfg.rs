@@ -16,11 +16,11 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn new(clear: u32, save: u32, load: u32) -> Self {
+    pub fn new(clear_mask: u32, save_mask: u32, load_mask: u32) -> Self {
         Self {
-            clear_mask: clear,
-            save_mask: save,
-            load_mask: load,
+            clear_mask,
+            save_mask,
+            load_mask,
             ..Default::default()
         }
     }

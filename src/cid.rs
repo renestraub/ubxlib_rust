@@ -8,7 +8,7 @@ pub struct UbxCID {
 
 impl UbxCID {
     pub fn new(cls: u8, id: u8) -> Self {
-        Self { cls: cls, id: id }
+        Self { cls, id }
     }
 
     pub fn cls(&self) -> u8 {

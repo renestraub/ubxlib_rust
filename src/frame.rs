@@ -35,17 +35,17 @@ impl<T> UbxFrameWithData<T>
     // TODO: cid or CLS, ID? Would allow to remove dependancy on UbxCID from frames
     pub fn new(name: &'static str, cid: UbxCID) -> Self {
         Self {
-            name: name,
-            cid: cid,
+            name,
+            cid,
             ..Default::default()
         }
     }
 
     pub fn init(name: &'static str, cid: UbxCID, data: T) -> Self {
         Self {
-            name: name,
-            cid: cid,
-            data: data
+            name,
+            cid,
+            data
         }
     }
 }
@@ -79,6 +79,12 @@ impl<T> UbxFrameDeSerialize for UbxFrameWithData<T>
 }
 
 
+
+// TODO: Generic for polling frame
+// no data
+// no deserialize
+
+
 #[derive(Default)]
 pub struct UbxFrame {
     pub cid: UbxCID,
@@ -88,8 +94,8 @@ pub struct UbxFrame {
 impl UbxFrame {
     pub fn construct(cid: UbxCID, data: Vec<u8>) -> Self {
         Self {
-            cid: cid,
-            data: data,
+            cid,
+            data,
         }
     }
 

@@ -48,10 +48,10 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn new(mask: BbrMask, reset_mode: ResetMode) -> Self {
+    pub fn new(nav_bbr_mask: BbrMask, reset_mode: ResetMode) -> Self {
         Self {
-            nav_bbr_mask: mask,
-            reset_mode: reset_mode,
+            nav_bbr_mask,
+            reset_mode,
             ..Default::default()
         }
     }

@@ -7,6 +7,8 @@ const CLS: u8 = 0x09;
 const ID: u8 = 0x14;
 
 
+// TODO: UpdSosAction Enum
+
 #[derive(Default, Debug, Serialize)]
 pub struct UpdSosAction {
     pub cmd: u8,
@@ -16,7 +18,7 @@ pub struct UpdSosAction {
 impl UpdSosAction {
     pub fn new(cmd: u8) -> Self {
         Self {
-            cmd: cmd,
+            cmd,
             ..Default::default()
         }
     }
