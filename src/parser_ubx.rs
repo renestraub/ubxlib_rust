@@ -78,13 +78,8 @@ impl ParserUbx {
         return self.frames_rx;
     }
 
-    pub fn clear_filter(&mut self) {
-        self.wait_cids.clear();
-    }
-
-    pub fn add_filter(&mut self, cid: UbxCID) {
-        self.wait_cids.insert(cid);
-        debug!("acceptance CID {:?}", self.wait_cids);
+    pub fn set_filter(&mut self, cid: UbxCID) {
+        self.set_filters(&[cid]);
     }
 
     pub fn set_filters(&mut self, cids: &[UbxCID]) {
@@ -102,7 +97,7 @@ impl ParserUbx {
         self.rx_queue.pop_front() // Some(UbxFrame) or None
     }
 
-    // TODO: CHange to plain array instead of vector
+    // TODO: Change to plain array instead of vector
     pub fn process(&mut self, data: &Vec<u8>) {
         for byte in data.iter() {
             self.process_byte(*byte);
@@ -260,7 +255,7 @@ mod tests {
     #[test]
     fn process_byte() {
         let mut uut = ParserUbx::new();
-        uut.add_filter(UbxCID::new(0x13, 0x40));
+        uut.set_filter(UbxCID::new(0x13, 0x40));
         for byte in FRAME_1.iter() {
             uut.process_byte(*byte);
         }
@@ -273,7 +268,7 @@ mod tests {
     #[test]
     fn process_array() {
         let mut uut = ParserUbx::new();
-        uut.add_filter(UbxCID::new(0x13, 0x40));
+        uut.set_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1.to_vec());
 
         let res = uut.packet();
@@ -284,7 +279,7 @@ mod tests {
     #[test]
     fn passes_filter() {
         let mut uut = ParserUbx::new();
-        uut.add_filter(UbxCID::new(0x13, 0x40));
+        uut.set_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1.to_vec());
 
         let res = uut.packet();
@@ -295,7 +290,7 @@ mod tests {
     #[test]
     fn dropped_cls() {
         let mut uut = ParserUbx::new();
-        uut.add_filter(UbxCID::new(0x12, 0x40));
+        uut.set_filter(UbxCID::new(0x12, 0x40));
         uut.process(&FRAME_1.to_vec());
 
         let res = uut.packet();
@@ -305,7 +300,7 @@ mod tests {
     #[test]
     fn dropped_id() {
         let mut uut = ParserUbx::new();
-        uut.add_filter(UbxCID::new(0x13, 0x41));
+        uut.set_filter(UbxCID::new(0x13, 0x41));
         uut.process(&FRAME_1.to_vec());
 
         let res = uut.packet();
@@ -315,10 +310,8 @@ mod tests {
     #[test]
     fn multiple_filters() {
         let mut uut = ParserUbx::new();
-        uut.add_filter(UbxCID::new(0x12, 0x12));
-        uut.add_filter(UbxCID::new(0x13, 0x40));
-        uut.add_filter(UbxCID::new(0xFF, 0x00));
-        uut.add_filter(UbxCID::new(0xFF, 0x00));
+        let cids = [UbxCID::new(0x12, 0x12), UbxCID::new(0x13, 0x40), UbxCID::new(0xFF, 0x00), UbxCID::new(0xFF, 0x00)];
+        uut.set_filters(&cids);
         uut.process(&FRAME_1.to_vec());
 
         let res = uut.packet();
@@ -327,14 +320,14 @@ mod tests {
     }
 
     #[test]
-    fn clear_filter() {
+    fn change_filter() {
         let mut uut = ParserUbx::new();
-        uut.add_filter(UbxCID::new(0x13, 0x40));
+        uut.set_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1.to_vec());
         let res = uut.packet();
         assert_eq!(res.is_some(), true);
 
-        uut.clear_filter();
+        uut.set_filter(UbxCID::new(0x00, 0x00));
         uut.process(&FRAME_1.to_vec());
         let res = uut.packet();
         assert_eq!(res.is_none(), true);
@@ -348,7 +341,7 @@ mod tests {
                                0x06, 0x28, 0x30, 0x00, 0x40, 0x28, 0xEF, 0x0C, 0x0A, 0x00, 0x00, 0x00,
                                0x00, 0x00, 0x00, 0x00, 0x51, 0xAC+1];
         let mut uut = ParserUbx::new();
-        uut.add_filter(UbxCID::new(0x13, 0x40));
+        uut.set_filter(UbxCID::new(0x13, 0x40));
         uut.process(&frame.to_vec());
         let res = uut.packet(); // crc packet
         assert_eq!(res.is_some(), true);
@@ -364,7 +357,7 @@ mod tests {
             0x00, 0x00, 0x51, 0xAC,
         ];
         let mut uut = ParserUbx::new();
-        uut.add_filter(UbxCID::new(0x13, 0x40));
+        uut.set_filter(UbxCID::new(0x13, 0x40));
         uut.process(&frame.to_vec());
         let res = uut.packet(); // Should be None because frame is too long (MAX_MESSAGE_LENGTH)
         assert_eq!(res.is_none(), true);
@@ -374,8 +367,7 @@ mod tests {
     fn filters() {
         let mut uut = ParserUbx::new();
 
-        uut.add_filter(UbxCID::new(0x05, 0x01));
-        uut.add_filter(UbxCID::new(0x05, 0x00));
+        uut.set_filters(&[UbxCID::new(0x05, 0x01), UbxCID::new(0x05, 0x00)]);
         assert_eq!(uut.wait_cids.len(), 2);
         assert!(uut.wait_cids.contains(&UbxCID::new(0x05, 0x00)));
         assert!(uut.wait_cids.contains(&UbxCID::new(0x05, 0x01)));
@@ -385,8 +377,5 @@ mod tests {
         assert_eq!(uut.wait_cids.len(), 2);
         assert!(uut.wait_cids.contains(&UbxCID::new(0x05, 0x00)));
         assert!(uut.wait_cids.contains(&UbxCID::new(0x05, 0x01)));
-
-        uut.clear_filter();
-        assert_eq!(uut.wait_cids.len(), 0);
     }
 }

@@ -121,8 +121,7 @@ impl ServerTty {
         // We expect a response frame with the exact same CID
         let wait_cid = frame_poll.cid();
         self.parser.empty_queue();
-        self.parser.clear_filter(); // TODO: Change to use set_filters or a later fn set_filter (singular)
-        self.parser.add_filter(wait_cid);
+        self.parser.set_filter(wait_cid);
 
         // Serialize polling frame payload.
         // Only a few polling frames required payload, most come w/o.
