@@ -1,6 +1,7 @@
 mod checksum;
 mod cid;
 mod config_file;
+mod error;
 mod frame;
 mod gnss_mgr;
 mod neo_m8;
@@ -36,6 +37,16 @@ fn main() {
     let app = setup_arg_parse();
     let matches = app.get_matches();
 
+    // Parse logger options -v/-q (mutually exclusive)
+    let mut builder = Builder::new();
+    if matches.is_present("verbose") {
+        builder.filter(None, LevelFilter::Debug).init();
+    } else if matches.is_present("quiet") {
+        builder.filter(None, LevelFilter::Warn).init();
+    } else {
+        builder.filter(None, LevelFilter::Info).init();
+    }
+    
     let rc = run_app(matches);
 
     std::process::exit(match rc {
@@ -48,68 +59,22 @@ fn main() {
 }
 
 fn run_app(matches: ArgMatches) -> Result<(), String> {
-    // Parse logger options -v/-q (mutually exclusive)
-    let mut builder = Builder::new();
-    if matches.is_present("verbose") {
-        builder.filter(None, LevelFilter::Debug).init();
-    } else if matches.is_present("quiet") {
-        builder.filter(None, LevelFilter::Warn).init();
-    } else {
-        builder.filter(None, LevelFilter::Info).init();
-    }
-
     // unwrap must never fail here, as argument is checked by parser already
     let device_name = matches.value_of("device").unwrap();
 
-    // Check that specified device exists
-    let device_exists = Path::new(device_name).exists();
-    if !device_exists {
-        return Err(format!("Device {} does not exist", device_name).to_string());
-    }
+    check_port(device_name)?;
 
-    // Check that it's a character device (or i.e. no block device)
-    let meta = fs::metadata(device_name);
-    match meta {
-        Ok(m) => {
-            let file_type = m.file_type();
-            if !file_type.is_char_device() {
-                return Err(format!("Device {} is not a character device", device_name).to_string());
-            }
-        }
-        Err(_) => return Err(String::from("cannot determine device type")),
-    }
-
-    // Check if device is in use, if so abort
-    let output = Command::new("fuser").args(&[device_name]).output();
-    match output {
-        Ok(o) => {
-            if o.stdout.len() > 0 {
-                let pid = String::from_utf8_lossy(&o.stdout);
-                let pid = pid.trim();
-                return Err(
-                    format!("another process (PID:{}) is accessing the receiver", &pid).to_string(),
-                );
-            }
-        }
-        Err(e) => return Err(format!("error executing fuser command {:?}", e).to_string()),
-    }
-
+    // Create GNSS Manager on specified device
     let mut gnss = GnssMgr::new(device_name);
 
     // The "init" command checks the current bitrate and changes to 115200 if required.
     // all other subcommand use the modem at 115200.
     let bitrate = match matches.subcommand() {
-        ("init", Some(_)) => match gnss.prepare_port() {
-            Ok(br) => br,
-            Err(e) => return Err(format!("{}", e).to_string()),
-        },
-        _ => 115200,
+        ("init", Some(_)) => None,
+        _ => Some(115200 as u32),
     };
 
-    match gnss.open(bitrate) {
-        Ok(x) => x,
-        Err(e) => return Err(format!("error opening serial port {:?}", e).to_string()),
-    }
+    gnss.prepare_port(bitrate)?;
 
     // Execute desired command, returns Result directly
     match matches.subcommand() {
@@ -164,4 +129,42 @@ fn setup_arg_parse() -> App<'static, 'static> {
                 .possible_values(&["save", "clear"])
                 .help("Selects sos operation to perform")));
     app
+}
+
+fn check_port(device_name: &str) -> Result<(), String> {
+    // Check that specified device exists
+    let device_exists = Path::new(device_name).exists();
+    if !device_exists {
+        return Err(format!("Device {} does not exist", device_name).to_string());
+    }
+
+    // Check that it's a character device (no block device)
+    let meta = fs::metadata(device_name);
+    match meta {
+        Ok(m) => {
+            let file_type = m.file_type();
+            if !file_type.is_char_device() {
+                return Err(format!("Device {} is not a character device", device_name).to_string());
+            }
+        }
+        Err(_) => return Err(String::from("cannot determine device type")),
+    }
+
+    // Ensure device is not in use
+    let output = Command::new("fuser").args(&[device_name]).output();
+    match output {
+        Ok(o) => {
+            if o.stdout.len() > 0 {
+                let pid = String::from_utf8_lossy(&o.stdout);
+                let pid = pid.trim();
+                return Err(
+                    format!("another process (PID:{}) is accessing the receiver", &pid).to_string(),
+                );
+            }
+        }
+        // TODO: Just warn don't abort.
+        Err(e) => return Err(format!("error executing fuser command {:?}", e).to_string()),
+    }
+
+    Ok(())
 }

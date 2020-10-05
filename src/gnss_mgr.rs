@@ -8,6 +8,7 @@ use clap::ArgMatches;
 use log::{debug, info, warn};
 
 use crate::config_file::GnssMgrConfig;
+use crate::error::Error;
 use crate::neo_m8::NeoM8;
 
 static CURRENT_FW_VER: &str = "ADR 4.31";
@@ -26,51 +27,27 @@ impl GnssMgr {
         }
     }
 
-    pub fn prepare_port(&mut self) -> Result<usize, String> {
-        // NOTE: To be called only before GnssMgr object is instantiated
+    pub fn prepare_port(&mut self, _bitrate: Option<u32>) -> Result<(), String> {
+        if _bitrate.is_none() {
+            // Check bitrate and change to 115'200 if different
+            info!("detecting current bitrate");
 
-        // Check bitrate and change to 115'200 if different
-        #![allow(unused_mut)] // rustc incorectly complains about "mut"
-        let mut bit_rate_current;
+            let bit_rate_current = match self.modem.detect_baudrate() {
+                Ok(bitrate) => bitrate, 
+                Err(e) => return Err(format!("bitrate detection failed ({})", e).to_string()),
+            };
 
-        // let mut detector = DetectBaudrate::new(&self.device_name);
-        // let res = detector.exec();
-        let res = self.modem.detect_baudrate();
-        match res {
-            Ok(bitrate) => {
-                info!("detected bitrate {:?} bps", bitrate);
-                bit_rate_current = bitrate;
+            info!("detected bitrate {:?} bps", bit_rate_current);
+            if bit_rate_current != 115200 {
+                info!("changing bitrate from {} to 115200 bps", bit_rate_current);
+                self.modem.configure(bit_rate_current).map_err(|err| err.to_string())?;
+                self.modem.set_modem_baudrate(115200).map_err(|err| err.to_string())?;
             }
-            Err(e) => return Err(format!("bitrate detection failed, {}", e).to_string()),
         }
 
-        if bit_rate_current == 9600 {
-            info!("changing bitrate from {} to 115200 bps", bit_rate_current);
+        self.modem.configure(115200).map_err(|err| err.to_string())?;
 
-            self.modem.open(bit_rate_current)?;
-            self.modem.set_baudrate(115200)?;
-            return Ok(115200);
-        }
-        /*
-                else if bit_rate_current == 115200 {
-                    info!("changing bitrate from {} to 9600 bps", bit_rate_current);
-
-                    let mut modem = NeoM8::new(device_name);
-                    modem.open(bit_rate_current);
-                    modem.set_baudrate(9600);
-                    return Ok(9600);
-                }
-                else {
-                    return Err("unsupported bitrate".to_string());
-                }
-        */
-        else {
-            return Ok(115200);
-        }
-    }
-
-    pub fn open(&mut self, bitrate: usize) -> Result<(), &'static str> {
-        self.modem.open(bitrate)
+        Ok(())
     }
 
     pub fn run_init(&mut self, _matches: &ArgMatches) -> Result<(), String> {
@@ -91,7 +68,7 @@ impl GnssMgr {
         // self.modem.version(&mut info)?;
         match self.modem.version(&mut info) {
             Ok(_) => (),
-            Err(_) => return Err(String::from("Can't get modem information")),
+            Err(e) => return Err(format!("Can't get modem information ({})", e).to_string()),
         }
 
         // .. create run file
@@ -137,9 +114,20 @@ impl GnssMgr {
         debug!("control action {:?}", action);
 
         match action {
-            "cold-start" => self.modem.cold_start().ok(),
-            "factory-reset" => self.modem.factory_reset().ok(),
-            "persist" => self.modem.persist().ok(),
+            "cold-start" => {
+                info!("Cold boot of GNSS receiver triggered, let receiver start");
+                self.modem.cold_start().map_err(|err| err.to_string())?
+            },
+            "factory-reset" => {
+                info!(
+                    "Reset GNSS receiver configuration to default, let receiver start with default config"
+                );
+                self.modem.factory_reset().map_err(|err| err.to_string())?
+            },
+            "persist" => { 
+                info!("Persisting receiver configuration");
+                self.modem.persist().map_err(|err| err.to_string())?
+            },
             _ => return Err("Unknown command".to_string()),
         };
 
@@ -151,10 +139,15 @@ impl GnssMgr {
         debug!("sos action {:?}", action);
 
         match action {
-            "save" => self.modem.sos_save().ok(),
+            "save" => {
+                self.modem.sos_save().map_err(|err| err.to_string())?;
+                info!("Saving receiver state successfully performed");
+                Some(())
+            },
             "clear" => {
-                self.modem.set_assistance_time().ok();
-                self.modem.sos_clear().ok();
+                self.modem.set_assistance_time().map_err(|err| err.to_string())?;
+                self.modem.sos_clear().map_err(|err| err.to_string())?;
+                info!("Clearing receiver state successfully performed");
                 Some(())
             },
             _ => return Err("Unknown command".to_string()),
@@ -187,10 +180,17 @@ impl GnssMgr {
             _ => (),
         }
 
-        // Sat Satellite systems
+        // Set Satellite systems
         match &config.systems {
-            Some(sys) => {
-                self.modem.set_systems(sys).ok();
+            Some(systems) => {
+                info!("setting navigation systems {:?}", systems);
+
+                let res = self.modem.set_systems(systems);
+                match res {
+                    Ok(_) => (),
+                    Err(Error::ModemNAK) => warn!("failed to configure satellite systems {:?}", systems),
+                    Err(e) => warn!("{}", e),
+                }
             },
             _ => (),
         }
