@@ -7,6 +7,7 @@ mod gnss_mgr;
 mod neo_m8;
 mod parser_ubx;
 mod server_tty;
+mod ubx_ack;
 mod ubx_cfg_cfg;
 mod ubx_cfg_esfalg;
 mod ubx_cfg_esfla;
