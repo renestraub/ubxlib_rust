@@ -310,7 +310,12 @@ mod tests {
     #[test]
     fn multiple_filters() {
         let mut uut = ParserUbx::new();
-        let cids = [UbxCID::new(0x12, 0x12), UbxCID::new(0x13, 0x40), UbxCID::new(0xFF, 0x00), UbxCID::new(0xFF, 0x00)];
+        let cids = [
+            UbxCID::new(0x12, 0x12),
+            UbxCID::new(0x13, 0x40),
+            UbxCID::new(0xFF, 0x00),
+            UbxCID::new(0xFF, 0x00),
+        ];
         uut.set_filters(&cids);
         uut.process(&FRAME_1.to_vec());
 
@@ -337,9 +342,40 @@ mod tests {
     fn crc_error() {
         /* B5 62 13 40 18 00 10 00 00 12 E4 07 09 05 06 28 30 00 40 28 EF 0C 0A 00 00 00 00 00 00 00 51 AC   */
         /* hdr  | <--                                 checksum                                  --> | chksum */
-        let frame: [u8; 32] = [0xB5, 0x62, 0x13, 0x40, 0x18, 0x00, 0x10, 0x00, 0x00, 0x12, 0xE4, 0x07, 0x09, 0x05,
-                               0x06, 0x28, 0x30, 0x00, 0x40, 0x28, 0xEF, 0x0C, 0x0A, 0x00, 0x00, 0x00,
-                               0x00, 0x00, 0x00, 0x00, 0x51, 0xAC+1];
+        let frame: [u8; 32] = [
+            0xB5,
+            0x62,
+            0x13,
+            0x40,
+            0x18,
+            0x00,
+            0x10,
+            0x00,
+            0x00,
+            0x12,
+            0xE4,
+            0x07,
+            0x09,
+            0x05,
+            0x06,
+            0x28,
+            0x30,
+            0x00,
+            0x40,
+            0x28,
+            0xEF,
+            0x0C,
+            0x0A,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x51,
+            0xAC + 1,
+        ];
         let mut uut = ParserUbx::new();
         uut.set_filter(UbxCID::new(0x13, 0x40));
         uut.process(&frame.to_vec());

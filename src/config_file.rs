@@ -101,7 +101,6 @@ impl GnssMgrConfig {
         };
         self.systems = value;
 
-
         let sec_installation = match conf.section(Some("installation")) {
             Some(sec) => sec,
             _ => return Err("Invalid configuration file format/version".to_string()),

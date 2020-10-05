@@ -1,17 +1,16 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo};
 use crate::frame::UbxFrameWithData;
+use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo};
 
 const CLS: u8 = 0x0A;
 const ID: u8 = 0x04;
 
-
 #[derive(Default, Debug, Serialize)]
-pub struct DataPoll { }
+pub struct DataPoll {}
 
-pub struct UbxMonVerPoll { }
+pub struct UbxMonVerPoll {}
 
 impl UbxMonVerPoll {
     pub fn new() -> UbxFrameWithData<DataPoll> {
@@ -19,14 +18,12 @@ impl UbxMonVerPoll {
     }
 }
 
-
 #[derive(Default, Debug, Deserialize)]
 pub struct MonVer {
     pub sw_version: String,
     pub hw_version: String,
     pub hw_extension: Vec<String>,
 }
-
 
 #[derive(Debug)]
 pub struct UbxMonVer {
@@ -36,7 +33,7 @@ pub struct UbxMonVer {
 impl UbxMonVer {
     pub fn new() -> Self {
         Self {
-            frame: UbxFrameWithData::new("UBX-MON-VER", UbxCID::new(CLS, ID))
+            frame: UbxFrameWithData::new("UBX-MON-VER", UbxCID::new(CLS, ID)),
         }
     }
 
@@ -109,7 +106,6 @@ impl UbxFrameDeSerialize for UbxMonVer {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -133,7 +129,19 @@ mod tests {
 
     #[test]
     fn deserialize() {
-        const DATA: [u8; 250] = [69, 88, 84, 32, 67, 79, 82, 69, 32, 51, 46, 48, 49, 32, 40, 49, 101, 99, 57, 51, 102, 41, 0, 0, 0, 0, 0, 0, 0, 0, 48, 48, 48, 56, 48, 48, 48, 48, 0, 0, 82, 79, 77, 32, 66, 65, 83, 69, 32, 51, 46, 48, 49, 32, 40, 49, 48, 55, 56, 56, 56, 41, 0, 0, 0, 0, 0, 0, 0, 0, 70, 87, 86, 69, 82, 61, 65, 68, 82, 32, 52, 46, 50, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 80, 82, 79, 84, 86, 69, 82, 61, 49, 57, 46, 50, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 79, 68, 61, 78, 69, 79, 45, 77, 56, 76, 45, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 70, 73, 83, 61, 48, 120, 69, 70, 52, 48, 49, 53, 32, 40, 49, 48, 48, 49, 49, 49, 41, 0, 0, 0, 0, 0, 0, 0, 0, 0, 71, 80, 83, 59, 71, 76, 79, 59, 71, 65, 76, 59, 66, 68, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 83, 66, 65, 83, 59, 73, 77, 69, 83, 59, 81, 90, 83, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        const DATA: [u8; 250] = [
+            69, 88, 84, 32, 67, 79, 82, 69, 32, 51, 46, 48, 49, 32, 40, 49, 101, 99, 57, 51, 102,
+            41, 0, 0, 0, 0, 0, 0, 0, 0, 48, 48, 48, 56, 48, 48, 48, 48, 0, 0, 82, 79, 77, 32, 66,
+            65, 83, 69, 32, 51, 46, 48, 49, 32, 40, 49, 48, 55, 56, 56, 56, 41, 0, 0, 0, 0, 0, 0,
+            0, 0, 70, 87, 86, 69, 82, 61, 65, 68, 82, 32, 52, 46, 50, 49, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 80, 82, 79, 84, 86, 69, 82, 61, 49, 57, 46, 50, 48, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 79, 68, 61, 78, 69, 79, 45, 77, 56, 76, 45,
+            48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 70, 73, 83, 61, 48, 120, 69, 70,
+            52, 48, 49, 53, 32, 40, 49, 48, 48, 49, 49, 49, 41, 0, 0, 0, 0, 0, 0, 0, 0, 0, 71, 80,
+            83, 59, 71, 76, 79, 59, 71, 65, 76, 59, 66, 68, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 83, 66, 65, 83, 59, 73, 77, 69, 83, 59, 81, 90, 83, 83, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
         let mut dut = UbxMonVer::new();
         dut.from_bin(DATA.to_vec());
         assert_eq!(dut.sw_version(), "EXT CORE 3.01 (1ec93f)");

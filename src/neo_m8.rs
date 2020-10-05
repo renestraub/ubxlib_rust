@@ -1,5 +1,5 @@
 use chrono::prelude::*;
-use log::{debug};
+use log::debug;
 use std::collections::HashMap;
 use std::{thread, time};
 
@@ -9,7 +9,7 @@ use crate::server_tty::ServerTty;
 use crate::ubx_cfg_cfg::UbxCfgCfgAction;
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
 use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
-use crate::ubx_cfg_gnss::{UbxCfgGnss, UbxCfgGnssPoll, SystemName};
+use crate::ubx_cfg_gnss::{SystemName, UbxCfgGnss, UbxCfgGnssPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
 use crate::ubx_cfg_prt::{UbxCfgPrtPoll, UbxCfgPrtUart};
@@ -18,7 +18,6 @@ use crate::ubx_cfg_rst::UbxCfgRstAction;
 use crate::ubx_mga_init_time_utc::UbxMgaIniTimeUtc;
 use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
 use crate::ubx_upd_sos::UbxUpdSosAction;
-
 
 pub struct NeoM8 {
     pub device_name: String,

@@ -7,8 +7,8 @@ use serial::prelude::*;
 
 use crate::cid::UbxCID;
 use crate::error::Error;
-use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 use crate::frame::UbxFrame;
+use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 use crate::parser_ubx::ParserUbx;
 
 pub struct ServerTty {
@@ -25,7 +25,7 @@ impl ServerTty {
         let obj = Self {
             device_name: String::from(device_name),
             parser: ParserUbx::new(),
-            serial_port: serial::open(device_name).ok(),    // convert Result to Option value
+            serial_port: serial::open(device_name).ok(), // convert Result to Option value
             crc_error_cid: UbxCID::new(0x00, 0x02),
             max_retries: 5,
             retry_delay_in_ms: 3000,
@@ -47,8 +47,10 @@ impl ServerTty {
                     flow_control: serial::FlowNone,
                 };
 
-                port.configure(&settings).map_err(|_err| Error::SerialPortConfigFailed)?;
-                port.set_timeout(Duration::from_millis(100)).map_err(|_err| Error::SerialPortConfigFailed)?;
+                port.configure(&settings)
+                    .map_err(|_err| Error::SerialPortConfigFailed)?;
+                port.set_timeout(Duration::from_millis(100))
+                    .map_err(|_err| Error::SerialPortConfigFailed)?;
                 return Ok(());
             }
             _ => return Err(Error::SerialPortNotFound),
@@ -87,10 +89,10 @@ impl ServerTty {
                     debug!("result received {:?} {:?}", packet.cid, packet.data);
                     frame_result.from_bin(packet.data);
                     return Ok(());
-                },
+                }
                 Err(_) => {
                     warn!("poll: timeout, retrying {}", retry);
-                },
+                }
             }
         }
 
@@ -104,7 +106,10 @@ impl ServerTty {
     - sends set message to modem
     - waits for ACK/NAK
     */
-    pub fn set<TSet: UbxFrameSerialize + UbxFrameInfo>(&mut self, frame_set: &TSet) -> Result<(), Error> {
+    pub fn set<TSet: UbxFrameSerialize + UbxFrameInfo>(
+        &mut self,
+        frame_set: &TSet,
+    ) -> Result<(), Error> {
         debug!("setting {}", frame_set.name());
 
         // Wait for ACK-ACK and ACK-NAK
@@ -127,7 +132,7 @@ impl ServerTty {
                     0 => {
                         debug!("set: received NAK");
                         return Err(Error::ModemNAK);
-                    },
+                    }
                     _ => panic!("set: invalid frame received"),
                 }
             }
@@ -148,7 +153,10 @@ impl ServerTty {
     - cold start
     - change baudrate
     */
-    pub fn fire_and_forget<TSet: UbxFrameSerialize + UbxFrameInfo>(&mut self, frame_set: &TSet) -> Result<(), Error> {
+    pub fn fire_and_forget<TSet: UbxFrameSerialize + UbxFrameInfo>(
+        &mut self,
+        frame_set: &TSet,
+    ) -> Result<(), Error> {
         debug!("firing {}", frame_set.name());
 
         let data = frame_set.to_bin();

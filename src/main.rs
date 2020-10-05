@@ -46,7 +46,7 @@ fn main() {
     } else {
         builder.filter(None, LevelFilter::Info).init();
     }
-    
+
     let rc = run_app(matches);
 
     std::process::exit(match rc {

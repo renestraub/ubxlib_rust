@@ -1,10 +1,9 @@
-use std::fmt;
+use serde::de::DeserializeOwned;
 use serde::Serialize;
-use serde::de::DeserializeOwned; 
+use std::fmt;
 
 use crate::checksum::Checksum;
 use crate::cid::UbxCID;
-
 
 pub trait UbxFrameInfo {
     fn name(&self) -> &'static str;
@@ -20,7 +19,6 @@ pub trait UbxFrameDeSerialize {
     // TODO: Consider data: &[u8]
 }
 
-
 // Generic implementation for ubx frames that can be directly (de)serialized
 #[derive(Default, Debug)]
 pub struct UbxFrameWithData<T> {
@@ -30,7 +28,8 @@ pub struct UbxFrameWithData<T> {
 }
 
 impl<T> UbxFrameWithData<T>
-    where T: Default
+where
+    T: Default,
 {
     // TODO: cid or CLS, ID? Would allow to remove dependancy on UbxCID from frames
     pub fn new(name: &'static str, cid: UbxCID) -> Self {
@@ -42,11 +41,7 @@ impl<T> UbxFrameWithData<T>
     }
 
     pub fn init(name: &'static str, cid: UbxCID, data: T) -> Self {
-        Self {
-            name,
-            cid,
-            data
-        }
+        Self { name, cid, data }
     }
 }
 
@@ -61,29 +56,27 @@ impl<T> UbxFrameInfo for UbxFrameWithData<T> {
 }
 
 impl<T> UbxFrameSerialize for UbxFrameWithData<T>
-    where T: Serialize
+where
+    T: Serialize,
 {
-    fn to_bin(&self) -> Vec<u8> 
-    {
+    fn to_bin(&self) -> Vec<u8> {
         let data = bincode::serialize(&self.data).unwrap();
         UbxFrame::bytes(self.cid(), data)
     }
 }
 
-impl<T> UbxFrameDeSerialize for UbxFrameWithData<T> 
-    where T: DeserializeOwned
+impl<T> UbxFrameDeSerialize for UbxFrameWithData<T>
+where
+    T: DeserializeOwned,
 {
     fn from_bin(&mut self, data: Vec<u8>) {
         self.data = bincode::deserialize(&data).unwrap();
     }
 }
 
-
-
 // TODO: Generic for polling frame
 // no data
 // no deserialize
-
 
 #[derive(Default)]
 pub struct UbxFrame {
@@ -93,10 +86,7 @@ pub struct UbxFrame {
 
 impl UbxFrame {
     pub fn construct(cid: UbxCID, data: Vec<u8>) -> Self {
-        Self {
-            cid,
-            data,
-        }
+        Self { cid, data }
     }
 
     pub fn bytes(cid: UbxCID, data: Vec<u8>) -> Vec<u8> {

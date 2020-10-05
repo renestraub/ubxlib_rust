@@ -17,7 +17,6 @@ pub enum SystemName {
     Glonass = 6,
 }
 
-
 pub struct UbxCfgGnssPoll {
     pub name: &'static str,
     pub cid: UbxCID,
@@ -115,7 +114,7 @@ impl UbxCfgGnss {
             let mut offset = 4;
             let size = 8;
             while offset < bytes {
-                let cfg : CfgBlock = bincode::deserialize(&data[offset..offset+size]).unwrap();
+                let cfg: CfgBlock = bincode::deserialize(&data[offset..offset + size]).unwrap();
                 self.configs.push(cfg);
 
                 offset += size;
@@ -136,7 +135,9 @@ impl UbxCfgGnss {
     }
 
     fn find_config(&mut self, system: SystemName) -> Option<&mut CfgBlock> {
-        self.configs.iter_mut().find(|c| c.gnss_id as usize == system as usize)
+        self.configs
+            .iter_mut()
+            .find(|c| c.gnss_id as usize == system as usize)
     }
 }
 
@@ -163,7 +164,6 @@ impl UbxFrameDeSerialize for UbxCfgGnss {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -178,9 +178,7 @@ mod tests {
 
     #[test]
     fn header_load() {
-        const DATA: [u8; 4] = [
-            0x00, 26, 16, 1
-        ];
+        const DATA: [u8; 4] = [0x00, 26, 16, 1];
         let mut dut = UbxCfgGnss::new();
         dut.from_bin(DATA.to_vec());
 
@@ -193,9 +191,7 @@ mod tests {
 
     #[test]
     fn header_and_config_load() {
-        const DATA: [u8; 12] = [
-            0x00, 26, 16, 1, 2, 12, 8, 0, 0x00, 0x00, 0xFF, 0x00
-        ];
+        const DATA: [u8; 12] = [0x00, 26, 16, 1, 2, 12, 8, 0, 0x00, 0x00, 0xFF, 0x00];
         let mut dut = UbxCfgGnss::new();
         dut.from_bin(DATA.to_vec());
 
@@ -215,9 +211,8 @@ mod tests {
     #[test]
     fn header_and_multiple_config_load() {
         const DATA: [u8; 20] = [
-            0x00, 26, 16, 1,
-            2, 12, 8, 0, 0x00, 0x00, 0xFF, 0x00,
-            3, 4, 2, 0, 0x01, 0x00, 0xAA, 0x00
+            0x00, 26, 16, 1, 2, 12, 8, 0, 0x00, 0x00, 0xFF, 0x00, 3, 4, 2, 0, 0x01, 0x00, 0xAA,
+            0x00,
         ];
         let mut dut = UbxCfgGnss::new();
         dut.from_bin(DATA.to_vec());
@@ -244,9 +239,8 @@ mod tests {
     #[test]
     fn enable_disable() {
         const DATA: [u8; 20] = [
-            0x00, 26, 16, 1,
-            3, 12, 8, 0, 0x00, 0x00, 0xFF, 0x00,
-            2, 4, 2, 0, 0x01, 0x00, 0xAA, 0x00
+            0x00, 26, 16, 1, 3, 12, 8, 0, 0x00, 0x00, 0xFF, 0x00, 2, 4, 2, 0, 0x01, 0x00, 0xAA,
+            0x00,
         ];
         let mut dut = UbxCfgGnss::new();
         dut.from_bin(DATA.to_vec());
@@ -277,14 +271,12 @@ mod tests {
     #[test]
     fn serialize() {
         const DATA: [u8; 20] = [
-            0x00, 26, 16, 1,
-            3, 12, 8, 0, 0x00, 0x00, 0xFF, 0x00,
-            2, 4, 2, 0, 0x01, 0x00, 0xAA, 0x00
+            0x00, 26, 16, 1, 3, 12, 8, 0, 0x00, 0x00, 0xFF, 0x00, 2, 4, 2, 0, 0x01, 0x00, 0xAA,
+            0x00,
         ];
         const DATA_SERIALIZED: [u8; 20] = [
-            0x00, 26, 16, 1,
-            3, 12, 8, 0, 0x01, 0x00, 0xFF, 0x00,
-            2, 4, 2, 0, 0x00, 0x00, 0xAA, 0x00
+            0x00, 26, 16, 1, 3, 12, 8, 0, 0x01, 0x00, 0xFF, 0x00, 2, 4, 2, 0, 0x00, 0x00, 0xAA,
+            0x00,
         ];
 
         let mut dut = UbxCfgGnss::new();

@@ -7,7 +7,6 @@ use crate::frame::UbxFrameWithData;
 const CLS: u8 = 0x06;
 const ID: u8 = 0x04;
 
-
 #[derive(Serialize_repr, Debug)]
 #[repr(u16)]
 pub enum BbrMask {
@@ -21,7 +20,6 @@ impl Default for BbrMask {
         BbrMask::ColdStart
     }
 }
-
 
 #[derive(Serialize_repr, Debug)]
 #[repr(u8)]
@@ -38,7 +36,6 @@ impl Default for ResetMode {
         ResetMode::ImmediateHwReset
     }
 }
-
 
 #[derive(Default, Debug, Serialize)]
 pub struct Data {
@@ -57,18 +54,25 @@ impl Data {
     }
 }
 
-pub struct UbxCfgRstAction { }
+pub struct UbxCfgRstAction {}
 
-impl UbxCfgRstAction { 
+impl UbxCfgRstAction {
     pub fn cold_start() -> UbxFrameWithData<Data> {
-        UbxFrameWithData::init("UBX-CFG-RST", UbxCID::new(CLS, ID), Data::new(BbrMask::ColdStart, ResetMode::SwReset))
+        UbxFrameWithData::init(
+            "UBX-CFG-RST",
+            UbxCID::new(CLS, ID),
+            Data::new(BbrMask::ColdStart, ResetMode::SwReset),
+        )
     }
 
     pub fn stop() -> UbxFrameWithData<Data> {
-        UbxFrameWithData::init("UBX-CFG-RST", UbxCID::new(CLS, ID), Data::new(BbrMask::HotStart, ResetMode::Stop))
+        UbxFrameWithData::init(
+            "UBX-CFG-RST",
+            UbxCID::new(CLS, ID),
+            Data::new(BbrMask::HotStart, ResetMode::Stop),
+        )
     }
 }
-
 
 #[cfg(test)]
 mod tests {

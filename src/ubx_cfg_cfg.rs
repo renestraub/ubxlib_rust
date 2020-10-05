@@ -26,15 +26,23 @@ impl Data {
     }
 }
 
-pub struct UbxCfgCfgAction { }
+pub struct UbxCfgCfgAction {}
 
-impl UbxCfgCfgAction { 
+impl UbxCfgCfgAction {
     pub fn factory_reset() -> UbxFrameWithData<Data> {
-        UbxFrameWithData::init("UBX-CFG-CFG", UbxCID::new(CLS, ID), Data::new(MASK_ALL, 0, MASK_ALL))
+        UbxFrameWithData::init(
+            "UBX-CFG-CFG",
+            UbxCID::new(CLS, ID),
+            Data::new(MASK_ALL, 0, MASK_ALL),
+        )
     }
 
     pub fn persist() -> UbxFrameWithData<Data> {
-        UbxFrameWithData::init("UBX-CFG-CFG", UbxCID::new(CLS, ID), Data::new(0, MASK_ALL, 0))
+        UbxFrameWithData::init(
+            "UBX-CFG-CFG",
+            UbxCID::new(CLS, ID),
+            Data::new(0, MASK_ALL, 0),
+        )
     }
 }
 

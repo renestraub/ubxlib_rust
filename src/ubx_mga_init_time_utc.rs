@@ -2,7 +2,7 @@ use chrono::prelude::*;
 use serde::Serialize;
 
 use crate::cid::UbxCID;
-use crate::frame::{UbxFrameWithData, UbxFrameInfo, UbxFrameSerialize};
+use crate::frame::{UbxFrameInfo, UbxFrameSerialize, UbxFrameWithData};
 
 const CLS: u8 = 0x13;
 const ID: u8 = 0x40;
@@ -28,14 +28,14 @@ pub struct MgaIniTimeUtc {
     pub tacc_ns: u32,
 }
 
-pub struct UbxMgaIniTimeUtc { 
+pub struct UbxMgaIniTimeUtc {
     frame: UbxFrameWithData<MgaIniTimeUtc>,
 }
 
-impl UbxMgaIniTimeUtc { 
+impl UbxMgaIniTimeUtc {
     pub fn new() -> Self {
         Self {
-            frame: UbxFrameWithData::new("UBX-MGA-INI-TIME_UTC", UbxCID::new(CLS, ID))
+            frame: UbxFrameWithData::new("UBX-MGA-INI-TIME_UTC", UbxCID::new(CLS, ID)),
         }
     }
 
@@ -78,7 +78,6 @@ impl UbxFrameSerialize for UbxMgaIniTimeUtc {
         self.frame.to_bin()
     }
 }
-
 
 #[cfg(test)]
 mod tests {

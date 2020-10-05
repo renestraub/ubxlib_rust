@@ -6,18 +6,16 @@ use crate::frame::UbxFrameWithData;
 const CLS: u8 = 0x06;
 const ID: u8 = 0x24;
 
-
 #[derive(Default, Debug, Serialize)]
-pub struct DataPoll { }
+pub struct DataPoll {}
 
-pub struct UbxCfgNav5Poll { }
+pub struct UbxCfgNav5Poll {}
 
-impl UbxCfgNav5Poll { 
+impl UbxCfgNav5Poll {
     pub fn new() -> UbxFrameWithData<DataPoll> {
         UbxFrameWithData::new("UBX-CFG-NAV5-POLL", UbxCID::new(CLS, ID))
     }
 }
-
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -42,14 +40,13 @@ pub struct Data {
     pub res: [u8; 5],
 }
 
-pub struct UbxCfgNav5 { }
+pub struct UbxCfgNav5 {}
 
-impl UbxCfgNav5 { 
+impl UbxCfgNav5 {
     pub fn new() -> UbxFrameWithData<Data> {
         UbxFrameWithData::new("UBX-CFG-NAV5", UbxCID::new(CLS, ID))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -95,7 +92,10 @@ mod tests {
 
     #[test]
     fn deser() {
-        const DATA: [u8; 36] = [255, 255, 4, 3, 0, 0, 0, 0, 16, 39, 0, 0, 10, 0, 250, 0, 250, 0, 100, 0, 94, 1, 0, 60, 0, 0, 16, 39, 0, 0, 0, 0, 0, 0, 0, 0];
+        const DATA: [u8; 36] = [
+            255, 255, 4, 3, 0, 0, 0, 0, 16, 39, 0, 0, 10, 0, 250, 0, 250, 0, 100, 0, 94, 1, 0, 60,
+            0, 0, 16, 39, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
         let mut dut = UbxCfgNav5::new();
         assert_eq!(dut.name, "UBX-CFG-NAV5");
 

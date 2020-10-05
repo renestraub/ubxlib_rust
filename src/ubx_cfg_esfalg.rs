@@ -7,16 +7,15 @@ const CLS: u8 = 0x06;
 const ID: u8 = 0x56;
 
 #[derive(Default, Debug, Serialize)]
-pub struct DataPoll { }
+pub struct DataPoll {}
 
-pub struct UbxCfgEsfAlgPoll { }
+pub struct UbxCfgEsfAlgPoll {}
 
-impl UbxCfgEsfAlgPoll { 
+impl UbxCfgEsfAlgPoll {
     pub fn new() -> UbxFrameWithData<DataPoll> {
         UbxFrameWithData::new("UBX-CFG-ESFALG-POLL", UbxCID::new(CLS, ID))
     }
 }
-
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -26,14 +25,13 @@ pub struct Data {
     pub roll: i16,     // 1e-2, -180..180°
 }
 
-pub struct UbxCfgEsfAlg { }
-      
-impl UbxCfgEsfAlg { 
+pub struct UbxCfgEsfAlg {}
+
+impl UbxCfgEsfAlg {
     pub fn new() -> UbxFrameWithData<Data> {
         UbxFrameWithData::new("UBX-CFG-ESFALG", UbxCID::new(CLS, ID))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -81,7 +79,10 @@ mod tests {
         let data = dut.to_bin();
         assert_eq!(
             data[0..18],
-            [0xb5, 0x62, 0x06, 0x56, 12, 0, 0x00, 0x00, 0x00, 0x00, 0x50, 0x46, 0x00, 0x00, 0x6C, 0xEE, 0x94, 0x11]
+            [
+                0xb5, 0x62, 0x06, 0x56, 12, 0, 0x00, 0x00, 0x00, 0x00, 0x50, 0x46, 0x00, 0x00,
+                0x6C, 0xEE, 0x94, 0x11
+            ]
         );
     }
 }

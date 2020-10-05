@@ -6,7 +6,6 @@ use crate::frame::UbxFrameWithData;
 const CLS: u8 = 0x09;
 const ID: u8 = 0x14;
 
-
 // TODO: UpdSosAction Enum
 
 #[derive(Default, Debug, Serialize)]
@@ -24,18 +23,25 @@ impl UpdSosAction {
     }
 }
 
-pub struct UbxUpdSosAction { }
+pub struct UbxUpdSosAction {}
 
-impl UbxUpdSosAction { 
+impl UbxUpdSosAction {
     pub fn backup() -> UbxFrameWithData<UpdSosAction> {
-        UbxFrameWithData::init("UBX-UPD-SOS-ACTION", UbxCID::new(CLS, ID), UpdSosAction::new(0x00))
+        UbxFrameWithData::init(
+            "UBX-UPD-SOS-ACTION",
+            UbxCID::new(CLS, ID),
+            UpdSosAction::new(0x00),
+        )
     }
 
     pub fn clear() -> UbxFrameWithData<UpdSosAction> {
-        UbxFrameWithData::init("UBX-UPD-SOS-ACTION", UbxCID::new(CLS, ID), UpdSosAction::new(0x01))
+        UbxFrameWithData::init(
+            "UBX-UPD-SOS-ACTION",
+            UbxCID::new(CLS, ID),
+            UpdSosAction::new(0x01),
+        )
     }
 }
-
 
 #[cfg(test)]
 mod tests {

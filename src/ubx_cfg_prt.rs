@@ -21,14 +21,13 @@ impl DataPoll {
     }
 }
 
-pub struct UbxCfgPrtPoll { }
-      
-impl UbxCfgPrtPoll { 
+pub struct UbxCfgPrtPoll {}
+
+impl UbxCfgPrtPoll {
     pub fn new() -> UbxFrameWithData<DataPoll> {
         UbxFrameWithData::init("UBX-CFG-PRT-POLL", UbxCID::new(CLS, ID), DataPoll::new())
     }
 }
-
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -44,14 +43,13 @@ pub struct Data {
     pub res2: [u8; 2],
 }
 
-pub struct UbxCfgPrtUart { }
+pub struct UbxCfgPrtUart {}
 
-impl UbxCfgPrtUart { 
+impl UbxCfgPrtUart {
     pub fn new() -> UbxFrameWithData<Data> {
         UbxFrameWithData::new("UBX-CFG-PRT", UbxCID::new(CLS, ID))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -69,7 +67,9 @@ mod tests {
 
     #[test]
     fn deserialize() {
-        const DATA: [u8; 20] = [1, 0, 0, 0, 192, 8, 0, 0, 128, 37, 0, 0, 7, 0, 3, 0, 0, 0, 0, 0];
+        const DATA: [u8; 20] = [
+            1, 0, 0, 0, 192, 8, 0, 0, 128, 37, 0, 0, 7, 0, 3, 0, 0, 0, 0, 0,
+        ];
         let mut dut = UbxCfgPrtUart::new();
         assert_eq!(dut.name, "UBX-CFG-PRT");
         dut.from_bin(DATA.to_vec());

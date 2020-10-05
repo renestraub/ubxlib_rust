@@ -1,5 +1,5 @@
-use std::fmt;
 use std::error::Error as StdError;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum Error {
@@ -20,7 +20,6 @@ impl fmt::Display for Error {
             Error::BaudRateDetectionFailed => f.write_str("failed to detect current baudrate"),
             Error::ModemNotResponding => f.write_str("modem did not respond"),
             Error::ModemNAK => f.write_str("modem NAK received"),
-
         }
     }
 }
@@ -34,7 +33,6 @@ impl StdError for Error {
             Error::BaudRateDetectionFailed => "failed to detect current baudrate",
             Error::ModemNotResponding => "modem did not respond",
             Error::ModemNAK => "modem NAK received",
-
         }
     }
 }

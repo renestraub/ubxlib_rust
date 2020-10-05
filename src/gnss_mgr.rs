@@ -13,7 +13,6 @@ use crate::neo_m8::NeoM8;
 
 static CURRENT_FW_VER: &str = "ADR 4.31";
 
-
 pub struct GnssMgr {
     device_name: String,
     modem: NeoM8,
@@ -33,19 +32,25 @@ impl GnssMgr {
             info!("detecting current bitrate");
 
             let bit_rate_current = match self.modem.detect_baudrate() {
-                Ok(bitrate) => bitrate, 
+                Ok(bitrate) => bitrate,
                 Err(e) => return Err(format!("bitrate detection failed ({})", e).to_string()),
             };
 
             info!("detected bitrate {:?} bps", bit_rate_current);
             if bit_rate_current != 115200 {
                 info!("changing bitrate from {} to 115200 bps", bit_rate_current);
-                self.modem.configure(bit_rate_current).map_err(|err| err.to_string())?;
-                self.modem.set_modem_baudrate(115200).map_err(|err| err.to_string())?;
+                self.modem
+                    .configure(bit_rate_current)
+                    .map_err(|err| err.to_string())?;
+                self.modem
+                    .set_modem_baudrate(115200)
+                    .map_err(|err| err.to_string())?;
             }
         }
 
-        self.modem.configure(115200).map_err(|err| err.to_string())?;
+        self.modem
+            .configure(115200)
+            .map_err(|err| err.to_string())?;
 
         Ok(())
     }
@@ -117,17 +122,17 @@ impl GnssMgr {
             "cold-start" => {
                 info!("Cold boot of GNSS receiver triggered, let receiver start");
                 self.modem.cold_start().map_err(|err| err.to_string())?
-            },
+            }
             "factory-reset" => {
                 info!(
                     "Reset GNSS receiver configuration to default, let receiver start with default config"
                 );
                 self.modem.factory_reset().map_err(|err| err.to_string())?
-            },
-            "persist" => { 
+            }
+            "persist" => {
                 info!("Persisting receiver configuration");
                 self.modem.persist().map_err(|err| err.to_string())?
-            },
+            }
             _ => return Err("Unknown command".to_string()),
         };
 
@@ -143,13 +148,15 @@ impl GnssMgr {
                 self.modem.sos_save().map_err(|err| err.to_string())?;
                 info!("Saving receiver state successfully performed");
                 Some(())
-            },
+            }
             "clear" => {
-                self.modem.set_assistance_time().map_err(|err| err.to_string())?;
+                self.modem
+                    .set_assistance_time()
+                    .map_err(|err| err.to_string())?;
                 self.modem.sos_clear().map_err(|err| err.to_string())?;
                 info!("Clearing receiver state successfully performed");
                 Some(())
-            },
+            }
             _ => return Err("Unknown command".to_string()),
         };
 
@@ -173,8 +180,14 @@ impl GnssMgr {
         match &config.mode {
             Some(mode) => match mode.as_str() {
                 // TODO: This should go nicer
-                "stationary" => { self.modem.set_dynamic_mode(2).ok(); () },
-                "vehicle" => { self.modem.set_dynamic_mode(4).ok(); () },
+                "stationary" => {
+                    self.modem.set_dynamic_mode(2).ok();
+                    ()
+                }
+                "vehicle" => {
+                    self.modem.set_dynamic_mode(4).ok();
+                    ()
+                }
                 _ => (),
             },
             _ => (),
@@ -188,26 +201,32 @@ impl GnssMgr {
                 let res = self.modem.set_systems(systems);
                 match res {
                     Ok(_) => (),
-                    Err(Error::ModemNAK) => warn!("failed to configure satellite systems {:?}", systems),
+                    Err(Error::ModemNAK) => {
+                        warn!("failed to configure satellite systems {:?}", systems)
+                    }
                     Err(e) => warn!("{}", e),
                 }
-            },
+            }
             _ => (),
         }
 
         // TODO: Combine IMU angles in a struct, this is ugly
         if config.imu_yaw.is_some() && config.imu_pitch.is_some() && config.imu_roll.is_some() {
-            self.modem.set_imu_angles(
-                config.imu_yaw.unwrap(),
-                config.imu_pitch.unwrap(),
-                config.imu_roll.unwrap(),
-            ).ok();
+            self.modem
+                .set_imu_angles(
+                    config.imu_yaw.unwrap(),
+                    config.imu_pitch.unwrap(),
+                    config.imu_roll.unwrap(),
+                )
+                .ok();
         }
 
         // Lever Arms
         if config.vrp2antenna.is_some() {
             // TODO: replace 0 with a proper constant
-            self.modem.set_lever_arm(0, &config.vrp2antenna.unwrap()).ok();
+            self.modem
+                .set_lever_arm(0, &config.vrp2antenna.unwrap())
+                .ok();
         }
 
         if config.vrp2imu.is_some() {
@@ -227,7 +246,7 @@ impl GnssMgr {
     }
 
     fn write_runfile(path: &str, info: &HashMap<&str, String>) -> Result<(), &'static str> {
-        match fs::create_dir_all("/run/gnss/")  {
+        match fs::create_dir_all("/run/gnss/") {
             Err(_) => return Err("Can't create GNSS run file folder"),
             Ok(_) => (),
         }

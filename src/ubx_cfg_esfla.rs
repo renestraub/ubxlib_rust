@@ -31,14 +31,13 @@ impl Data {
     }
 }
 
-pub struct UbxCfgEsflaSet { }
-      
-impl UbxCfgEsflaSet { 
+pub struct UbxCfgEsflaSet {}
+
+impl UbxCfgEsflaSet {
     pub fn new() -> UbxFrameWithData<Data> {
         UbxFrameWithData::init("UBX-CFG-ESFLA", UbxCID::new(CLS, ID), Data::new())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

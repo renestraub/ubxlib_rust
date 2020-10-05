@@ -6,18 +6,16 @@ use crate::frame::UbxFrameWithData;
 const CLS: u8 = 0x06;
 const ID: u8 = 0x08;
 
-
 #[derive(Default, Debug, Serialize)]
-pub struct DataPoll { }
+pub struct DataPoll {}
 
-pub struct UbxCfgRatePoll { }
-      
-impl UbxCfgRatePoll { 
+pub struct UbxCfgRatePoll {}
+
+impl UbxCfgRatePoll {
     pub fn new() -> UbxFrameWithData<DataPoll> {
         UbxFrameWithData::new("UBX-CFG-RATE-POLL", UbxCID::new(CLS, ID))
     }
 }
-
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -26,14 +24,13 @@ pub struct Data {
     pub time_ref: u16,
 }
 
-pub struct UbxCfgRate { }
-      
-impl UbxCfgRate { 
+pub struct UbxCfgRate {}
+
+impl UbxCfgRate {
     pub fn new() -> UbxFrameWithData<Data> {
         UbxFrameWithData::new("UBX-CFG-RATE", UbxCID::new(CLS, ID))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
