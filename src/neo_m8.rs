@@ -17,7 +17,7 @@ use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
 use crate::ubx_cfg_rst::UbxCfgRstAction;
 use crate::ubx_mga_init_time_utc::UbxMgaIniTimeUtc;
 use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
-use crate::ubx_upd_sos::UbxUpdSosAction;
+use crate::ubx_upd_sos::{Response, UbxUpdSos, UbxUpdSosAction, UbxUpdSosPoll};
 
 pub struct NeoM8 {
     pub device_name: String,
@@ -78,6 +78,19 @@ impl NeoM8 {
         info.insert("augmentation", String::from(&ver_result.get_ext(6)));
 
         Ok(())
+    }
+
+    pub fn sos_check(&mut self) -> Result<(), Error> {
+        let mut set = UbxUpdSos::new();
+        let poll = UbxUpdSosPoll::new();
+        self.server.poll(&poll, &mut set)?;
+        debug!("SoS State reported is {:?}", set.data.response);
+
+        match set.data.response {
+            Response::Restored => Ok(()),
+            Response::NotRestoredNoBackup => Err(Error::ModemNobackup),
+            _ => Err(Error::ModemBackupRestoreFailed),
+        }
     }
 
     pub fn sos_save(&mut self) -> Result<(), Error> {

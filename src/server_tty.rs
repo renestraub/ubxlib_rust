@@ -140,7 +140,7 @@ impl ServerTty {
                     return Ok(());
                 }
                 Err(_) => {
-                    warn!("poll: timeout, retrying {}", retry+1);
+                    warn!("poll: timeout, retrying {}", retry + 1);
                 }
             }
         }
@@ -180,7 +180,7 @@ impl ServerTty {
                     Err(_) => (), // Ignore other errors, as for example NAK for another request
                 },
                 Err(_) => {
-                    warn!("set: timeout, retrying {}", retry+1);
+                    warn!("set: timeout, retrying {}", retry + 1);
                 }
             }
         }

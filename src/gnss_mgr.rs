@@ -153,8 +153,20 @@ impl GnssMgr {
                 self.modem
                     .set_assistance_time()
                     .map_err(|err| err.to_string())?;
-                self.modem.sos_clear().map_err(|err| err.to_string())?;
-                info!("Clearing receiver state successfully performed");
+
+                match self.modem.sos_check() {
+                    Ok(_) => {
+                        self.modem.sos_clear().map_err(|err| err.to_string())?;
+                        info!("Clearing receiver state successfully performed");
+                    }
+                    Err(Error::ModemNobackup) => {
+                        info!("No backup found");
+                    }
+                    Err(_) => {
+                        info!("Problem with backup, clearing state");
+                        self.modem.sos_clear().map_err(|err| err.to_string())?;
+                    }
+                }
                 Some(())
             }
             _ => return Err("Unknown command".to_string()),

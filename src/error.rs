@@ -10,6 +10,8 @@ pub enum Error {
     ModemNotResponding,
     ModemNAK,
     ModemUnexpectedAckNak,
+    ModemNobackup,
+    ModemBackupRestoreFailed,
 }
 
 impl fmt::Display for Error {
@@ -22,6 +24,8 @@ impl fmt::Display for Error {
             Error::ModemNotResponding => f.write_str("modem did not respond"),
             Error::ModemNAK => f.write_str("modem NAK received"),
             Error::ModemUnexpectedAckNak => f.write_str("unexpected ACK/NAK received"),
+            Error::ModemNobackup => f.write_str("no backup present"),
+            Error::ModemBackupRestoreFailed => f.write_str("restoring backup failed"),
         }
     }
 }
@@ -36,6 +40,8 @@ impl StdError for Error {
             Error::ModemNotResponding => "modem did not respond",
             Error::ModemNAK => "modem NAK received",
             Error::ModemUnexpectedAckNak => "unexpected ACK/NAK received",
+            Error::ModemNobackup => "no backup present",
+            Error::ModemBackupRestoreFailed => "restoring backup failed",
         }
     }
 }
