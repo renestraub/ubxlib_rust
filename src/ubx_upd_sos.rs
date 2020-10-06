@@ -1,4 +1,5 @@
 use serde::Serialize;
+use serde_repr::Serialize_repr;
 
 use crate::cid::UbxCID;
 use crate::frame::UbxFrameWithData;
@@ -6,16 +7,27 @@ use crate::frame::UbxFrameWithData;
 const CLS: u8 = 0x09;
 const ID: u8 = 0x14;
 
-// TODO: UpdSosAction Enum
+#[derive(Serialize_repr, Debug)]
+#[repr(u8)]
+pub enum Command {
+    Backup = 0x00,
+    Clear = 0x01,
+}
+
+impl Default for Command {
+    fn default() -> Self {
+        Command::Backup
+    }
+}
 
 #[derive(Default, Debug, Serialize)]
 pub struct UpdSosAction {
-    pub cmd: u8,
+    pub cmd: Command,
     pub res1: [u8; 3],
 }
 
 impl UpdSosAction {
-    pub fn new(cmd: u8) -> Self {
+    pub fn new(cmd: Command) -> Self {
         Self {
             cmd,
             ..Default::default()
@@ -30,7 +42,7 @@ impl UbxUpdSosAction {
         UbxFrameWithData::init(
             "UBX-UPD-SOS-ACTION",
             UbxCID::new(CLS, ID),
-            UpdSosAction::new(0x00),
+            UpdSosAction::new(Command::Backup),
         )
     }
 
@@ -38,7 +50,7 @@ impl UbxUpdSosAction {
         UbxFrameWithData::init(
             "UBX-UPD-SOS-ACTION",
             UbxCID::new(CLS, ID),
-            UpdSosAction::new(0x01),
+            UpdSosAction::new(Command::Clear),
         )
     }
 }
