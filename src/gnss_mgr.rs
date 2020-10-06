@@ -10,6 +10,7 @@ use log::{debug, info, warn};
 use crate::config_file::GnssMgrConfig;
 use crate::error::Error;
 use crate::neo_m8::NeoM8;
+use crate::ubx_cfg_esfla::LeverArmType;
 
 static CURRENT_FW_VER: &str = "ADR 4.31";
 
@@ -235,15 +236,15 @@ impl GnssMgr {
 
         // Lever Arms
         if config.vrp2antenna.is_some() {
-            // TODO: replace 0 with a proper constant
             self.modem
-                .set_lever_arm(0, &config.vrp2antenna.unwrap())
+                .set_lever_arm(LeverArmType::VRPtoAntenna, &config.vrp2antenna.unwrap())
                 .ok();
         }
 
         if config.vrp2imu.is_some() {
-            // TODO: replace 1 with a proper constant
-            self.modem.set_lever_arm(1, &config.vrp2imu.unwrap()).ok();
+            self.modem
+                .set_lever_arm(LeverArmType::VRPtoIMU, &config.vrp2imu.unwrap())
+                .ok();
         }
     }
 

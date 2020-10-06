@@ -8,7 +8,7 @@ use crate::error::Error;
 use crate::server_tty::ServerTty;
 use crate::ubx_cfg_cfg::UbxCfgCfgAction;
 use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
-use crate::ubx_cfg_esfla::UbxCfgEsflaSet;
+use crate::ubx_cfg_esfla::{LeverArmType, UbxCfgEsflaSet};
 use crate::ubx_cfg_gnss::{SystemName, UbxCfgGnss, UbxCfgGnssPoll};
 use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
 use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
@@ -277,8 +277,7 @@ impl NeoM8 {
         Ok(())
     }
 
-    // TODO const for arm type 0 = VRP-to-Ant, 1 = VRP_to_IMU
-    pub fn set_lever_arm(&mut self, armtype: u8, distances: &Xyz) -> Result<(), Error> {
+    pub fn set_lever_arm(&mut self, armtype: LeverArmType, distances: &Xyz) -> Result<(), Error> {
         assert!(distances.x >= -30.0 && distances.x <= 30.0);
         assert!(distances.y >= -10.0 && distances.y <= 10.0);
         assert!(distances.z >= -10.0 && distances.z <= 10.0);
