@@ -38,28 +38,20 @@ fn main() {
     let app = setup_arg_parse();
     let matches = app.get_matches();
 
-    // Parse logger options -v/-q (mutually exclusive)
-    let mut builder = Builder::new();
-    if matches.is_present("verbose") {
-        builder.filter(None, LevelFilter::Debug).init();
-    } else if matches.is_present("quiet") {
-        builder.filter(None, LevelFilter::Warn).init();
-    } else {
-        builder.filter(None, LevelFilter::Info).init();
-    }
+    set_logger(&matches);
 
-    let rc = run_app(matches);
-
-    std::process::exit(match rc {
+    let res = run_app(&matches);
+    let ec = match res {
         Ok(_) => 0,
         Err(err) => {
             eprintln!("error: {}", err);
             1
         }
-    });
+    };
+    std::process::exit(ec);
 }
 
-fn run_app(matches: ArgMatches) -> Result<(), String> {
+fn run_app(matches: &ArgMatches) -> Result<(), String> {
     // unwrap must never fail here, as argument is checked by parser already
     let device_name = matches.value_of("device").unwrap();
 
@@ -130,6 +122,19 @@ fn setup_arg_parse() -> App<'static, 'static> {
                 .possible_values(&["save", "clear"])
                 .help("Selects sos operation to perform")));
     app
+}
+
+fn set_logger(matches: &ArgMatches) {
+    // Parse logger options -v/-q (mutually exclusive)
+    let mut builder = Builder::new();
+
+    if matches.is_present("verbose") {
+        builder.filter(None, LevelFilter::Debug).init();
+    } else if matches.is_present("quiet") {
+        builder.filter(None, LevelFilter::Warn).init();
+    } else {
+        builder.filter(None, LevelFilter::Info).init();
+    }
 }
 
 fn check_port(device_name: &str) -> Result<(), String> {
