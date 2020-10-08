@@ -94,11 +94,10 @@ impl ParserUbx {
     }
 
     pub fn packet(&mut self) -> Option<UbxFrame> {
-        self.rx_queue.pop_front() // Some(UbxFrame) or None
+        self.rx_queue.pop_front() // returns Some(UbxFrame) or None
     }
 
-    // TODO: Change to plain array instead of vector
-    pub fn process(&mut self, data: &Vec<u8>) {
+    pub fn process(&mut self, data: &[u8]) {
         for byte in data.iter() {
             self.process_byte(*byte);
         }
@@ -195,9 +194,6 @@ impl ParserUbx {
             let cid = UbxCID::new(self.msg_class, self.msg_id);
             // debug!("cid {:?}", cid);
             if self.wait_cids.contains(&cid) {
-                // .. send CID and data as tuple to server
-                // TODO: Here comes the fun part.
-                // We have to copy over the buffer to the packet by value
                 let packet = UbxFrame {
                     cid: cid,
                     data: self.msg_data.clone(),
@@ -269,7 +265,7 @@ mod tests {
     fn process_array() {
         let mut uut = ParserUbx::new();
         uut.set_filter(UbxCID::new(0x13, 0x40));
-        uut.process(&FRAME_1.to_vec());
+        uut.process(&FRAME_1);
 
         let res = uut.packet();
         let packet = res.unwrap(); // panics if None
@@ -280,7 +276,7 @@ mod tests {
     fn passes_filter() {
         let mut uut = ParserUbx::new();
         uut.set_filter(UbxCID::new(0x13, 0x40));
-        uut.process(&FRAME_1.to_vec());
+        uut.process(&FRAME_1);
 
         let res = uut.packet();
         let packet = res.unwrap(); // panics if None
@@ -291,7 +287,7 @@ mod tests {
     fn dropped_cls() {
         let mut uut = ParserUbx::new();
         uut.set_filter(UbxCID::new(0x12, 0x40));
-        uut.process(&FRAME_1.to_vec());
+        uut.process(&FRAME_1);
 
         let res = uut.packet();
         assert_eq!(res.is_none(), true);
@@ -301,7 +297,7 @@ mod tests {
     fn dropped_id() {
         let mut uut = ParserUbx::new();
         uut.set_filter(UbxCID::new(0x13, 0x41));
-        uut.process(&FRAME_1.to_vec());
+        uut.process(&FRAME_1);
 
         let res = uut.packet();
         assert_eq!(res.is_none(), true);
@@ -317,7 +313,7 @@ mod tests {
             UbxCID::new(0xFF, 0x00),
         ];
         uut.set_filters(&cids);
-        uut.process(&FRAME_1.to_vec());
+        uut.process(&FRAME_1);
 
         let res = uut.packet();
         let packet = res.unwrap(); // panics if None
@@ -328,12 +324,12 @@ mod tests {
     fn change_filter() {
         let mut uut = ParserUbx::new();
         uut.set_filter(UbxCID::new(0x13, 0x40));
-        uut.process(&FRAME_1.to_vec());
+        uut.process(&FRAME_1);
         let res = uut.packet();
         assert_eq!(res.is_some(), true);
 
         uut.set_filter(UbxCID::new(0x00, 0x00));
-        uut.process(&FRAME_1.to_vec());
+        uut.process(&FRAME_1);
         let res = uut.packet();
         assert_eq!(res.is_none(), true);
     }
@@ -378,7 +374,7 @@ mod tests {
         ];
         let mut uut = ParserUbx::new();
         uut.set_filter(UbxCID::new(0x13, 0x40));
-        uut.process(&frame.to_vec());
+        uut.process(&frame);
         let res = uut.packet(); // crc packet
         assert_eq!(res.is_some(), true);
         let packet = res.unwrap(); // panics if None
@@ -394,7 +390,7 @@ mod tests {
         ];
         let mut uut = ParserUbx::new();
         uut.set_filter(UbxCID::new(0x13, 0x40));
-        uut.process(&frame.to_vec());
+        uut.process(&frame);
         let res = uut.packet(); // Should be None because frame is too long (MAX_MESSAGE_LENGTH)
         assert_eq!(res.is_none(), true);
     }
