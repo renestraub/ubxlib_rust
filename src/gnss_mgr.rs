@@ -61,35 +61,24 @@ impl GnssMgr {
         let mut info: HashMap<&str, String> = HashMap::new();
         info.insert("vendor", String::from("ublox"));
 
-        info!("getting modem information");
         // Get version information and ..
-        // TODO: Check at what level error messages are defined/wrapped into human readable messages
-        // - gnss-mgr
-        // - neo_m8
-        // - server_tty
-        // Goal: allow use of ? operator, w/o exposing to low level error messages
-        // self.modem.version(&mut info)?;
-        match self.modem.version(&mut info) {
-            Ok(_) => (),
-            Err(e) => return Err(format!("Can't get modem information ({})", e).to_string()),
-        }
+        info!("getting modem information");
+        self.modem
+            .version(&mut info)
+            .map_err(|e| format!("can't get modem information ({})", e))?;
 
         // .. create run file
         let runfile_path = Self::build_runfile_path(&self.device_name);
-        match Self::write_runfile(&runfile_path, &info) {
-            Ok(_) => info!("GNSS run file {} created", runfile_path.display()),
-            Err(e) => {
-                return Err(format!("{}", e));
-            }
-        }
+        Self::write_runfile(&runfile_path, &info)
+            .map_err(|e| format!("can't create run file ({})", e))?;
+
+        info!("GNSS run file {} created", runfile_path.display());
 
         // Change protocol to NMEA 4.1
-        // set_nmea_protocol_version
-        info!("checking nmea version");
-        match self.modem.set_nmea_protocol_version("4.1") {
-            Ok(_) => (),
-            Err(_) => return Err(String::from("Can't set NMEA protocol version")),
-        }
+        info!("setting nmea version");
+        self.modem
+            .set_nmea_protocol_version("4.1")
+            .map_err(|e| format!("can't set NMEA protocol version ({})", e))?;
 
         Ok(())
     }
@@ -277,7 +266,7 @@ impl GnssMgr {
         let parent = path.parent().unwrap();
 
         fs::create_dir_all(parent)
-            .map_err(|_err|format!("can't create GNSS run file folder {}", parent.display()))?;
+            .map_err(|_err| format!("can't create GNSS run file folder {}", parent.display()))?;
 
         let mut file = File::create(&path)
             .map_err(|_err| format!("can't create GNSS run file {}", path.display()))?;

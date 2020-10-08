@@ -21,11 +21,9 @@ impl GnssMgrConfig {
         let conf = Ini::load_from_file(path).map_err(|_err| "configuration file not found")?;
 
         // Check for version 2 format
-        let sec_general = match conf.section(Some("default")) {
-            Some(sec) => sec,
-            _ => return Err("Invalid configuration file format/version".to_string()),
-        };
-
+        let sec_general = conf
+            .section(Some("default"))
+            .ok_or("Invalid configuration file format/version")?;
         let _version = match sec_general.get("version") {
             Some("2") => 2,
             _ => return Err("Invalid configuration file format/version".to_string()),
