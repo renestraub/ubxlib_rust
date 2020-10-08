@@ -1,5 +1,6 @@
 use ini::Ini;
 use log::info;
+use std::path::Path;
 
 #[derive(Debug, Default)]
 pub struct GnssMgrConfig {
@@ -15,12 +16,9 @@ pub struct GnssMgrConfig {
 }
 
 impl GnssMgrConfig {
-    pub fn parse_config(&mut self, path: &str) -> Result<(), String> {
+    pub fn parse_config<P: AsRef<Path>>(&mut self, path: P) -> Result<(), String> {
         // Import whole file, check for syntax errors
-        let conf = match Ini::load_from_file(path) {
-            Ok(c) => c,
-            _ => return Err(format!("configuration file {} not found", path).to_string()),
-        };
+        let conf = Ini::load_from_file(path).map_err(|_err| "configuration file not found")?;
 
         // Check for version 2 format
         let sec_general = match conf.section(Some("default")) {
@@ -212,6 +210,16 @@ impl GnssMgrConfig {
         Ok(())
     }
 }
+
+// TODO: imu_angles
+/*
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Angles {
+    pub yaw: f32,
+    pub pitch: f32,
+    pub roll: f32,
+}
+*/
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Xyz {

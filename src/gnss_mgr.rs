@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use clap::ArgMatches;
 use log::{debug, info, warn};
@@ -57,9 +57,6 @@ impl GnssMgr {
     }
 
     pub fn run_init(&mut self, _matches: &ArgMatches) -> Result<(), String> {
-        // create /run/gnss/gnss0.config
-        let runfile_path = Self::build_runfile_path(&self.device_name);
-
         // vendor is always "ublox" when using this library
         let mut info: HashMap<&str, String> = HashMap::new();
         info.insert("vendor", String::from("ublox"));
@@ -78,11 +75,12 @@ impl GnssMgr {
         }
 
         // .. create run file
+        let runfile_path = Self::build_runfile_path(&self.device_name);
         match Self::write_runfile(&runfile_path, &info) {
-            Ok(_) => info!("GNSS run file {} created", &runfile_path),
-            Err(_) => {
-                warn!("Error creating run file");
-            } // TODO: return code on error
+            Ok(_) => info!("GNSS run file {} created", runfile_path.display()),
+            Err(e) => {
+                return Err(format!("{}", e));
+            }
         }
 
         // Change protocol to NMEA 4.1
@@ -99,12 +97,12 @@ impl GnssMgr {
     pub fn run_config(&mut self, matches: &ArgMatches) -> Result<(), String> {
         // Check for optional config file name
         let configfile_path = matches.value_of("configfile");
-        let configfile_path: String = match configfile_path {
-            Some(path) => path.to_string(), // path to file specified
+        let configfile_path = match configfile_path {
+            Some(path) => PathBuf::from(path), // path to file specified
             _ => Self::build_configfile_path(&self.device_name), // left away, compute from device name
         };
 
-        info!("using configfile {}", configfile_path);
+        info!("using configfile {}", configfile_path.display());
 
         // Get configuration from config file
         let mut config: GnssMgrConfig = Default::default();
@@ -248,29 +246,7 @@ impl GnssMgr {
         }
     }
 
-    fn build_runfile_path(path: &str) -> String {
-        // Take devicename of form /dev/<name> to build /run/gnss/<name>.config
-        let path = &path.replace("/dev/", "/run/gnss/");
-        let mut path = String::from(path);
-        path.push_str(".config");
-        path
-        //let owner = Path::new(&path);
-        // path.as_ref()
-    }
-
-    fn write_runfile(path: &str, info: &HashMap<&str, String>) -> Result<(), &'static str> {
-        match fs::create_dir_all("/run/gnss/") {
-            Err(_) => return Err("Can't create GNSS run file folder"),
-            Ok(_) => (),
-        }
-
-        let path = Path::new(path);
-        // let display = path.display();
-        let mut file = match File::create(&path) {
-            Err(_) => return Err("Can't create GNSS run file"),
-            Ok(file) => file,
-        };
-
+    fn write_runfile(path: &Path, info: &HashMap<&str, String>) -> Result<(), String> {
         let deprecated = if info["fw_ver"] != CURRENT_FW_VER {
             " (Deprecated)"
         } else {
@@ -297,18 +273,32 @@ impl GnssMgr {
             info["hw_ver"],
         );
 
-        match file.write_all(text.as_bytes()) {
-            Err(_) => Err("Can't write GNSS run file"),
-            Ok(_) => Ok(()),
-        }
+        // let path = Path::new(path);
+        let parent = path.parent().unwrap();
+
+        fs::create_dir_all(parent)
+            .map_err(|_err|format!("can't create GNSS run file folder {}", parent.display()))?;
+
+        let mut file = File::create(&path)
+            .map_err(|_err| format!("can't create GNSS run file {}", path.display()))?;
+        file.write_all(text.as_bytes())
+            .map_err(|_err| format!("can't write GNSS run file"))?;
+
+        Ok(())
     }
 
-    // TODO: return Path instead of String
-    fn build_configfile_path(path: &str) -> String {
-        // Take devicename of form /dev/<name> to build /etc/gnss/<name>
+    fn build_runfile_path(path: &str) -> PathBuf {
+        // Take devicename of form /dev/<name> to build /run/gnss/<name>.config
+        let path = &path.replace("/dev/", "/run/gnss/");
+        let mut path = PathBuf::from(path);
+        path.set_extension("config");
+        path.to_path_buf()
+    }
+
+    fn build_configfile_path(path: &str) -> PathBuf {
         let path = &path.replace("/dev/", "/etc/gnss/");
-        let mut path = String::from(path);
-        path.push_str(".conf");
-        path
+        let mut path = PathBuf::from(path);
+        path.set_extension("conf");
+        path.to_path_buf()
     }
 }
