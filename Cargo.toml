@@ -1,6 +1,6 @@
 [package]
 name = "gnss-mgr"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Rene Straub <rene.straub@netmodule.com>"]
 edition = "2018"
 
@@ -14,3 +14,9 @@ log = "0.4.11"
 env_logger = "0.7.1"
 chrono = "0.4"
 serde_repr = "0.1"
+
+
+[profile.release]
+lto = true
+codegen-units = 1       # 100 kB
+# panic = 'abort'         # 100 kB
