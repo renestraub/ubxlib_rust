@@ -3,7 +3,7 @@ use log::debug;
 use std::collections::HashMap;
 use std::{thread, time};
 
-use crate::config_file::Xyz;
+use crate::config_file::{Angles, Xyz};
 use crate::error::Error;
 use crate::server_tty::ServerTty;
 use crate::ubx_cfg_cfg::UbxCfgCfgAction;
@@ -226,8 +226,6 @@ impl NeoM8 {
         let poll = UbxCfgGnssPoll::new();
         self.server.poll(&poll, &mut set)?;
 
-        // info!("setting navigation systems {:?}", systems);
-
         set.disable_all();
         if systems.contains(&String::from("gps")) {
             set.enable(SystemName::Gps);
@@ -258,18 +256,18 @@ impl NeoM8 {
         Ok(())
     }
 
-    pub fn set_imu_angles(&mut self, yaw: u16, pitch: i16, roll: i16) -> Result<(), Error> {
-        assert!(yaw <= 360);
-        assert!(pitch >= -90 && pitch <= 90);
-        assert!(roll >= -180 && roll <= 180);
+    pub fn set_imu_angles(&mut self, angles: Angles) -> Result<(), Error> {
+        assert!(angles.yaw <= 360);
+        assert!(angles.pitch >= -90 && angles.pitch <= 90);
+        assert!(angles.roll >= -180 && angles.roll <= 180);
 
         let mut set = UbxCfgEsfAlg::new();
         let poll = UbxCfgEsfAlgPoll::new();
         self.server.poll(&poll, &mut set)?;
 
-        set.data.yaw = yaw as u32 * 100;
-        set.data.pitch = pitch as i16 * 100;
-        set.data.roll = roll as i16 * 100;
+        set.data.yaw = angles.yaw as u32 * 100;
+        set.data.pitch = angles.pitch as i16 * 100;
+        set.data.roll = angles.roll as i16 * 100;
         debug!("new IMU settings {:?}", set.data);
 
         self.server.set(&set)?;

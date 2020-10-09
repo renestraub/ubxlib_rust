@@ -140,7 +140,7 @@ fn set_logger(matches: &ArgMatches) {
 fn check_port(device_name: &str) -> Result<(), String> {
     // Check that specified device exists
     if !Path::new(device_name).exists() {
-        return Err(format!("device {} does not exist", device_name).to_string());
+        return Err(format!("device {} does not exist", device_name));
     }
 
     // Check that it's a character device (no block device)

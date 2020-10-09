@@ -5,7 +5,7 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
 use clap::ArgMatches;
-use log::{debug, info, warn};
+use log::{debug, info};
 
 use crate::config_file::GnssMgrConfig;
 use crate::error::Error;
@@ -34,7 +34,7 @@ impl GnssMgr {
 
             let bit_rate_current = match self.modem.detect_baudrate() {
                 Ok(bitrate) => bitrate,
-                Err(e) => return Err(format!("bitrate detection failed ({})", e).to_string()),
+                Err(e) => return Err(format!("bitrate detection failed ({})", e)),
             };
 
             info!("detected bitrate {:?} bps", bit_rate_current);
@@ -97,7 +97,10 @@ impl GnssMgr {
         let mut config: GnssMgrConfig = Default::default();
         let _res = config.parse_config(&configfile_path)?;
 
-        self.configure(&config);
+        info!("configuring modem");
+
+        self.configure(&config)
+            .map_err(|e| format!("configuration failed ({})", e))?;
 
         Ok(())
     }
@@ -163,76 +166,68 @@ impl GnssMgr {
         Ok(())
     }
 
-    // TODO: Return error code from each function
-    fn configure(&mut self, config: &GnssMgrConfig) {
+    fn configure(&mut self, config: &GnssMgrConfig) -> Result<(), String> {
         /*
          * Configure modem as defined by config
-         * - Elements that are set (Some(x)) are applied, others are left as is
-         * - Modem set methods are allowed to fail -> .ok()
+         * - Elements that are set (Some(x)) are applied, others are left as is.
+         * - Operations must work. On the first error the method aborts.
          */
-
-        if config.update_rate.is_some() {
-            let rate = config.update_rate.unwrap();
-            self.modem.set_update_rate(rate).ok();
+        if let Some(rate) = config.update_rate {
+            self.modem
+                .set_update_rate(rate as u16)
+                .map_err(|err| err.to_string())?;
         }
 
-        // TODO: Overly complicated with these string types...
-        match &config.mode {
-            Some(mode) => match mode.as_str() {
-                // TODO: This should go nicer
+        if let Some(mode) = &config.mode {
+            // TODO: Move this decoding logic into set_dynamic_mode()?
+            match mode.as_str() {
                 "stationary" => {
-                    self.modem.set_dynamic_mode(2).ok();
-                    ()
+                    self.modem
+                        .set_dynamic_mode(2)
+                        .map_err(|err| err.to_string())?;
                 }
                 "vehicle" => {
-                    self.modem.set_dynamic_mode(4).ok();
-                    ()
+                    self.modem
+                        .set_dynamic_mode(4)
+                        .map_err(|err| err.to_string())?;
                 }
-                _ => (),
-            },
-            _ => (),
+                _ => return Err(format!("invalid mode {}", mode)),
+            }
         }
 
         // Set Satellite systems
-        match &config.systems {
-            Some(systems) => {
-                info!("setting navigation systems {:?}", systems);
-
-                let res = self.modem.set_systems(systems);
-                match res {
-                    Ok(_) => (),
-                    Err(Error::ModemNAK) => {
-                        warn!("failed to configure satellite systems {:?}", systems)
-                    }
-                    Err(e) => warn!("{}", e),
+        if let Some(systems) = &config.systems {
+            match self.modem.set_systems(systems) {
+                Ok(_) => (),
+                Err(Error::ModemNAK) => {
+                    // warn!("failed to configure satellite systems {:?}", systems)
+                    return Err(format!("invalid systems combination {:?}", systems))
                 }
+                Err(e) => return Err(e.to_string()),
             }
-            _ => (),
         }
 
-        // TODO: Combine IMU angles in a struct, this is ugly
-        if config.imu_yaw.is_some() && config.imu_pitch.is_some() && config.imu_roll.is_some() {
+        // IMU Orientation
+        if let Some(angles) = config.imu_angles {
             self.modem
-                .set_imu_angles(
-                    config.imu_yaw.unwrap(),
-                    config.imu_pitch.unwrap(),
-                    config.imu_roll.unwrap(),
-                )
-                .ok();
+                .set_imu_angles(angles)
+                .map_err(|err| err.to_string())?;
         }
 
         // Lever Arms
-        if config.vrp2antenna.is_some() {
+        if let Some(xyz) = config.vrp2antenna {
             self.modem
-                .set_lever_arm(LeverArmType::VRPtoAntenna, &config.vrp2antenna.unwrap())
-                .ok();
+                .set_lever_arm(LeverArmType::VRPtoAntenna, &xyz)
+                .map_err(|err| err.to_string())?;
         }
 
-        if config.vrp2imu.is_some() {
+        if let Some(xyz) = config.vrp2imu {
             self.modem
-                .set_lever_arm(LeverArmType::VRPtoIMU, &config.vrp2imu.unwrap())
-                .ok();
+                .set_lever_arm(LeverArmType::VRPtoIMU, &xyz)
+                .map_err(|err| err.to_string())?;
         }
+
+        Ok(())
     }
 
     fn write_runfile(path: &Path, info: &HashMap<&str, String>) -> Result<(), String> {
