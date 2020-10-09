@@ -139,37 +139,29 @@ fn set_logger(matches: &ArgMatches) {
 
 fn check_port(device_name: &str) -> Result<(), String> {
     // Check that specified device exists
-    let device_exists = Path::new(device_name).exists();
-    if !device_exists {
-        return Err(format!("Device {} does not exist", device_name).to_string());
+    if !Path::new(device_name).exists() {
+        return Err(format!("device {} does not exist", device_name).to_string());
     }
 
     // Check that it's a character device (no block device)
-    let meta = fs::metadata(device_name);
-    match meta {
-        Ok(m) => {
-            let file_type = m.file_type();
-            if !file_type.is_char_device() {
-                return Err(format!("Device {} is not a character device", device_name).to_string());
-            }
-        }
-        Err(_) => return Err(String::from("cannot determine device type")),
+    let meta = fs::metadata(device_name).map_err(|_| "cannot determine device type")?;
+    let file_type = meta.file_type();
+    if !file_type.is_char_device() {
+        return Err(format!("device {} is not a character device", device_name));
     }
 
     // Ensure device is not in use
-    let output = Command::new("fuser").args(&[device_name]).output();
-    match output {
-        Ok(o) => {
-            if o.stdout.len() > 0 {
-                let pid = String::from_utf8_lossy(&o.stdout);
-                let pid = pid.trim();
-                return Err(
-                    format!("another process (PID:{}) is accessing the receiver", &pid).to_string(),
-                );
-            }
-        }
-        // TODO: Just warn don't abort.
-        Err(e) => return Err(format!("error executing fuser command {:?}", e).to_string()),
+    let output = Command::new("fuser")
+        .args(&[device_name])
+        .output()
+        .map_err(|e| format!("error executing fuser command ({:?})", e))?;
+    if output.stdout.len() > 0 {
+        let pid = String::from_utf8_lossy(&output.stdout);
+        let pid = pid.trim();
+        return Err(format!(
+            "another process (PID:{}) is accessing the receiver",
+            &pid
+        ));
     }
 
     Ok(())
