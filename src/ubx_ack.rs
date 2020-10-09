@@ -3,9 +3,9 @@ use serde::Deserialize;
 use crate::cid::UbxCID;
 use crate::frame::UbxFrameWithData;
 
-const CLS: u8 = 0x05;
-const ID_ACK: u8 = 0x01;
-const ID_NAK: u8 = 0x00;
+pub const CLS_ACK: u8 = 0x05;
+pub const ID_ACK: u8 = 0x01;
+pub const ID_NAK: u8 = 0x00;
 
 #[derive(Default, Debug, Deserialize)]
 pub struct Data {
@@ -18,8 +18,8 @@ pub struct UbxAck {}
 impl UbxAck {
     pub fn new(id: u8) -> UbxFrameWithData<Data> {
         match id {
-            0x00 => UbxFrameWithData::new("UBX-ACK-NAK", UbxCID::new(CLS, ID_NAK)),
-            0x01 => UbxFrameWithData::new("UBX-ACK-ACK", UbxCID::new(CLS, ID_ACK)),
+            ID_NAK => UbxFrameWithData::new("UBX-ACK-NAK", UbxCID::new(CLS_ACK, ID_NAK)),
+            ID_ACK => UbxFrameWithData::new("UBX-ACK-ACK", UbxCID::new(CLS_ACK, ID_ACK)),
             _ => panic!("illegal UBX-ACK id"),
         }
     }

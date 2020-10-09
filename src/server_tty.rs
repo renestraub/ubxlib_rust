@@ -11,6 +11,7 @@ use crate::frame::UbxFrame;
 use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 use crate::parser_ubx::ParserUbx;
 use crate::ubx_ack::UbxAck;
+use crate::ubx_ack::{CLS_ACK, ID_ACK, ID_NAK};
 
 pub struct ServerTty {
     device_name: String,
@@ -19,6 +20,8 @@ pub struct ServerTty {
     crc_error_cid: UbxCID,
     max_retries: usize,
     retry_delay_in_ms: u128,
+    cid_ack: UbxCID,
+    cid_nak: UbxCID,
 }
 
 impl ServerTty {
@@ -30,6 +33,8 @@ impl ServerTty {
             crc_error_cid: UbxCID::new(0x00, 0x02),
             max_retries: 5,
             retry_delay_in_ms: 3000,
+            cid_nak: UbxCID::new(CLS_ACK, ID_NAK),
+            cid_ack: UbxCID::new(CLS_ACK, ID_ACK),
         };
         obj
     }
@@ -162,7 +167,7 @@ impl ServerTty {
         debug!("setting {}", frame_set.name());
 
         // Wait for ACK-ACK / ACK-NAK
-        let cids = [UbxCID::new(0x05, 0x00), UbxCID::new(0x05, 0x01)];
+        let cids = [self.cid_ack, self.cid_nak];
         self.parser.set_filters(&cids);
 
         // Get frame data (header, cls, id, len, payload, checksum a/b)
@@ -272,10 +277,9 @@ impl ServerTty {
 
         if ack_nak.ack_cid() == set_cid {
             // CID in ACK/NAK frame matches our request
-            match ack_nak.cid.id() {
-                // TODO: Not nice to hard-code 0x01 here.. any better way?
-                0x01 => Ok(()),
-                0x00 => Err(Error::ModemNAK),
+            match ack_nak.cid().id() {
+                ID_ACK => Ok(()),
+                ID_NAK => Err(Error::ModemNAK),
                 _ => Err(Error::ModemNAK),
             }
         } else {
