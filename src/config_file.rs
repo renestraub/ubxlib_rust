@@ -282,16 +282,16 @@ mod xyz_reader {
         let uut = Xyz::from_str("1.0;-2.2;333.3");
         assert_eq!(uut.is_some(), true);
         let uut = uut.unwrap();
-        assert_eq!(uut.x, 1.0); // TODO: Check float comparison
-        assert_eq!(uut.y, -2.2);
-        assert_eq!(uut.z, 333.3);
+        assert!(float_same(uut.x, 1.0));
+        assert!(float_same(uut.y, -2.2));
+        assert!(float_same(uut.z, 333.3));
 
         let uut = Xyz::from_str("-11.1;22.2;-333.33");
         assert_eq!(uut.is_some(), true);
         let uut = uut.unwrap();
-        assert_eq!(uut.x, -11.1);
-        assert_eq!(uut.y, 22.2);
-        assert_eq!(uut.z, -333.33);
+        assert!(float_same(uut.x, -11.1));
+        assert!(float_same(uut.y, 22.2));
+        assert!(float_same(uut.z, -333.33));
     }
 
     #[test]
@@ -323,6 +323,11 @@ mod xyz_reader {
         assert_eq!(1, 0);
     }
     */
+
+    fn float_same(a: f32, b: f32) -> bool {
+        let delta = (a - b).abs();
+        return delta < 0.01;
+    }
 }
 
 #[cfg(test)]
