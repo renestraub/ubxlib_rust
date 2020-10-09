@@ -60,7 +60,7 @@ where
 {
     fn to_bin(&self) -> Vec<u8> {
         let data = bincode::serialize(&self.data).unwrap();
-        UbxFrame::bytes(self.cid(), data)
+        UbxFrame::bytes(self.cid(), &data)
     }
 }
 
@@ -84,41 +84,45 @@ pub struct UbxFrame {
 }
 
 impl UbxFrame {
-    pub fn construct(cid: UbxCID, data: Vec<u8>) -> Self {
-        Self { cid, data }
+    pub fn bytes(cid: UbxCID, data: &[u8]) -> Vec<u8> {
+        let frame = Self { cid, data: data.to_vec() };
+        frame.serialize()
     }
 
-    pub fn bytes(cid: UbxCID, data: Vec<u8>) -> Vec<u8> {
-        let frame = UbxFrame::construct(cid, data);
-        let msg = frame.to_bytes();
-        msg
-    }
-
-    fn to_bytes(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         let mut checksum = Checksum::new();
-        let mut msg = Vec::<u8>::new();
+        let mut msg = Vec::<u8>::with_capacity(256);
 
+        // Header Sync
         msg.push(0xb5);
         msg.push(0x62);
 
+        // Message Class & Id
         let cls = self.cid.cls();
-        let id = self.cid.id();
         msg.push(cls);
-        msg.push(id);
         checksum.add(cls);
+
+        let id = self.cid.id();
+        msg.push(id);
         checksum.add(id);
 
+        // Length - 16 bit little endian
         let length = self.data.len();
-        msg.push(((length >> 0) & 0xFF) as u8); // TODO: proper pack/unpack crate
-        msg.push(((length >> 8) & 0xFF) as u8); // TODO: there is surely one
-        checksum.add(((length >> 0) & 0xFF) as u8);
-        checksum.add(((length >> 8) & 0xFF) as u8);
+        let l_low = ((length >> 0) & 0xFF) as u8;
+        msg.push(l_low);
+        checksum.add(l_low);
 
+        let l_high = ((length >> 8) & 0xFF) as u8;
+        msg.push(l_high);
+        checksum.add(l_high);
+
+        // Payload
         for d in &self.data {
             msg.push(*d);
             checksum.add(*d)
         }
 
+        // Checksum
         let (cka, ckb) = checksum.value();
         msg.push(cka);
         msg.push(ckb);
@@ -143,16 +147,14 @@ mod tests {
 
     #[test]
     fn ack_frame() {
-        let dut = UbxFrame::construct(UbxCID::new(0x05, 0x01), [1, 2].to_vec());
-        let msg = dut.to_bytes();
+        let msg = UbxFrame::bytes(UbxCID::new(0x05, 0x01), &[1, 2].to_vec());
         assert_eq!(msg, [0xb5, 0x62, 0x05, 0x01, 0x02, 0x00, 1, 2, 11, 47]);
     }
 
     #[test]
     fn poll_mon_ver() {
         // Poll UBX-MON-VER: B5 62 0A 04 00 00 0E 34
-        let dut = UbxFrame::construct(UbxCID::new(0x0A, 0x04), [].to_vec());
-        let msg = dut.to_bytes();
+        let msg = UbxFrame::bytes(UbxCID::new(0x0A, 0x04), &[].to_vec());
         assert_eq!(msg, [0xb5, 0x62, 0x0a, 0x04, 0x00, 0x00, 0x0e, 0x34]);
     }
 }

@@ -43,7 +43,7 @@ impl UbxFrameInfo for UbxCfgGnssPoll {
 
 impl UbxFrameSerialize for UbxCfgGnssPoll {
     fn to_bin(&self) -> Vec<u8> {
-        UbxFrame::bytes(UbxCID::new(CLS, ID), [].to_vec())
+        UbxFrame::bytes(UbxCID::new(CLS, ID), &[].to_vec())
     }
 }
 
@@ -154,7 +154,7 @@ impl UbxFrameInfo for UbxCfgGnss {
 impl UbxFrameSerialize for UbxCfgGnss {
     fn to_bin(&self) -> Vec<u8> {
         let data = self.save();
-        UbxFrame::bytes(UbxCID::new(CLS, ID), data)
+        UbxFrame::bytes(UbxCID::new(CLS, ID), &data)
     }
 }
 
