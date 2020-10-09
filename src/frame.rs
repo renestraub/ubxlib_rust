@@ -85,7 +85,10 @@ pub struct UbxFrame {
 
 impl UbxFrame {
     pub fn bytes(cid: UbxCID, data: &[u8]) -> Vec<u8> {
-        let frame = Self { cid, data: data.to_vec() };
+        let frame = Self {
+            cid,
+            data: data.to_vec(),
+        };
         frame.serialize()
     }
 

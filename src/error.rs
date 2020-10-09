@@ -12,6 +12,7 @@ pub enum Error {
     ModemUnexpectedAckNak,
     ModemNobackup,
     ModemBackupRestoreFailed,
+    InvalidArgument,
 }
 
 impl fmt::Display for Error {
@@ -26,6 +27,7 @@ impl fmt::Display for Error {
             Error::ModemUnexpectedAckNak => f.write_str("unexpected ACK/NAK received"),
             Error::ModemNobackup => f.write_str("no backup present"),
             Error::ModemBackupRestoreFailed => f.write_str("restoring backup failed"),
+            Error::InvalidArgument => f.write_str("invalid argument"),
         }
     }
 }
@@ -42,6 +44,7 @@ impl StdError for Error {
             Error::ModemUnexpectedAckNak => "unexpected ACK/NAK received",
             Error::ModemNobackup => "no backup present",
             Error::ModemBackupRestoreFailed => "restoring backup failed",
+            Error::InvalidArgument => "invalid argument",
         }
     }
 }

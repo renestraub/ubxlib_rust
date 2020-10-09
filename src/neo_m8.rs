@@ -146,7 +146,7 @@ impl NeoM8 {
 
     pub fn set_modem_baudrate(&mut self, baudrate: u32) -> Result<(), Error> {
         assert!(baudrate == 115200 || baudrate == 9600);
-
+        // TODO: Change assertion to return Err(Error::InvalidArgument)?
         let mut set = UbxCfgPrtUart::new();
         let poll = UbxCfgPrtPoll::new();
         self.server.poll(&poll, &mut set)?;
@@ -187,7 +187,7 @@ impl NeoM8 {
             "4.0" => 0x40,
             "4.1" => 0x41,
             "4.11" => 0x4b,
-            _ => panic!("invalid nmea protocol version"),
+            _ => return Err(Error::InvalidArgument),
         };
 
         let mut set = UbxCfgNmea::new();
@@ -204,8 +204,12 @@ impl NeoM8 {
         Ok(())
     }
 
-    pub fn set_dynamic_mode(&mut self, model: u8) -> Result<(), Error> {
-        assert!(model <= 10 && model != 1);
+    pub fn set_dynamic_mode(&mut self, model: &str) -> Result<(), Error> {
+        let model = match model {
+            "stationary" => 2,
+            "vehicle" => 4,
+            _ => return Err(Error::InvalidArgument),
+        };
 
         let mut set = UbxCfgNav5::new();
         let poll = UbxCfgNav5Poll::new();

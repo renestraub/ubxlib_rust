@@ -91,14 +91,13 @@ impl GnssMgr {
             _ => Self::build_configfile_path(&self.device_name), // left away, compute from device name
         };
 
-        info!("using configfile {}", configfile_path.display());
-
         // Get configuration from config file
+        info!("using configfile {}", configfile_path.display());
         let mut config: GnssMgrConfig = Default::default();
         let _res = config.parse_config(&configfile_path)?;
 
+        // Apply configuration to modem
         info!("configuring modem");
-
         self.configure(&config)
             .map_err(|e| format!("configuration failed ({})", e))?;
 
@@ -179,20 +178,9 @@ impl GnssMgr {
         }
 
         if let Some(mode) = &config.mode {
-            // TODO: Move this decoding logic into set_dynamic_mode()?
-            match mode.as_str() {
-                "stationary" => {
-                    self.modem
-                        .set_dynamic_mode(2)
-                        .map_err(|err| err.to_string())?;
-                }
-                "vehicle" => {
-                    self.modem
-                        .set_dynamic_mode(4)
-                        .map_err(|err| err.to_string())?;
-                }
-                _ => return Err(format!("invalid mode {}", mode)),
-            }
+            self.modem
+                .set_dynamic_mode(mode)
+                .map_err(|err| err.to_string())?;
         }
 
         // Set Satellite systems
@@ -201,7 +189,7 @@ impl GnssMgr {
                 Ok(_) => (),
                 Err(Error::ModemNAK) => {
                     // warn!("failed to configure satellite systems {:?}", systems)
-                    return Err(format!("invalid systems combination {:?}", systems))
+                    return Err(format!("invalid systems combination {:?}", systems));
                 }
                 Err(e) => return Err(e.to_string()),
             }
