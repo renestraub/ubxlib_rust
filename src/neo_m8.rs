@@ -145,8 +145,10 @@ impl NeoM8 {
     }
 
     pub fn set_modem_baudrate(&mut self, baudrate: u32) -> Result<(), Error> {
-        assert!(baudrate == 115200 || baudrate == 9600);
-        // TODO: Change assertion to return Err(Error::InvalidArgument)?
+        if baudrate != 115200 && baudrate != 9600 {
+            return Err(Error::InvalidArgument);
+        }
+
         let mut set = UbxCfgPrtUart::new();
         let poll = UbxCfgPrtPoll::new();
         self.server.poll(&poll, &mut set)?;
@@ -164,7 +166,9 @@ impl NeoM8 {
     }
 
     pub fn set_update_rate(&mut self, rate_in_hz: u16) -> Result<(), Error> {
-        assert!(rate_in_hz >= 1 && rate_in_hz <= 10);
+        if rate_in_hz < 1 || rate_in_hz > 10 {
+            return Err(Error::InvalidArgument);
+        }
 
         let mut set = UbxCfgRate::new();
         let poll = UbxCfgRatePoll::new();
@@ -261,17 +265,17 @@ impl NeoM8 {
     }
 
     pub fn set_imu_angles(&mut self, angles: Angles) -> Result<(), Error> {
-        assert!(angles.yaw <= 360);
-        assert!(angles.pitch >= -90 && angles.pitch <= 90);
-        assert!(angles.roll >= -180 && angles.roll <= 180);
+        if angles.yaw > 360 || angles.pitch.abs() > 90 || angles.roll.abs() > 180 {
+            return Err(Error::InvalidArgument);
+        }
 
         let mut set = UbxCfgEsfAlg::new();
         let poll = UbxCfgEsfAlgPoll::new();
         self.server.poll(&poll, &mut set)?;
 
-        set.data.yaw = angles.yaw as u32 * 100;
-        set.data.pitch = angles.pitch as i16 * 100;
-        set.data.roll = angles.roll as i16 * 100;
+        set.data.yaw = angles.yaw * 100;
+        set.data.pitch = angles.pitch * 100;
+        set.data.roll = angles.roll * 100;
         debug!("new IMU settings {:?}", set.data);
 
         self.server.set(&set)?;
@@ -280,9 +284,9 @@ impl NeoM8 {
     }
 
     pub fn set_lever_arm(&mut self, armtype: LeverArmType, distances: &Xyz) -> Result<(), Error> {
-        assert!(distances.x >= -30.0 && distances.x <= 30.0);
-        assert!(distances.y >= -10.0 && distances.y <= 10.0);
-        assert!(distances.z >= -10.0 && distances.z <= 10.0);
+        if distances.x.abs() > 30.0 || distances.y.abs() > 10.0 || distances.z.abs() > 10.0 {
+            return Err(Error::InvalidArgument);
+        }
 
         let mut set = UbxCfgEsflaSet::new();
         set.data.version = 0;

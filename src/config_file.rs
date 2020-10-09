@@ -58,7 +58,7 @@ impl GnssMgrConfig {
         let imu_roll = Self::get_int(sec_installation, "roll", |val| val >= -180 && val <= 180);
         if imu_yaw.is_some() && imu_pitch.is_some() && imu_roll.is_some() {
             self.imu_angles = Angles::new(
-                imu_yaw.unwrap() as u16,
+                imu_yaw.unwrap() as u32,
                 imu_pitch.unwrap() as i16,
                 imu_roll.unwrap() as i16,
             );
@@ -139,13 +139,13 @@ impl GnssMgrConfig {
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Angles {
-    pub yaw: u16,
+    pub yaw: u32,
     pub pitch: i16,
     pub roll: i16,
 }
 
 impl Angles {
-    pub fn new(yaw: u16, pitch: i16, roll: i16) -> Option<Self> {
+    pub fn new(yaw: u32, pitch: i16, roll: i16) -> Option<Self> {
         Some(Self { yaw, pitch, roll })
     }
 }
