@@ -72,7 +72,7 @@ mod tests {
         ];
         let mut dut = UbxCfgPrtUart::new();
         assert_eq!(dut.name, "UBX-CFG-PRT");
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.data.port_id, 1);
         assert_eq!(dut.data.baudrate, 9600);

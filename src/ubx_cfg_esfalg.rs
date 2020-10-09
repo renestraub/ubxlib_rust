@@ -51,7 +51,7 @@ mod tests {
     fn too_few_values() {
         const DATA: [u8; 5] = [0xe8, 0x03, 0x01, 0x00, 0x34];
         let mut dut = UbxCfgEsfAlg::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
     }
 
     #[test]
@@ -60,7 +60,7 @@ mod tests {
             0xff, 0xfe, 0xfd, 0xfc, 0x04, 0x03, 0x02, 0x01, 0x08, 0x07, 0x06, 0x05,
         ];
         let mut dut = UbxCfgEsfAlg::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.data.bitfield, 0xfcfdfeffu32);
         assert_eq!(dut.data.yaw, 0x01020304u32);

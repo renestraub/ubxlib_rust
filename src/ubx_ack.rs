@@ -49,7 +49,7 @@ mod tests {
     fn deserialize() {
         const DATA: [u8; 2] = [0x20, 0x04];
         let mut dut = UbxAck::new(ID_ACK);
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.data.cls_id, 0x20);
         assert_eq!(dut.data.msg_id, 0x04);

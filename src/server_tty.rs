@@ -136,7 +136,7 @@ impl ServerTty {
             match self.wait() {
                 Ok(packet) => {
                     debug!("result received {:?} {:?}", packet.cid, packet.data);
-                    frame_result.from_bin(packet.data);
+                    frame_result.from_bin(&packet.data);
                     return Ok(());
                 }
                 Err(_) => {
@@ -267,7 +267,7 @@ impl ServerTty {
 
     fn check_ack_nak(&self, packet: &UbxFrame, set_cid: UbxCID) -> Result<(), Error> {
         let mut ack_nak = UbxAck::new(packet.cid.id());
-        ack_nak.from_bin(packet.data.clone());
+        ack_nak.from_bin(&packet.data);
         // debug!("ack/nak {:?} - {:?}", ack_nak.ack_cid(), set_cid);
 
         if ack_nak.ack_cid() == set_cid {

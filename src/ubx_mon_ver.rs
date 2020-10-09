@@ -101,7 +101,7 @@ impl UbxFrameInfo for UbxMonVer {
 }
 
 impl UbxFrameDeSerialize for UbxMonVer {
-    fn from_bin(&mut self, data: Vec<u8>) {
+    fn from_bin(&mut self, data: &[u8]) {
         self.load(&data);
     }
 }
@@ -143,7 +143,7 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         let mut dut = UbxMonVer::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
         assert_eq!(dut.sw_version(), "EXT CORE 3.01 (1ec93f)");
         assert_eq!(dut.hw_version(), "00080000");
         assert_eq!(dut.get_info("PROTVER="), "19.20");

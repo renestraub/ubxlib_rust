@@ -135,7 +135,7 @@ mod response {
         const DATA: [u8; 8] = [0x03, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];
         let mut dut = UbxUpdSos::new();
         assert_eq!(dut.name, "UBX-UPD-SOS");
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.data.cmd, 0x03);
         assert_eq!(dut.data.response, Response::Restored);

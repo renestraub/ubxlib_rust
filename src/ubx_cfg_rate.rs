@@ -50,7 +50,7 @@ mod tests {
         const DATA: [u8; 6] = [0xe8, 0x03, 0x01, 0x00, 0x34, 0x12];
         let mut dut = UbxCfgRate::new();
         assert_eq!(dut.name, "UBX-CFG-RATE");
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.data.meas_rate, 1000);
         assert_eq!(dut.data.nav_rate, 1);
@@ -62,7 +62,7 @@ mod tests {
     fn deser_too_few_values() {
         const DATA: [u8; 5] = [0xe8, 0x03, 0x01, 0x00, 0x34];
         let mut dut = UbxCfgRate::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.data.meas_rate, 1000);
         assert_eq!(dut.data.nav_rate, 1);

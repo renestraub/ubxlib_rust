@@ -159,7 +159,7 @@ impl UbxFrameSerialize for UbxCfgGnss {
 }
 
 impl UbxFrameDeSerialize for UbxCfgGnss {
-    fn from_bin(&mut self, data: Vec<u8>) {
+    fn from_bin(&mut self, data: &[u8]) {
         self.load(&data);
     }
 }
@@ -180,7 +180,7 @@ mod tests {
     fn header_load() {
         const DATA: [u8; 4] = [0x00, 26, 16, 1];
         let mut dut = UbxCfgGnss::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.name, "UBX-CFG-GNSS");
         assert_eq!(dut.header.msg_ver, 0x00);
@@ -193,7 +193,7 @@ mod tests {
     fn header_and_config_load() {
         const DATA: [u8; 12] = [0x00, 26, 16, 1, 2, 12, 8, 0, 0x00, 0x00, 0xFF, 0x00];
         let mut dut = UbxCfgGnss::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.name, "UBX-CFG-GNSS");
         assert_eq!(dut.header.msg_ver, 0x00);
@@ -215,7 +215,7 @@ mod tests {
             0x00,
         ];
         let mut dut = UbxCfgGnss::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.name, "UBX-CFG-GNSS");
         assert_eq!(dut.header.msg_ver, 0x00);
@@ -243,7 +243,7 @@ mod tests {
             0x00,
         ];
         let mut dut = UbxCfgGnss::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         dut.enable(SystemName::Beidou);
         let cfg = &dut.configs[0];
@@ -280,7 +280,7 @@ mod tests {
         ];
 
         let mut dut = UbxCfgGnss::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         dut.enable(SystemName::Beidou);
         dut.disable(SystemName::Galileo);

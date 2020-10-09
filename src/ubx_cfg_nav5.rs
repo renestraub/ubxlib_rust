@@ -83,7 +83,7 @@ mod tests {
         dut.data.fix_mode = 0;
         dut.data.utc_standard = 0;
 
-        dut.from_bin(res[6..42].to_vec());
+        dut.from_bin(&res[6..42]);
         assert_eq!(dut.data.mask, 0x1122);
         assert_eq!(dut.data.dyn_model, 4);
         assert_eq!(dut.data.fix_mode, 2);
@@ -99,7 +99,7 @@ mod tests {
         let mut dut = UbxCfgNav5::new();
         assert_eq!(dut.name, "UBX-CFG-NAV5");
 
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
         assert_eq!(dut.data.dyn_model, 4);
         assert_eq!(dut.data.fix_mode, 3);
         assert_eq!(dut.data.pdop, 250);

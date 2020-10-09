@@ -15,8 +15,7 @@ pub trait UbxFrameSerialize {
 }
 
 pub trait UbxFrameDeSerialize {
-    fn from_bin(&mut self, data: Vec<u8>);
-    // TODO: Consider data: &[u8]
+    fn from_bin(&mut self, data: &[u8]);
 }
 
 // Generic implementation for ubx frames that can be directly (de)serialized
@@ -69,7 +68,7 @@ impl<T> UbxFrameDeSerialize for UbxFrameWithData<T>
 where
     T: DeserializeOwned,
 {
-    fn from_bin(&mut self, data: Vec<u8>) {
+    fn from_bin(&mut self, data: &[u8]) {
         self.data = bincode::deserialize(&data).unwrap();
     }
 }

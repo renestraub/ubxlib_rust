@@ -57,7 +57,7 @@ mod tests {
     fn deserialize() {
         const DATA: [u8; 20] = [0, 64, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
         let mut dut = UbxCfgNmea::new();
-        dut.from_bin(DATA.to_vec());
+        dut.from_bin(&DATA);
 
         assert_eq!(dut.data.nmea_version, 0x40);
     }
