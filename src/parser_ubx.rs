@@ -86,7 +86,7 @@ impl ParserUbx {
         // Build HashSet from provided array
         let cid_set: HashSet<UbxCID> = cids.iter().cloned().collect();
         self.wait_cids = cid_set;
-        debug!("acceptance CID {:?}", self.wait_cids);
+        // debug!("acceptance CID {:?}", self.wait_cids);
     }
 
     pub fn empty_queue(&mut self) {
