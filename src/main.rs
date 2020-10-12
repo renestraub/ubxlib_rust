@@ -53,12 +53,16 @@ fn main() {
 
 fn run_app(matches: &ArgMatches) -> Result<(), String> {
     // unwrap must never fail here, as argument is checked by parser already
-    let device_name = matches.value_of("device").unwrap();
+    let mut device_name: String = matches.value_of("device").unwrap().to_string();
 
-    check_port(device_name)?;
+    let res = check_port(&device_name);
+    if res.is_err() && !device_name.starts_with("/dev/") {
+        device_name = format!("/dev/{}", device_name);
+        check_port(&device_name)?;
+    }
 
     // Create GNSS Manager on specified device
-    let mut gnss = GnssMgr::new(device_name);
+    let mut gnss = GnssMgr::new(&device_name);
 
     // The "init" command checks the current bitrate and changes to 115200 if required.
     // all other subcommand use the modem at 115200.
