@@ -103,10 +103,10 @@ fn setup_arg_parse() -> App<'static, 'static> {
             .help("local serial device to which GNSS modem is connected (e.g. /dev/gnss0)"))
 
         .subcommand(SubCommand::with_name("init")
-            .about("Initializes GNSS"))
+            .about("Initializes GNSS, sets bitrate"))
 
         .subcommand(SubCommand::with_name("config")
-            .about("Performs GNSS modem control function")
+            .about("Configures GNSS modem")
             .arg(Arg::with_name("configfile")
                 .short("f")
                 .long("file")
@@ -114,7 +114,7 @@ fn setup_arg_parse() -> App<'static, 'static> {
                 .help("Path to configuration file")))
 
         .subcommand(SubCommand::with_name("control")
-            .about("Configures GNSS modem")
+            .about("Performs GNSS modem control function")
             .arg(Arg::with_name("action")
                 .required(true)
                 .possible_values(&["cold-start", "persist", "factory-reset"])
