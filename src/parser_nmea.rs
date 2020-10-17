@@ -93,8 +93,7 @@ impl ParserNmea {
             if nmea.is_ok() {
                 debug!("{:?}", nmea.unwrap());
             }
-        }
-        else {
+        } else {
             debug!("Checksum error {} - {}", self.checksum, self.checksum_data);
         }
 

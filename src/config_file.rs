@@ -1,5 +1,6 @@
 use ini::{ini::Properties, Ini};
 use log::info;
+use std::collections::HashSet;
 use std::path::Path;
 
 #[derive(Debug, Default)]
@@ -18,6 +19,8 @@ impl GnssMgrConfig {
     pub fn parse_config<P: AsRef<Path>>(&mut self, path: P) -> Result<(), String> {
         // Import whole file, check for syntax errors
         let conf = Ini::load_from_file(path).map_err(|_err| "configuration file not found")?;
+
+        Self::have_duplicates(&conf)?;
 
         // Get sections
         let sec_general = conf
@@ -80,6 +83,25 @@ impl GnssMgrConfig {
             _ => None,
         };
 
+        Ok(())
+    }
+
+    fn have_duplicates(conf: &Ini) -> Result<(), String> {
+        let general_section_name = "general";
+        let mut keys = HashSet::<String>::new();
+
+        for (sec, prop) in conf.iter() {
+            let section_name = sec.as_ref().unwrap_or(&general_section_name);
+            for (key, _v) in prop.iter() {
+                let fullname = format!("[{}] {}", section_name, key);
+                if keys.contains(&fullname) {
+                    return Err(format!("duplicate key {} detected", fullname));
+                } else {
+                    keys.insert(fullname);
+                }
+            }
+        }
+        
         Ok(())
     }
 
@@ -253,28 +275,35 @@ mod file_and_format {
     fn file_not_found() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/does_not_exists.conf");
-        assert_eq!(res.is_err(), true);
+        assert!(res.is_err());
     }
 
     #[test]
     fn no_default_section() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_default_section.conf");
-        assert_eq!(res.is_err(), true);
+        assert!(res.is_err());
     }
 
     #[test]
     fn no_version_info() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_version.conf");
-        assert_eq!(res.is_err(), true);
+        assert!(res.is_err());
     }
 
     #[test]
     fn wrong_version_info() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_version.conf");
-        assert_eq!(res.is_err(), true);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn duplicate() {
+        let mut config: GnssMgrConfig = Default::default();
+        let res = config.parse_config("test_files/gnss0_duplicate.conf");
+        assert!(res.is_err());
     }
 }
 
