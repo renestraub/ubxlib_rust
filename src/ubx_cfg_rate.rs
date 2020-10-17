@@ -1,24 +1,21 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
+use crate::frame::{UbxFramePoll, UbxFrameWithData};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x08;
 
-#[derive(Default, Debug, Serialize)]
-pub struct DataPoll {}
-
 pub struct UbxCfgRatePoll {}
 
 impl UbxCfgRatePoll {
-    pub fn new() -> UbxFrameWithData<DataPoll> {
-        UbxFrameWithData::new("UBX-CFG-RATE-POLL", UbxCID::new(CLS, ID))
+    pub fn new() -> UbxFramePoll {
+        UbxFramePoll::new("UBX-CFG-RATE-POLL", UbxCID::new(CLS, ID))
     }
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct Data {
+pub struct DataCfgRate {
     pub meas_rate: u16, // Time elapsed between two measuremnts in ms
     pub nav_rate: u16,  // Number of measurements for NAV solution
     pub time_ref: u16,
@@ -27,7 +24,7 @@ pub struct Data {
 pub struct UbxCfgRate {}
 
 impl UbxCfgRate {
-    pub fn new() -> UbxFrameWithData<Data> {
+    pub fn new() -> UbxFrameWithData<DataCfgRate> {
         UbxFrameWithData::new("UBX-CFG-RATE", UbxCID::new(CLS, ID))
     }
 }

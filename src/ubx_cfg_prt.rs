@@ -9,11 +9,11 @@ const ID: u8 = 0x00;
 const PORTID_UART: u8 = 1;
 
 #[derive(Default, Debug, Serialize)]
-pub struct DataPoll {
+pub struct DataCfgPrtPoll {
     pub port_id: u8,
 }
 
-impl DataPoll {
+impl DataCfgPrtPoll {
     pub fn new() -> Self {
         Self {
             port_id: PORTID_UART,
@@ -24,13 +24,17 @@ impl DataPoll {
 pub struct UbxCfgPrtPoll {}
 
 impl UbxCfgPrtPoll {
-    pub fn new() -> UbxFrameWithData<DataPoll> {
-        UbxFrameWithData::init("UBX-CFG-PRT-POLL", UbxCID::new(CLS, ID), DataPoll::new())
+    pub fn new() -> UbxFrameWithData<DataCfgPrtPoll> {
+        UbxFrameWithData::init(
+            "UBX-CFG-PRT-POLL",
+            UbxCID::new(CLS, ID),
+            DataCfgPrtPoll::new(),
+        )
     }
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct Data {
+pub struct DataCfgPrt {
     pub port_id: u8,
     pub res1: u8,
     pub tx_ready: u16,
@@ -46,7 +50,7 @@ pub struct Data {
 pub struct UbxCfgPrtUart {}
 
 impl UbxCfgPrtUart {
-    pub fn new() -> UbxFrameWithData<Data> {
+    pub fn new() -> UbxFrameWithData<DataCfgPrt> {
         UbxFrameWithData::new("UBX-CFG-PRT", UbxCID::new(CLS, ID))
     }
 }

@@ -23,10 +23,10 @@ impl Default for LeverArmType {
     }
 }
 
-#[derive(Default, Debug, Serialize)]
 // Note that this is a frame variant that sets exactly one lever arm.
 // Use multiple times to configure several arm settings.
-pub struct Data {
+#[derive(Default, Debug, Serialize)]
+pub struct DataCfgEsfla {
     pub version: u8,
     pub num_configs: u8,
     pub res1: [u8; 2],
@@ -38,7 +38,7 @@ pub struct Data {
     pub leverarm_z: i16,
 }
 
-impl Data {
+impl DataCfgEsfla {
     pub fn new() -> Self {
         Self {
             version: 0x00,
@@ -51,8 +51,8 @@ impl Data {
 pub struct UbxCfgEsflaSet {}
 
 impl UbxCfgEsflaSet {
-    pub fn new() -> UbxFrameWithData<Data> {
-        UbxFrameWithData::init("UBX-CFG-ESFLA", UbxCID::new(CLS, ID), Data::new())
+    pub fn new() -> UbxFrameWithData<DataCfgEsfla> {
+        UbxFrameWithData::init("UBX-CFG-ESFLA", UbxCID::new(CLS, ID), DataCfgEsfla::new())
     }
 }
 

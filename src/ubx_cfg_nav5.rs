@@ -1,24 +1,21 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
+use crate::frame::{UbxFramePoll, UbxFrameWithData};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x24;
 
-#[derive(Default, Debug, Serialize)]
-pub struct DataPoll {}
-
 pub struct UbxCfgNav5Poll {}
 
 impl UbxCfgNav5Poll {
-    pub fn new() -> UbxFrameWithData<DataPoll> {
-        UbxFrameWithData::new("UBX-CFG-NAV5-POLL", UbxCID::new(CLS, ID))
+    pub fn new() -> UbxFramePoll {
+        UbxFramePoll::new("UBX-CFG-NAV5-POLL", UbxCID::new(CLS, ID))
     }
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct Data {
+pub struct DataCfgNav5 {
     pub mask: u16,
     pub dyn_model: u8,
     pub fix_mode: u8,
@@ -43,7 +40,7 @@ pub struct Data {
 pub struct UbxCfgNav5 {}
 
 impl UbxCfgNav5 {
-    pub fn new() -> UbxFrameWithData<Data> {
+    pub fn new() -> UbxFrameWithData<DataCfgNav5> {
         UbxFrameWithData::new("UBX-CFG-NAV5", UbxCID::new(CLS, ID))
     }
 }

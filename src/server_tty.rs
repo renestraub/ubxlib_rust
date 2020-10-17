@@ -271,7 +271,7 @@ impl ServerTty {
     }
 
     fn check_ack_nak(&self, packet: &UbxFrame, set_cid: UbxCID) -> Result<(), Error> {
-        let mut ack_nak = UbxAck::new(packet.cid.id());
+        let mut ack_nak = UbxAck::from(packet.cid.id());
         ack_nak.from_bin(&packet.data);
         // debug!("ack/nak {:?} - {:?}", ack_nak.ack_cid(), set_cid);
 

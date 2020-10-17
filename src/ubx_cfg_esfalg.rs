@@ -1,24 +1,21 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
+use crate::frame::{UbxFramePoll, UbxFrameWithData};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x56;
 
-#[derive(Default, Debug, Serialize)]
-pub struct DataPoll {}
-
 pub struct UbxCfgEsfAlgPoll {}
 
 impl UbxCfgEsfAlgPoll {
-    pub fn new() -> UbxFrameWithData<DataPoll> {
-        UbxFrameWithData::new("UBX-CFG-ESFALG-POLL", UbxCID::new(CLS, ID))
+    pub fn new() -> UbxFramePoll {
+        UbxFramePoll::new("UBX-CFG-ESFALG-POLL", UbxCID::new(CLS, ID))
     }
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct Data {
+pub struct DataCfgEsfAlg {
     pub bitfield: u32, // u-blox describes as U4, bit is X4
     pub yaw: u32,      // 1e-2, 0..360°
     pub pitch: i16,    // 1e-2, -90..90°
@@ -28,7 +25,7 @@ pub struct Data {
 pub struct UbxCfgEsfAlg {}
 
 impl UbxCfgEsfAlg {
-    pub fn new() -> UbxFrameWithData<Data> {
+    pub fn new() -> UbxFrameWithData<DataCfgEsfAlg> {
         UbxFrameWithData::new("UBX-CFG-ESFALG", UbxCID::new(CLS, ID))
     }
 }

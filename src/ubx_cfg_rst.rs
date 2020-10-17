@@ -38,14 +38,14 @@ impl Default for ResetMode {
 }
 
 #[derive(Default, Debug, Serialize)]
-pub struct Data {
+pub struct DataCfgRst {
     pub nav_bbr_mask: BbrMask,
     pub reset_mode: ResetMode,
     pub res1: u8,
 }
 
-impl Data {
-    pub fn new(nav_bbr_mask: BbrMask, reset_mode: ResetMode) -> Self {
+impl DataCfgRst {
+    pub fn from(nav_bbr_mask: BbrMask, reset_mode: ResetMode) -> Self {
         Self {
             nav_bbr_mask,
             reset_mode,
@@ -57,19 +57,19 @@ impl Data {
 pub struct UbxCfgRstAction {}
 
 impl UbxCfgRstAction {
-    pub fn cold_start() -> UbxFrameWithData<Data> {
+    pub fn cold_start() -> UbxFrameWithData<DataCfgRst> {
         UbxFrameWithData::init(
             "UBX-CFG-RST",
             UbxCID::new(CLS, ID),
-            Data::new(BbrMask::ColdStart, ResetMode::SwReset),
+            DataCfgRst::from(BbrMask::ColdStart, ResetMode::SwReset),
         )
     }
 
-    pub fn stop() -> UbxFrameWithData<Data> {
+    pub fn stop() -> UbxFrameWithData<DataCfgRst> {
         UbxFrameWithData::init(
             "UBX-CFG-RST",
             UbxCID::new(CLS, ID),
-            Data::new(BbrMask::HotStart, ResetMode::Stop),
+            DataCfgRst::from(BbrMask::HotStart, ResetMode::Stop),
         )
     }
 }

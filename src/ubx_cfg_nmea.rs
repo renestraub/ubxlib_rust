@@ -1,24 +1,21 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
+use crate::frame::{UbxFramePoll, UbxFrameWithData};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x17;
 
-#[derive(Default, Debug, Serialize)]
-pub struct DataPoll {}
-
 pub struct UbxCfgNmeaPoll {}
 
 impl UbxCfgNmeaPoll {
-    pub fn new() -> UbxFrameWithData<DataPoll> {
-        UbxFrameWithData::new("UBX-CFG-NMEA-POLL", UbxCID::new(CLS, ID))
+    pub fn new() -> UbxFramePoll {
+        UbxFramePoll::new("UBX-CFG-NMEA-POLL", UbxCID::new(CLS, ID))
     }
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct Data {
+pub struct DataCfgNmea {
     pub filter: u8,
     pub nmea_version: u8,
     pub num_sv: u8,
@@ -35,7 +32,7 @@ pub struct Data {
 pub struct UbxCfgNmea {}
 
 impl UbxCfgNmea {
-    pub fn new() -> UbxFrameWithData<Data> {
+    pub fn new() -> UbxFrameWithData<DataCfgNmea> {
         UbxFrameWithData::new("UBX-CFG-NMEA", UbxCID::new(CLS, ID))
     }
 }

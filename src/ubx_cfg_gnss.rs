@@ -48,7 +48,7 @@ impl UbxFrameSerialize for UbxCfgGnssPoll {
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct Header {
+pub struct DataHeader {
     pub msg_ver: u8,
     pub num_trk_ch_hw: u8,
     pub num_trk_ch_use: u8,
@@ -56,7 +56,7 @@ pub struct Header {
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct CfgBlock {
+pub struct DataCfgBlock {
     pub gnss_id: u8,
     pub res_trk_ch: u8,
     pub max_trk_ch: u8,
@@ -68,8 +68,8 @@ pub struct CfgBlock {
 pub struct UbxCfgGnss {
     pub name: &'static str,
     pub cid: UbxCID,
-    pub header: Header,
-    pub configs: Vec<CfgBlock>,
+    pub header: DataHeader,
+    pub configs: Vec<DataCfgBlock>,
 }
 
 impl UbxCfgGnss {
@@ -114,7 +114,7 @@ impl UbxCfgGnss {
             let mut offset = 4;
             let size = 8;
             while offset < bytes {
-                let cfg: CfgBlock = bincode::deserialize(&data[offset..offset + size]).unwrap();
+                let cfg: DataCfgBlock = bincode::deserialize(&data[offset..offset + size]).unwrap();
                 self.configs.push(cfg);
 
                 offset += size;
@@ -124,17 +124,15 @@ impl UbxCfgGnss {
 
     fn save(&self) -> Vec<u8> {
         let mut data = bincode::serialize(&self.header).unwrap();
-        // println!("{:?}", data);
 
         for cfg in &self.configs {
             let mut cfg_data = bincode::serialize(&cfg).unwrap();
-            // println!("{:?}", x);
             data.append(&mut cfg_data);
         }
         data
     }
 
-    fn find_config(&mut self, system: SystemName) -> Option<&mut CfgBlock> {
+    fn find_config(&mut self, system: SystemName) -> Option<&mut DataCfgBlock> {
         self.configs
             .iter_mut()
             .find(|c| c.gnss_id as usize == system as usize)

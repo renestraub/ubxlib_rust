@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
+use crate::frame::{UbxFramePoll, UbxFrameWithData};
 
 const CLS: u8 = 0x09;
 const ID: u8 = 0x14;
@@ -35,19 +35,16 @@ impl Default for Response {
     }
 }
 
-#[derive(Default, Debug, Serialize)]
-pub struct DataPoll {}
-
 pub struct UbxUpdSosPoll {}
 
 impl UbxUpdSosPoll {
-    pub fn new() -> UbxFrameWithData<DataPoll> {
-        UbxFrameWithData::new("UBX-UPD-SOS-POLL", UbxCID::new(CLS, ID))
+    pub fn new() -> UbxFramePoll {
+        UbxFramePoll::new("UBX-UPD-SOS-POLL", UbxCID::new(CLS, ID))
     }
 }
 
 #[derive(Default, Debug, Deserialize)]
-pub struct DataResponse {
+pub struct DataUpdSosResponse {
     pub cmd: u8, // shall be 0x02
     pub res1: [u8; 3],
     pub response: Response,
@@ -57,19 +54,19 @@ pub struct DataResponse {
 pub struct UbxUpdSos {}
 
 impl UbxUpdSos {
-    pub fn new() -> UbxFrameWithData<DataResponse> {
+    pub fn new() -> UbxFrameWithData<DataUpdSosResponse> {
         UbxFrameWithData::new("UBX-UPD-SOS", UbxCID::new(CLS, ID))
     }
 }
 
 #[derive(Default, Debug, Serialize)]
-pub struct UpdSosAction {
+pub struct DataUpdSosAction {
     pub cmd: Command,
     pub res1: [u8; 3],
 }
 
-impl UpdSosAction {
-    pub fn new(cmd: Command) -> Self {
+impl DataUpdSosAction {
+    pub fn from(cmd: Command) -> Self {
         Self {
             cmd,
             ..Default::default()
@@ -80,19 +77,19 @@ impl UpdSosAction {
 pub struct UbxUpdSosAction {}
 
 impl UbxUpdSosAction {
-    pub fn backup() -> UbxFrameWithData<UpdSosAction> {
+    pub fn backup() -> UbxFrameWithData<DataUpdSosAction> {
         UbxFrameWithData::init(
             "UBX-UPD-SOS-ACTION",
             UbxCID::new(CLS, ID),
-            UpdSosAction::new(Command::Backup),
+            DataUpdSosAction::from(Command::Backup),
         )
     }
 
-    pub fn clear() -> UbxFrameWithData<UpdSosAction> {
+    pub fn clear() -> UbxFrameWithData<DataUpdSosAction> {
         UbxFrameWithData::init(
             "UBX-UPD-SOS-ACTION",
             UbxCID::new(CLS, ID),
-            UpdSosAction::new(Command::Clear),
+            DataUpdSosAction::from(Command::Clear),
         )
     }
 }

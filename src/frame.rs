@@ -73,9 +73,37 @@ where
     }
 }
 
-// TODO: Generic for polling frame
-// no data
-// no deserialize
+// Generic implementation for ubx poll frame
+// - no payload data
+// - only serialization is implemented
+#[derive(Default, Debug)]
+pub struct UbxFramePoll {
+    pub name: &'static str,
+    pub cid: UbxCID,
+}
+
+impl UbxFramePoll {
+    pub fn new(name: &'static str, cid: UbxCID) -> Self {
+        Self { name, cid }
+    }
+}
+
+impl UbxFrameInfo for UbxFramePoll {
+    fn name(&self) -> &'static str {
+        self.name
+    }
+
+    fn cid(&self) -> UbxCID {
+        self.cid
+    }
+}
+
+impl UbxFrameSerialize for UbxFramePoll {
+    fn to_bin(&self) -> Vec<u8> {
+        const DATA: [u8; 0] = [];
+        UbxFrame::bytes(self.cid(), &DATA)
+    }
+}
 
 #[derive(Default)]
 pub struct UbxFrame {

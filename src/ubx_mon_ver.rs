@@ -1,20 +1,17 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
 use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo};
+use crate::frame::{UbxFramePoll, UbxFrameWithData};
 
 const CLS: u8 = 0x0A;
 const ID: u8 = 0x04;
 
-#[derive(Default, Debug, Serialize)]
-pub struct DataPoll {}
-
 pub struct UbxMonVerPoll {}
 
 impl UbxMonVerPoll {
-    pub fn new() -> UbxFrameWithData<DataPoll> {
-        UbxFrameWithData::new("UBX-MON-VER-POLL", UbxCID::new(CLS, ID))
+    pub fn new() -> UbxFramePoll {
+        UbxFramePoll::new("UBX-MON-VER-POLL", UbxCID::new(CLS, ID))
     }
 }
 
@@ -86,6 +83,7 @@ impl UbxMonVer {
     }
 
     fn extract_string(data: &[u8]) -> String {
+        // Version strings are zero padded, remove these and return String
         String::from_utf8_lossy(&data).replace(|c: char| c == '\0', "")
     }
 }

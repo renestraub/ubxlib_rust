@@ -8,7 +8,7 @@ const CLS: u8 = 0x13;
 const ID: u8 = 0x40;
 
 #[derive(Default, Debug, Serialize)]
-pub struct MgaIniTimeUtc {
+pub struct DataMgaIniTimeUtc {
     pub msg_type: u8, // Name type is a keyword that can't be used in Rust
     pub msg_version: u8,
     pub msg_ref: u8, // Name ref is a keyword that can't be used in Rust
@@ -28,7 +28,7 @@ pub struct MgaIniTimeUtc {
     pub tacc_ns: u32,
 }
 
-impl MgaIniTimeUtc {
+impl DataMgaIniTimeUtc {
     pub fn new() -> Self {
         Self {
             ..Default::default()
@@ -39,16 +39,16 @@ impl MgaIniTimeUtc {
 pub struct UbxMgaIniTimeUtc {}
 
 impl UbxMgaIniTimeUtc {
-    pub fn new() -> UbxFrameWithData<MgaIniTimeUtc> {
+    pub fn new() -> UbxFrameWithData<DataMgaIniTimeUtc> {
         UbxFrameWithData::init(
             "UBX-MGA-INI-TIME_UTC",
             UbxCID::new(CLS, ID),
-            MgaIniTimeUtc::new(),
+            DataMgaIniTimeUtc::new(),
         )
     }
 }
 
-impl UbxFrameWithData<MgaIniTimeUtc> {
+impl UbxFrameWithData<DataMgaIniTimeUtc> {
     pub fn set_date_time(&mut self, utc: &DateTime<Utc>) {
         self.data.msg_type = 0x10; // 0x10 for UTC time format
         self.data.msg_version = 0x00;
