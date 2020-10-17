@@ -412,9 +412,14 @@ mod vrp_antenna {
         assert_eq!(res.is_ok(), true);
 
         let xyz = config.vrp2antenna.unwrap();
-        assert_eq!(xyz.x, 1.0);
-        assert_eq!(xyz.y, 1.5); // TODO: Check float compare
-        assert_eq!(xyz.z, 0.3);
+        assert!(float_same(xyz.x, 1.0));
+        assert!(float_same(xyz.y, 1.5));
+        assert!(float_same(xyz.z, 0.3));
+    }
+
+    fn float_same(a: f32, b: f32) -> bool {
+        let delta = (a - b).abs();
+        return delta < 0.01;
     }
 }
 
