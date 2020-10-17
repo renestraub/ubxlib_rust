@@ -5,6 +5,7 @@ mod error;
 mod frame;
 mod gnss_mgr;
 mod neo_m8;
+mod parser_nmea;
 mod parser_ubx;
 mod server_tty;
 mod ubx_ack;

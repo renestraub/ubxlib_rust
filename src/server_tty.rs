@@ -9,6 +9,7 @@ use crate::cid::UbxCID;
 use crate::error::Error;
 use crate::frame::UbxFrame;
 use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
+use crate::parser_nmea::ParserNmea;
 use crate::parser_ubx::ParserUbx;
 use crate::ubx_ack::UbxAck;
 use crate::ubx_ack::{CLS_ACK, ID_ACK, ID_NAK};
@@ -65,12 +66,12 @@ impl ServerTty {
 
     pub fn scan(&mut self) -> Result<(), Error> {
         let port = self.serial_port.as_mut().unwrap();
-        // TODO: move to (dummy) parser_nmea module
-        let mut nmea_buffer = String::new(); // hold combined string from all received data
+        let mut nmea_parser = ParserNmea::new();
 
         let start = Instant::now();
         let mut elapsed = start.elapsed();
         let ubx_frames = self.parser.frames_received();
+        let nmea_frames = nmea_parser.frames_received();
 
         self.parser.restart();
         while elapsed.as_millis() < 2000 {
@@ -81,14 +82,7 @@ impl ServerTty {
                     let data = read_buffer[0..bytes_read].to_vec();
                     // debug!("{:?}", data);
                     self.parser.process(&data);
-
-                    // TODO: move to (dummy) parser_nmea module
-                    let nmea = std::str::from_utf8(&read_buffer[0..bytes_read]);
-                    if nmea.is_ok() {
-                        // debug!("{:?}", nmea);
-                        nmea_buffer.push_str(&nmea.unwrap());
-                        // debug!("{:?}", nmea_buffer);
-                    }
+                    nmea_parser.process(&data);
                 }
                 Err(_) => (), // no data, just continue
             }
@@ -99,9 +93,8 @@ impl ServerTty {
                 return Ok(());
             }
 
-            let count = nmea_buffer.matches("GPGSV").count();
-            if count >= 2 {
-                debug!("NMEA frames received");
+            if nmea_parser.frames_received() - nmea_frames > 2 {
+                debug!("nmea frames received");
                 return Ok(());
             }
 
