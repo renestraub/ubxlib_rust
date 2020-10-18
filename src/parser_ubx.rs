@@ -63,7 +63,7 @@ impl ParserUbx {
             msg_data: Vec::with_capacity(1024),
             cka: 0,
             ckb: 0,
-            // ofs: 0,
+            ofs: 0,
         };
         obj._reset();
         obj
