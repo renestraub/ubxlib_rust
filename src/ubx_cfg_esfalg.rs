@@ -9,7 +9,7 @@ const ID: u8 = 0x56;
 pub struct UbxCfgEsfAlgPoll {}
 
 impl UbxCfgEsfAlgPoll {
-    pub fn new() -> UbxFramePoll {
+    pub fn create() -> UbxFramePoll {
         UbxFramePoll::new("UBX-CFG-ESFALG-POLL", UbxCID::new(CLS, ID))
     }
 }
@@ -25,7 +25,7 @@ pub struct DataCfgEsfAlg {
 pub struct UbxCfgEsfAlg {}
 
 impl UbxCfgEsfAlg {
-    pub fn new() -> UbxFrameWithData<DataCfgEsfAlg> {
+    pub fn create() -> UbxFrameWithData<DataCfgEsfAlg> {
         UbxFrameWithData::new("UBX-CFG-ESFALG", UbxCID::new(CLS, ID))
     }
 }
@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn poll() {
-        let dut = UbxCfgEsfAlgPoll::new();
+        let dut = UbxCfgEsfAlgPoll::create();
         assert_eq!(dut.name, "UBX-CFG-ESFALG-POLL");
         let msg = dut.to_bin();
         assert_eq!(msg, [0xb5, 0x62, 0x06, 0x56, 0, 0, 92, 26]);
@@ -47,7 +47,7 @@ mod tests {
     #[should_panic]
     fn too_few_values() {
         const DATA: [u8; 5] = [0xe8, 0x03, 0x01, 0x00, 0x34];
-        let mut dut = UbxCfgEsfAlg::new();
+        let mut dut = UbxCfgEsfAlg::create();
         dut.from_bin(&DATA);
     }
 
@@ -56,7 +56,7 @@ mod tests {
         const DATA: [u8; 12] = [
             0xff, 0xfe, 0xfd, 0xfc, 0x04, 0x03, 0x02, 0x01, 0x08, 0x07, 0x06, 0x05,
         ];
-        let mut dut = UbxCfgEsfAlg::new();
+        let mut dut = UbxCfgEsfAlg::create();
         dut.from_bin(&DATA);
 
         assert_eq!(dut.data.bitfield, 0xfcfdfeffu32);
@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn serialize() {
-        let mut dut = UbxCfgEsfAlg::new();
+        let mut dut = UbxCfgEsfAlg::create();
         assert_eq!(dut.name, "UBX-CFG-ESFALG");
         dut.data.yaw = 180 as u32 * 100;
         dut.data.pitch = -45 as i16 * 100;

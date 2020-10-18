@@ -39,7 +39,7 @@ impl DataMgaIniTimeUtc {
 pub struct UbxMgaIniTimeUtc {}
 
 impl UbxMgaIniTimeUtc {
-    pub fn new() -> UbxFrameWithData<DataMgaIniTimeUtc> {
+    pub fn create() -> UbxFrameWithData<DataMgaIniTimeUtc> {
         UbxFrameWithData::init(
             "UBX-MGA-INI-TIME_UTC",
             UbxCID::new(CLS, ID),
@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn new() {
-        let dut = UbxMgaIniTimeUtc::new();
+        let dut = UbxMgaIniTimeUtc::create();
         assert_eq!(dut.name(), "UBX-MGA-INI-TIME_UTC");
         let msg = dut.to_bin();
         assert_eq!(msg[0..6], [0xb5, 0x62, 0x13, 0x40, 24, 0]);
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn set_date_time() {
-        let mut dut = UbxMgaIniTimeUtc::new();
+        let mut dut = UbxMgaIniTimeUtc::create();
 
         let utc = Utc.ymd(2020, 2, 3).and_hms_milli(11, 22, 33, 444);
         dut.set_date_time(&utc);

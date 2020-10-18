@@ -10,7 +10,7 @@ const ID: u8 = 0x04;
 pub struct UbxMonVerPoll {}
 
 impl UbxMonVerPoll {
-    pub fn new() -> UbxFramePoll {
+    pub fn create() -> UbxFramePoll {
         UbxFramePoll::new("UBX-MON-VER-POLL", UbxCID::new(CLS, ID))
     }
 }
@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn poll() {
-        let dut = UbxMonVerPoll::new();
+        let dut = UbxMonVerPoll::create();
         assert_eq!(dut.name, "UBX-MON-VER-POLL");
         let msg = dut.to_bin();
         assert_eq!(msg, [0xb5, 0x62, 0x0A, 0x04, 0, 0, 14, 52]);

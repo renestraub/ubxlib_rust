@@ -38,7 +38,7 @@ impl Default for Response {
 pub struct UbxUpdSosPoll {}
 
 impl UbxUpdSosPoll {
-    pub fn new() -> UbxFramePoll {
+    pub fn create() -> UbxFramePoll {
         UbxFramePoll::new("UBX-UPD-SOS-POLL", UbxCID::new(CLS, ID))
     }
 }
@@ -54,7 +54,7 @@ pub struct DataUpdSosResponse {
 pub struct UbxUpdSos {}
 
 impl UbxUpdSos {
-    pub fn new() -> UbxFrameWithData<DataUpdSosResponse> {
+    pub fn create() -> UbxFrameWithData<DataUpdSosResponse> {
         UbxFrameWithData::new("UBX-UPD-SOS", UbxCID::new(CLS, ID))
     }
 }
@@ -121,7 +121,7 @@ mod response {
 
     #[test]
     fn poll() {
-        let dut = UbxUpdSosPoll::new();
+        let dut = UbxUpdSosPoll::create();
         assert_eq!(dut.name, "UBX-UPD-SOS-POLL");
         let msg = dut.to_bin();
         assert_eq!(msg, [0xb5, 0x62, 0x09, 0x14, 0, 0, 29, 96]);
@@ -130,7 +130,7 @@ mod response {
     #[test]
     fn deserialize() {
         const DATA: [u8; 8] = [0x03, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00];
-        let mut dut = UbxUpdSos::new();
+        let mut dut = UbxUpdSos::create();
         assert_eq!(dut.name, "UBX-UPD-SOS");
         dut.from_bin(&DATA);
 

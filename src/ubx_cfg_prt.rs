@@ -24,7 +24,7 @@ impl DataCfgPrtPoll {
 pub struct UbxCfgPrtPoll {}
 
 impl UbxCfgPrtPoll {
-    pub fn new() -> UbxFrameWithData<DataCfgPrtPoll> {
+    pub fn create() -> UbxFrameWithData<DataCfgPrtPoll> {
         UbxFrameWithData::init(
             "UBX-CFG-PRT-POLL",
             UbxCID::new(CLS, ID),
@@ -50,7 +50,7 @@ pub struct DataCfgPrt {
 pub struct UbxCfgPrtUart {}
 
 impl UbxCfgPrtUart {
-    pub fn new() -> UbxFrameWithData<DataCfgPrt> {
+    pub fn create() -> UbxFrameWithData<DataCfgPrt> {
         UbxFrameWithData::new("UBX-CFG-PRT", UbxCID::new(CLS, ID))
     }
 }
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn poll() {
-        let dut = UbxCfgPrtPoll::new();
+        let dut = UbxCfgPrtPoll::create();
         assert_eq!(dut.name, "UBX-CFG-PRT-POLL");
         assert_eq!(dut.data.port_id, 1);
         let msg = dut.to_bin();
@@ -74,7 +74,7 @@ mod tests {
         const DATA: [u8; 20] = [
             1, 0, 0, 0, 192, 8, 0, 0, 128, 37, 0, 0, 7, 0, 3, 0, 0, 0, 0, 0,
         ];
-        let mut dut = UbxCfgPrtUart::new();
+        let mut dut = UbxCfgPrtUart::create();
         assert_eq!(dut.name, "UBX-CFG-PRT");
         dut.from_bin(&DATA);
 
@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn set() {
-        let mut dut = UbxCfgPrtUart::new();
+        let mut dut = UbxCfgPrtUart::create();
         assert_eq!(dut.name, "UBX-CFG-PRT");
         dut.data.baudrate = 115200;
         let msg = dut.to_bin();

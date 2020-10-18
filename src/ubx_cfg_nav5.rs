@@ -9,7 +9,7 @@ const ID: u8 = 0x24;
 pub struct UbxCfgNav5Poll {}
 
 impl UbxCfgNav5Poll {
-    pub fn new() -> UbxFramePoll {
+    pub fn create() -> UbxFramePoll {
         UbxFramePoll::new("UBX-CFG-NAV5-POLL", UbxCID::new(CLS, ID))
     }
 }
@@ -40,7 +40,7 @@ pub struct DataCfgNav5 {
 pub struct UbxCfgNav5 {}
 
 impl UbxCfgNav5 {
-    pub fn new() -> UbxFrameWithData<DataCfgNav5> {
+    pub fn create() -> UbxFrameWithData<DataCfgNav5> {
         UbxFrameWithData::new("UBX-CFG-NAV5", UbxCID::new(CLS, ID))
     }
 }
@@ -52,7 +52,7 @@ mod tests {
 
     #[test]
     fn poll() {
-        let dut = UbxCfgNav5Poll::new();
+        let dut = UbxCfgNav5Poll::create();
         assert_eq!(dut.name, "UBX-CFG-NAV5-POLL");
         let msg = dut.to_bin();
         assert_eq!(msg, [0xb5, 0x62, CLS, ID, 0, 0, 42, 132]);
@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn serialize_deser() {
-        let mut dut = UbxCfgNav5::new();
+        let mut dut = UbxCfgNav5::create();
         assert_eq!(dut.name, "UBX-CFG-NAV5");
 
         dut.data.mask = 0x1122;
@@ -93,7 +93,7 @@ mod tests {
             255, 255, 4, 3, 0, 0, 0, 0, 16, 39, 0, 0, 10, 0, 250, 0, 250, 0, 100, 0, 94, 1, 0, 60,
             0, 0, 16, 39, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
-        let mut dut = UbxCfgNav5::new();
+        let mut dut = UbxCfgNav5::create();
         assert_eq!(dut.name, "UBX-CFG-NAV5");
 
         dut.from_bin(&DATA);

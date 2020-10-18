@@ -9,7 +9,7 @@ const ID: u8 = 0x17;
 pub struct UbxCfgNmeaPoll {}
 
 impl UbxCfgNmeaPoll {
-    pub fn new() -> UbxFramePoll {
+    pub fn create() -> UbxFramePoll {
         UbxFramePoll::new("UBX-CFG-NMEA-POLL", UbxCID::new(CLS, ID))
     }
 }
@@ -32,7 +32,7 @@ pub struct DataCfgNmea {
 pub struct UbxCfgNmea {}
 
 impl UbxCfgNmea {
-    pub fn new() -> UbxFrameWithData<DataCfgNmea> {
+    pub fn create() -> UbxFrameWithData<DataCfgNmea> {
         UbxFrameWithData::new("UBX-CFG-NMEA", UbxCID::new(CLS, ID))
     }
 }
@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn poll() {
-        let dut = UbxCfgNmeaPoll::new();
+        let dut = UbxCfgNmeaPoll::create();
         assert_eq!(dut.name, "UBX-CFG-NMEA-POLL");
         let msg = dut.to_bin();
         assert_eq!(msg, [0xb5, 0x62, 0x06, 0x17, 0, 0, 29, 93]);
@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn deserialize() {
         const DATA: [u8; 20] = [0, 64, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
-        let mut dut = UbxCfgNmea::new();
+        let mut dut = UbxCfgNmea::create();
         dut.from_bin(&DATA);
 
         assert_eq!(dut.data.nmea_version, 0x40);
@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn set() {
-        let mut dut = UbxCfgNmea::new();
+        let mut dut = UbxCfgNmea::create();
         assert_eq!(dut.name, "UBX-CFG-NMEA");
         dut.data.nmea_version = 0x41;
         let msg = dut.to_bin();

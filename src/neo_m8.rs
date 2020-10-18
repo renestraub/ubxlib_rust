@@ -60,7 +60,7 @@ impl NeoM8 {
 
     pub fn version(&mut self, info: &mut HashMap<&str, String>) -> Result<(), Error> {
         let mut ver_result = UbxMonVer::new();
-        let poll = UbxMonVerPoll::new();
+        let poll = UbxMonVerPoll::create();
         self.server.poll(&poll, &mut ver_result)?;
         debug!("{:#?}", ver_result);
 
@@ -80,8 +80,8 @@ impl NeoM8 {
     }
 
     pub fn sos_check(&mut self) -> Result<(), Error> {
-        let mut set = UbxUpdSos::new();
-        let poll = UbxUpdSosPoll::new();
+        let mut set = UbxUpdSos::create();
+        let poll = UbxUpdSosPoll::create();
         self.server.poll(&poll, &mut set)?;
         debug!("SoS State reported is {:?}", set.data.response);
 
@@ -148,8 +148,8 @@ impl NeoM8 {
             return Err(Error::InvalidArgument);
         }
 
-        let mut set = UbxCfgPrtUart::new();
-        let poll = UbxCfgPrtPoll::new();
+        let mut set = UbxCfgPrtUart::create();
+        let poll = UbxCfgPrtPoll::create();
         self.server.poll(&poll, &mut set)?;
 
         if set.data.baudrate != baudrate {
@@ -169,8 +169,8 @@ impl NeoM8 {
             return Err(Error::InvalidArgument);
         }
 
-        let mut set = UbxCfgRate::new();
-        let poll = UbxCfgRatePoll::new();
+        let mut set = UbxCfgRate::create();
+        let poll = UbxCfgRatePoll::create();
         self.server.poll(&poll, &mut set)?;
 
         let new_time = 1000u16 / rate_in_hz;
@@ -193,8 +193,8 @@ impl NeoM8 {
             _ => return Err(Error::InvalidArgument),
         };
 
-        let mut set = UbxCfgNmea::new();
-        let poll = UbxCfgNmeaPoll::new();
+        let mut set = UbxCfgNmea::create();
+        let poll = UbxCfgNmeaPoll::create();
         self.server.poll(&poll, &mut set)?;
 
         if set.data.nmea_version != ubx_ver {
@@ -214,8 +214,8 @@ impl NeoM8 {
             _ => return Err(Error::InvalidArgument),
         };
 
-        let mut set = UbxCfgNav5::new();
-        let poll = UbxCfgNav5Poll::new();
+        let mut set = UbxCfgNav5::create();
+        let poll = UbxCfgNav5Poll::create();
         self.server.poll(&poll, &mut set)?;
 
         if set.data.dyn_model != model {
@@ -268,8 +268,8 @@ impl NeoM8 {
             return Err(Error::InvalidArgument);
         }
 
-        let mut set = UbxCfgEsfAlg::new();
-        let poll = UbxCfgEsfAlgPoll::new();
+        let mut set = UbxCfgEsfAlg::create();
+        let poll = UbxCfgEsfAlgPoll::create();
         self.server.poll(&poll, &mut set)?;
 
         set.data.yaw = angles.yaw as u32 * 100;
@@ -287,7 +287,7 @@ impl NeoM8 {
             return Err(Error::InvalidArgument);
         }
 
-        let mut set = UbxCfgEsflaSet::new();
+        let mut set = UbxCfgEsflaSet::create();
         set.data.version = 0;
         set.data.num_configs = 1;
         set.data.leverarm_type = armtype;
@@ -305,7 +305,7 @@ impl NeoM8 {
         let utc: DateTime<Utc> = Utc::now();
         debug!("Setting GNSS time to {:?}", utc);
 
-        let mut set = UbxMgaIniTimeUtc::new();
+        let mut set = UbxMgaIniTimeUtc::create();
         set.set_date_time(&utc);
 
         self.server.fire_and_forget(&set)?;

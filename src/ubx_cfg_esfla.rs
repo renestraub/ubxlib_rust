@@ -51,7 +51,7 @@ impl DataCfgEsfla {
 pub struct UbxCfgEsflaSet {}
 
 impl UbxCfgEsflaSet {
-    pub fn new() -> UbxFrameWithData<DataCfgEsfla> {
+    pub fn create() -> UbxFrameWithData<DataCfgEsfla> {
         UbxFrameWithData::init("UBX-CFG-ESFLA", UbxCID::new(CLS, ID), DataCfgEsfla::new())
     }
 }
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn positive_values() {
-        let mut dut = UbxCfgEsflaSet::new();
+        let mut dut = UbxCfgEsflaSet::create();
         assert_eq!(dut.name, "UBX-CFG-ESFLA");
         dut.data.leverarm_type = LeverArmType::VRPtoAntenna;
         dut.data.leverarm_x = 127;
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn negative_values() {
-        let mut dut = UbxCfgEsflaSet::new();
+        let mut dut = UbxCfgEsflaSet::create();
         assert_eq!(dut.name, "UBX-CFG-ESFLA");
         dut.data.leverarm_type = LeverArmType::VRPtoIMU;
         dut.data.leverarm_x = -127;
