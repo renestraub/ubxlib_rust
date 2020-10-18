@@ -48,5 +48,12 @@ jobs:
       - name: Optimize Release Target
         run: |
           ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
-          strip target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+
+      - name: Compress binaries
+            uses: svenstaro/upx-action@v2
+            with:
+              file: target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+
+      - name: List
+        run: |
           ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
