@@ -46,12 +46,7 @@ jobs:
           args: --release --target=${{ matrix.target }}
 
       - name: Upload Release
-        uses: actions/checkout@v2
-
-        # - run: mkdir -p path/to/artifact
-        # - run: echo hello > path/to/artifact/world.txt
-
-        - uses: actions/upload-artifact@v2
-          with:
-            name: gnss-mgr
-            path: target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+        uses: actions/upload-artifact@v2
+        with:
+          name: gnss-mgr
+          path: target/arm-unknown-linux-gnueabihf/release/gnss-mgr
