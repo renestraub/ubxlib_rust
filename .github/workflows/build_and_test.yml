@@ -1,4 +1,4 @@
-name: Build and Test
+name: Copmile and Test Linux-x64
 
 on:
   push:

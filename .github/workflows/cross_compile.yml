@@ -1,5 +1,4 @@
-
-name: Cross-compile armv7
+name: Cross-compile Linux-armv7
 
 on:
   push:
