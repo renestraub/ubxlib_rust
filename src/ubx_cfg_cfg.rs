@@ -21,7 +21,6 @@ impl DataCfgCfg {
             clear_mask,
             save_mask,
             load_mask,
-            ..Default::default()
         }
     }
 }

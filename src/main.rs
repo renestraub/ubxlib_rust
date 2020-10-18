@@ -160,7 +160,7 @@ fn check_port(device_name: &str) -> Result<(), String> {
         .args(&[device_name])
         .output()
         .map_err(|e| format!("error executing fuser command ({:?})", e))?;
-    if output.stdout.len() > 0 {
+    if !output.stdout.is_empty() {
         let pid = String::from_utf8_lossy(&output.stdout);
         let pid = pid.trim();
         return Err(format!(

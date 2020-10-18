@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Default, Hash, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
 pub struct UbxCID {
     cls: u8,
     id: u8,
@@ -17,12 +17,6 @@ impl UbxCID {
 
     pub fn id(&self) -> u8 {
         self.id
-    }
-}
-
-impl PartialEq for UbxCID {
-    fn eq(&self, other: &Self) -> bool {
-        self.cls == other.cls && self.id == other.id
     }
 }
 

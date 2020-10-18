@@ -139,7 +139,7 @@ impl UbxFrame {
 
         // Length - 16 bit little endian
         let length = self.data.len();
-        let l_low = ((length >> 0) & 0xFF) as u8;
+        let l_low = (length & 0xFF) as u8;
         msg.push(l_low);
         checksum.add(l_low);
 

@@ -27,7 +27,7 @@ impl UbxAck {
 
 impl UbxFrameWithData<DataAck> {
     pub fn ack_cid(&self) -> UbxCID {
-        return UbxCID::new(self.data.cls_id, self.data.msg_id);
+        UbxCID::new(self.data.cls_id, self.data.msg_id)
     }
 }
 

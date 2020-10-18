@@ -37,7 +37,7 @@ impl ParserNmea {
     }
 
     pub fn frames_received(&self) -> usize {
-        return self.frames_rx;
+        self.frames_rx
     }
 
     pub fn process(&mut self, data: &[u8]) {
@@ -114,9 +114,9 @@ impl ParserNmea {
 
     fn _to_bin(data: u8) -> u8 {
         match data as char {
-            '0'..='9' => data - '0' as u8,
-            'a'..='f' => data - 'a' as u8 + 10,
-            'A'..='F' => data - 'A' as u8 + 10,
+            '0'..='9' => data - b'0',
+            'a'..='f' => data - b'a' + 10,
+            'A'..='F' => data - b'A' + 10,
             _ => 0,
         }
     }

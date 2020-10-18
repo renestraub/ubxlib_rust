@@ -47,7 +47,6 @@ impl NeoM8 {
                 }
                 Err(_) => {
                     debug!("bitrate {:?} not working", baud);
-                    ();
                 }
             }
         }
@@ -229,7 +228,7 @@ impl NeoM8 {
         Ok(())
     }
 
-    pub fn set_systems(&mut self, systems: &Vec<String>) -> Result<(), Error> {
+    pub fn set_systems(&mut self, systems: &[String]) -> Result<(), Error> {
         let mut set = UbxCfgGnss::new();
         let poll = UbxCfgGnssPoll::new();
         self.server.poll(&poll, &mut set)?;
@@ -273,9 +272,9 @@ impl NeoM8 {
         let poll = UbxCfgEsfAlgPoll::new();
         self.server.poll(&poll, &mut set)?;
 
-        set.data.yaw = angles.yaw * 100;
-        set.data.pitch = angles.pitch * 100;
-        set.data.roll = angles.roll * 100;
+        set.data.yaw = angles.yaw as u32 * 100;
+        set.data.pitch = angles.pitch as i16 * 100;
+        set.data.roll = angles.roll as i16 * 100;
         debug!("new IMU settings {:?}", set.data);
 
         self.server.set(&set)?;

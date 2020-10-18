@@ -18,7 +18,7 @@ impl Checksum {
     }
 
     pub fn matches(&self, cka: u8, ckb: u8) -> bool {
-        return self.cka == cka && self.ckb == ckb;
+        self.cka == cka && self.ckb == ckb
     }
 
     pub fn reset(&mut self) {

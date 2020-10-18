@@ -27,7 +27,7 @@ pub struct ServerTty {
 
 impl ServerTty {
     pub fn new(device_name: &str) -> Self {
-        let obj = Self {
+        Self {
             device_name: String::from(device_name),
             parser: ParserUbx::new(),
             serial_port: serial::open(device_name).ok(), // convert Result to Option value
@@ -36,8 +36,7 @@ impl ServerTty {
             retry_delay_in_ms: 3000,
             cid_nak: UbxCID::new(CLS_ACK, ID_NAK),
             cid_ack: UbxCID::new(CLS_ACK, ID_ACK),
-        };
-        obj
+        }
     }
 
     pub fn set_baudrate(&mut self, bitrate: usize) -> Result<(), Error> {
@@ -58,9 +57,9 @@ impl ServerTty {
                     .map_err(|_err| Error::SerialPortConfigFailed)?;
                 port.set_timeout(Duration::from_millis(100))
                     .map_err(|_err| Error::SerialPortConfigFailed)?;
-                return Ok(());
+                Ok(())
             }
-            _ => return Err(Error::SerialPortNotFound),
+            _ => Err(Error::SerialPortNotFound),
         }
     }
 
@@ -77,14 +76,11 @@ impl ServerTty {
         while elapsed.as_millis() < 2000 {
             let mut read_buffer = [0u8; 1024];
             let res = port.read(&mut read_buffer[..]);
-            match res {
-                Ok(bytes_read) => {
-                    let data = read_buffer[0..bytes_read].to_vec();
-                    // debug!("{:?}", data);
-                    self.parser.process(&data);
-                    nmea_parser.process(&data);
-                }
-                Err(_) => (), // no data, just continue
+            if let Ok(bytes_read) = res {
+                let data = read_buffer[0..bytes_read].to_vec();
+                // debug!("{:?}", data);
+                self.parser.process(&data);
+                nmea_parser.process(&data);
             }
 
             let _res = self.parser.packet();
@@ -208,7 +204,7 @@ impl ServerTty {
 
     /*** Private ***/
 
-    fn send(&mut self, data: &Vec<u8>) -> Result<(), Error> {
+    fn send(&mut self, data: &[u8]) -> Result<(), Error> {
         // debug!("{} bytes to send {:?}", data.len(), data);
         let port = self.serial_port.as_mut().unwrap();
         let res = port.write(&data);
@@ -235,26 +231,19 @@ impl ServerTty {
 
         self.parser.restart();
         while elapsed.as_millis() < self.retry_delay_in_ms {
-            match port.read(&mut read_buffer[..]) {
-                Ok(bytes_read) => {
-                    let data = read_buffer[0..bytes_read].to_vec();
-                    // process() places all decoded frames in response_queue
-                    self.parser.process(&data);
-                }
-                Err(_) => (), // no data, just continue
+            if let Ok(bytes_read) = port.read(&mut read_buffer[..]) {
+                let data = read_buffer[0..bytes_read].to_vec();
+                // process() places all decoded frames in response_queue
+                self.parser.process(&data);
             }
 
             // Check if a packet could be decoded already
-            let res = self.parser.packet();
-            match res {
-                Some(p) => {
-                    if p.cid != self.crc_error_cid {
-                        return Ok(p);
-                    } else {
-                        warn!("checksum error in frame, discarding");
-                    }
+            if let Some(p) = self.parser.packet() {
+                if p.cid != self.crc_error_cid {
+                    return Ok(p);
+                } else {
+                    warn!("checksum error in frame, discarding");
                 }
-                _ => (), // No packet decoded so far, no problem just continue
             }
 
             elapsed = start.elapsed();

@@ -75,7 +75,7 @@ impl ParserUbx {
     }
 
     pub fn frames_received(&self) -> usize {
-        return self.frames_rx;
+        self.frames_rx
     }
 
     pub fn set_filter(&mut self, cid: UbxCID) {
@@ -151,8 +151,7 @@ impl ParserUbx {
     }
 
     fn state_len2(&mut self, data: u8) {
-        self.msg_len = self.msg_len + (data as usize * 256);
-        // debug!("length {:?}", self.msg_len);
+        self.msg_len += data as usize * 256;
         self.checksum.add(data);
 
         if self.msg_len == 0 {
@@ -195,7 +194,7 @@ impl ParserUbx {
             // debug!("cid {:?}", cid);
             if self.wait_cids.contains(&cid) {
                 let packet = UbxFrame {
-                    cid: cid,
+                    cid,
                     data: self.msg_data.clone(),
                 };
                 self.rx_queue.push_back(packet);

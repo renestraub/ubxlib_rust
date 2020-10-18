@@ -254,7 +254,7 @@ impl GnssMgr {
         let mut file = File::create(&path)
             .map_err(|_err| format!("can't create GNSS run file {}", path.display()))?;
         file.write_all(text.as_bytes())
-            .map_err(|_err| format!("can't write GNSS run file"))?;
+            .map_err(|_err| "can't write GNSS run file".to_string())?;
 
         Ok(())
     }
@@ -264,13 +264,13 @@ impl GnssMgr {
         let path = &path.replace("/dev/", "/run/gnss/");
         let mut path = PathBuf::from(path);
         path.set_extension("config");
-        path.to_path_buf()
+        path
     }
 
     fn build_configfile_path(path: &str) -> PathBuf {
         let path = &path.replace("/dev/", "/etc/gnss/");
         let mut path = PathBuf::from(path);
         path.set_extension("conf");
-        path.to_path_buf()
+        path
     }
 }

@@ -51,7 +51,7 @@ impl GnssMgrConfig {
         // Satellite systems
         let value_str = Self::get_string(sec_navigation, "systems", |_| true);
         self.systems = match value_str {
-            Some(x) => Some(x.split(";").map(|s| s.to_string().to_lowercase()).collect()),
+            Some(x) => Some(x.split(';').map(|s| s.to_string().to_lowercase()).collect()),
             _ => None,
         };
 
@@ -59,13 +59,12 @@ impl GnssMgrConfig {
         let imu_yaw = Self::get_int(sec_installation, "yaw", |val| val >= 0 && val <= 360);
         let imu_pitch = Self::get_int(sec_installation, "pitch", |val| val >= -90 && val <= 90);
         let imu_roll = Self::get_int(sec_installation, "roll", |val| val >= -180 && val <= 180);
-        if imu_yaw.is_some() && imu_pitch.is_some() && imu_roll.is_some() {
-            self.imu_angles = Angles::new(
-                imu_yaw.unwrap() as u32,
-                imu_pitch.unwrap() as i16,
-                imu_roll.unwrap() as i16,
-            );
-        }
+        self.imu_angles = match (imu_yaw, imu_pitch, imu_roll) {
+            (Some(imu_yaw), Some(imu_pitch), Some(imu_roll)) => {
+                Angles::new(imu_yaw, imu_pitch, imu_roll)
+            }
+            _ => None,
+        };
 
         // Lever Arms
         let value_str = Self::get_string(sec_installation, "vrp2antenna", |x| {
@@ -101,7 +100,7 @@ impl GnssMgrConfig {
                 }
             }
         }
-        
+
         Ok(())
     }
 
@@ -161,13 +160,13 @@ impl GnssMgrConfig {
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Angles {
-    pub yaw: u32,
-    pub pitch: i16,
-    pub roll: i16,
+    pub yaw: i32,
+    pub pitch: i32,
+    pub roll: i32,
 }
 
 impl Angles {
-    pub fn new(yaw: u32, pitch: i16, roll: i16) -> Option<Self> {
+    pub fn new(yaw: i32, pitch: i32, roll: i32) -> Option<Self> {
         Some(Self { yaw, pitch, roll })
     }
 }
@@ -181,12 +180,7 @@ pub struct Xyz {
 
 impl Xyz {
     pub fn from_str(text: &str) -> Option<Self> {
-        if text.is_empty() {
-            return None;
-        }
-
-        let mut obj: Self = Default::default();
-        let tokens: Vec<&str> = text.split(";").collect();
+        let tokens: Vec<&str> = text.split(';').collect();
         if tokens.len() != 3 {
             return None;
         }
@@ -194,13 +188,9 @@ impl Xyz {
         let x = Xyz::parse_float(tokens[0]);
         let y = Xyz::parse_float(tokens[1]);
         let z = Xyz::parse_float(tokens[2]);
-        if x.is_ok() && y.is_ok() && z.is_ok() {
-            obj.x = x.unwrap();
-            obj.y = y.unwrap();
-            obj.z = z.unwrap();
-            Some(obj)
-        } else {
-            None
+        match (x, y, z) {
+            (Ok(x), Ok(y), Ok(z)) => Some(Self { x, y, z }),
+            _ => None,
         }
     }
 
@@ -219,20 +209,20 @@ mod xyz_reader {
     #[test]
     fn empty_string() {
         let uut = Xyz::from_str("");
-        assert_eq!(uut.is_none(), true);
+        assert!(uut.is_none());
     }
 
     #[test]
     fn ok() {
         let uut = Xyz::from_str("1.0;-2.2;333.3");
-        assert_eq!(uut.is_some(), true);
+        assert!(uut.is_some());
         let uut = uut.unwrap();
         assert!(float_same(uut.x, 1.0));
         assert!(float_same(uut.y, -2.2));
         assert!(float_same(uut.z, 333.3));
 
         let uut = Xyz::from_str("-11.1;22.2;-333.33");
-        assert_eq!(uut.is_some(), true);
+        assert!(uut.is_some());
         let uut = uut.unwrap();
         assert!(float_same(uut.x, -11.1));
         assert!(float_same(uut.y, 22.2));
@@ -242,7 +232,7 @@ mod xyz_reader {
     #[test]
     fn ok_with_spaces() {
         let uut = Xyz::from_str("1.25;   -2.5; 3.75");
-        assert_eq!(uut.is_some(), true);
+        assert!(uut.is_some());
         let uut = uut.unwrap();
         assert_eq!(uut.x, 1.25);
         assert_eq!(uut.y, -2.5);
@@ -252,13 +242,19 @@ mod xyz_reader {
     #[test]
     fn value_missing() {
         let uut = Xyz::from_str("1.0;;2.0");
-        assert_eq!(uut.is_none(), true);
+        assert!(uut.is_none());
     }
 
     #[test]
     fn invalid_separators() {
         let uut = Xyz::from_str("1.0;2.0,3.0");
-        assert_eq!(uut.is_none(), true);
+        assert!(uut.is_none());
+    }
+
+    #[test]
+    fn invalid_numbers() {
+        let uut = Xyz::from_str("x;y;");
+        assert!(uut.is_none());
     }
 
     fn float_same(a: f32, b: f32) -> bool {
