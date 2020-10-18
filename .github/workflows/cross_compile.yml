@@ -1,0 +1,81 @@
+name: Cross-compile Linux-armv7
+
+on:
+  push:
+    branches: [ master, ci ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Linux ARMv7
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target:
+          - arm-unknown-linux-gnueabihf
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Get ARM toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Get ARM toolchain (strip)
+        uses: numworks/setup-arm-toolchain@v1
+
+      # - name: test strip
+      #   run: arm-none-eabi-strip
+      #   continue-on-error: true
+
+      # - name: toolchains
+      #   run: rustup target list
+
+      # - name: Build Debug Target
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     use-cross: true
+      #     command: build
+      #     args: --target=${{ matrix.target }}
+
+      - name: Build Release Target
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target }}
+
+      - name: Optimize Release Target
+        run: |
+          arm-none-eabi-strip target/${{ matrix.target }}/release/gnss-mgr
+          ls -alh target/${{ matrix.target }}/release/gnss-mgr
+
+      # - name: Upload to Github Artifacts
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: gnss-mgr
+      #     path: target/${{ matrix.target }}/release/gnss-mgr
+
+      # - name: Upload to Bintray
+      #   uses: bpicode/github-action-upload-bintray@master
+
+      - name: Upload to Bintray
+        uses: reznikmm/upload-bintray-action@v2
+        with:
+          subject: renestraub
+          repository: ubx-gnss-mgr
+          package: arm-linux
+          version: 0.3.5
+          sourcePath: 'target/${{ matrix.target }}/release/gnss-mgr'
+          override: 1
+          username: renestraub
+          apiKey: ${{secrets.BINTRAY_API_KEY}}
