@@ -31,20 +31,18 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: ARM toolchain 2
+      - name: ARM binutil (strip)
         uses: numworks/setup-arm-toolchain@v1
       - name: test gcc
         run: arm-none-eabi-gcc --version
         continue-on-error: true
-      - name: test strip 
+      - name: test strip
         run: arm-none-eabi-strip
         continue-on-error: true
 
-      - name: Optimize Release Target
-        run: |
-          ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
-          arm-none-eabi-strip target/arm-unknown-linux-gnueabihf/release/gnss-mgr
-        
+      - name: toolchains
+        run: rustup target list
+
       #- name: Build Debug Target
       #  uses: actions-rs/cargo@v1
       #  with:
@@ -58,6 +56,11 @@ jobs:
           use-cross: true
           command: build
           args: --release --target=${{ matrix.target }}
+
+      - name: Optimize Release Target
+        run: |
+          ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+          arm-none-eabi-strip target/arm-unknown-linux-gnueabihf/release/gnss-mgr
 
       - name: Upload Release
         uses: actions/upload-artifact@v2
