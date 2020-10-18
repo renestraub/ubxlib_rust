@@ -48,5 +48,5 @@ jobs:
       - name: Optimize Release Target
         run: |
           ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
-          arm-linux-gnueabihf-strip target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+          strip target/arm-unknown-linux-gnueabihf/release/gnss-mgr
           ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
