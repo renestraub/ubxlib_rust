@@ -68,16 +68,16 @@ jobs:
           path: target/${{ matrix.target }}/release/gnss-mgr
 
       # - name: Upload to Bintray
-      #   uses: bpicode/github-action-upload-bintray@master      
+      #   uses: bpicode/github-action-upload-bintray@master
 
       - name: Upload to Bintray
-        - uses: reznikmm/upload-bintray-action@v2
-          with:
-            subject: renestraub
-            repository: ubx-gnss-mgr
-            package: ubx-gnss-mgr
-            version: 0.3.5
-            sourcePath: 'target/${{ matrix.target }}/release/gnss-mgr'
-            override: 1
-            username: renestraub
-            apiKey: ${{secrets.BINTRAY_API_KEY}}
+        uses: reznikmm/upload-bintray-action@v2
+        with:
+          subject: renestraub
+          repository: ubx-gnss-mgr
+          package: ubx-gnss-mgr
+          version: 0.3.5
+          sourcePath: 'target/${{ matrix.target }}/release/gnss-mgr'
+          override: 1
+          username: renestraub
+          apiKey: ${{secrets.BINTRAY_API_KEY}}
