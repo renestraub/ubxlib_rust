@@ -21,7 +21,8 @@ jobs:
           - arm-unknown-linux-gnueabihf
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout sources
+        uses: actions/checkout@v2
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -29,13 +30,15 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - uses: actions-rs/cargo@v1
+      - name: Build Debug Target
+        uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
           args: --target=${{ matrix.target }}
 
-      - uses: actions-rs/cargo@v1
+      - name: Build Release Target
+        uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
