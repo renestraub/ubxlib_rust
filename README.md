@@ -1,5 +1,7 @@
 # gnss-mgr
 
+![Rust](https://github.com/renestraub/ubxlib_rust/workflows/Rust/badge.svg)
+
 u-blox gnss mangement tool (and Rust library).
 
 _A more elaborate description will follow later._
