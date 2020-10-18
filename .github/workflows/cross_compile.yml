@@ -38,15 +38,20 @@ jobs:
       #    command: build
       #    args: --target=${{ matrix.target }}
 
-      #- name: Build Release Target
-      #  uses: actions-rs/cargo@v1
-      #  with:
-      #    use-cross: true
-      #    command: build
-      #    args: --release --target=${{ matrix.target }}
+      - name: Build Release Target
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target }}
 
-      - name: Optimize Release Target
-        run: |
-          ls -alh /usr/bin/arm*
+      - name: Upload Release
+        uses: actions/checkout@v2
 
-          
+        # - run: mkdir -p path/to/artifact
+        # - run: echo hello > path/to/artifact/world.txt
+
+        - uses: actions/upload-artifact@v2
+          with:
+            name: gnss-mgr
+            path: target/arm-unknown-linux-gnueabihf/release/gnss-mgr
