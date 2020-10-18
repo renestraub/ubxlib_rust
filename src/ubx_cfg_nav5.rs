@@ -52,6 +52,7 @@ mod tests {
 
     #[test]
     fn poll() {
+        panic!("fail by intent");
         let dut = UbxCfgNav5Poll::new();
         assert_eq!(dut.name, "UBX-CFG-NAV5-POLL");
         let msg = dut.to_bin();
