@@ -37,13 +37,13 @@ jobs:
         run: arm-none-eabi-gcc --version
         continue-on-error: true
       - name: test strip 
-        run: arm-linux-gnueabihf-strip
+        run: arm-none-eabi-strip
         continue-on-error: true
 
       - name: Optimize Release Target
         run: |
           ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
-          arm-linux-gnueabihf-strip target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+          arm-none-eabi-strip target/arm-unknown-linux-gnueabihf/release/gnss-mgr
         
       #- name: Build Debug Target
       #  uses: actions-rs/cargo@v1
