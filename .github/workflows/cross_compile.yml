@@ -43,3 +43,6 @@ jobs:
           use-cross: true
           command: build
           args: --release --target=${{ matrix.target }}
+
+      - name: Optimize Release Target
+        run: ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
