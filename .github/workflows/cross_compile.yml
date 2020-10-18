@@ -31,24 +31,22 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: ARM binutil (strip)
+      - name: Get ARM toolchain (strip)
         uses: numworks/setup-arm-toolchain@v1
-      - name: test gcc
-        run: arm-none-eabi-gcc --version
-        continue-on-error: true
-      - name: test strip
-        run: arm-none-eabi-strip
-        continue-on-error: true
 
-      - name: toolchains
-        run: rustup target list
+      # - name: test strip
+      #   run: arm-none-eabi-strip
+      #   continue-on-error: true
 
-      #- name: Build Debug Target
-      #  uses: actions-rs/cargo@v1
-      #  with:
-      #    use-cross: true
-      #    command: build
-      #    args: --target=${{ matrix.target }}
+      # - name: toolchains
+      #   run: rustup target list
+
+      # - name: Build Debug Target
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     use-cross: true
+      #     command: build
+      #     args: --target=${{ matrix.target }}
 
       - name: Build Release Target
         uses: actions-rs/cargo@v1
@@ -59,11 +57,12 @@ jobs:
 
       - name: Optimize Release Target
         run: |
-          ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
-          arm-none-eabi-strip target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+          ls -alh target/${{ matrix.target }}/release/gnss-mgr
+          arm-none-eabi-strip target/${{ matrix.target }}/release/gnss-mgr
+          ls -alh target/${{ matrix.target }}/release/gnss-mgr
 
       - name: Upload Release
         uses: actions/upload-artifact@v2
         with:
           name: gnss-mgr
-          path: target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+          path: target/${{ matrix.target }}/release/gnss-mgr
