@@ -24,7 +24,8 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - uses: actions-rs/toolchain@v1
+      - name: Get ARM toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           target: ${{ matrix.target }}
@@ -45,4 +46,7 @@ jobs:
           args: --release --target=${{ matrix.target }}
 
       - name: Optimize Release Target
-        run: ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+        run: |
+          ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+          arm-linux-gnueabihf-strip target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+          ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
