@@ -74,7 +74,7 @@ jobs:
           subject: renestraub
           repository: ubx-gnss-mgr
           package: arm-linux
-          version: 0.3.5
+          version: 0.3.6
           sourcePath: 'target/${{ matrix.target }}/release/gnss-mgr'
           override: 1
           username: renestraub
