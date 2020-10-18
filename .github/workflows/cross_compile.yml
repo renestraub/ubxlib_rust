@@ -12,7 +12,7 @@ env:
 
 jobs:
   build:
-    name: Build
+    name: Linux ARMv7
     runs-on: ubuntu-latest
 
     strategy:
@@ -57,15 +57,14 @@ jobs:
 
       - name: Optimize Release Target
         run: |
-          ls -alh target/${{ matrix.target }}/release/gnss-mgr
           arm-none-eabi-strip target/${{ matrix.target }}/release/gnss-mgr
           ls -alh target/${{ matrix.target }}/release/gnss-mgr
 
-      - name: Upload to Github Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: gnss-mgr
-          path: target/${{ matrix.target }}/release/gnss-mgr
+      # - name: Upload to Github Artifacts
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: gnss-mgr
+      #     path: target/${{ matrix.target }}/release/gnss-mgr
 
       # - name: Upload to Bintray
       #   uses: bpicode/github-action-upload-bintray@master
@@ -75,7 +74,7 @@ jobs:
         with:
           subject: renestraub
           repository: ubx-gnss-mgr
-          package: ubx-gnss-mgr
+          package: arm-linux
           version: 0.3.5
           sourcePath: 'target/${{ matrix.target }}/release/gnss-mgr'
           override: 1

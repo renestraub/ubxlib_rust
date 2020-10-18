@@ -1,0 +1,40 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master, ci ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Linux x64
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Get toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Run tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+
+    - name: Build Debug Target
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+
+    - name: Build Release Target
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release
