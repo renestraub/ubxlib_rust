@@ -50,9 +50,9 @@ jobs:
           ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
 
       - name: Compress binaries
-            uses: svenstaro/upx-action@v2
-            with:
-              file: target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+        uses: svenstaro/upx-action@v2
+        with:
+         file: target/arm-unknown-linux-gnueabihf/release/gnss-mgr
 
       - name: List
         run: |
