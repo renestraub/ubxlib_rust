@@ -31,29 +31,21 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Build Debug Target
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --target=${{ matrix.target }}
+      #- name: Build Debug Target
+      #  uses: actions-rs/cargo@v1
+      #  with:
+      #    use-cross: true
+      #    command: build
+      #    args: --target=${{ matrix.target }}
 
-      - name: Build Release Target
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --target=${{ matrix.target }}
+      #- name: Build Release Target
+      #  uses: actions-rs/cargo@v1
+      #  with:
+      #    use-cross: true
+      #    command: build
+      #    args: --release --target=${{ matrix.target }}
 
       - name: Optimize Release Target
         run: |
           ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
-
-      - name: Compress binaries
-        uses: svenstaro/upx-action@v2
-        with:
-         file: target/arm-unknown-linux-gnueabihf/release/gnss-mgr
-
-      - name: List
-        run: |
-          ls -alh target/arm-unknown-linux-gnueabihf/release/gnss-mgr
+          ls -alh /usr/bin/arm*
