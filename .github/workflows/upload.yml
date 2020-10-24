@@ -2,8 +2,7 @@ name: Upload Test
 
 on:
   push:
-    tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+    branches: [ ci2 ]
 
 
 env:
@@ -25,6 +24,7 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           prerelease: true
           body_path: CHANGELOG.md
