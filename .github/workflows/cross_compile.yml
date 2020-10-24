@@ -68,3 +68,4 @@ jobs:
           files: target/${{ matrix.target }}/release/gnss-mgr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
