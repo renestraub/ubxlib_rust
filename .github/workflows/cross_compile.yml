@@ -59,12 +59,12 @@ jobs:
           arm-none-eabi-strip target/${{ matrix.target }}/release/gnss-mgr
           ls -alh target/${{ matrix.target }}/release/gnss-mgr
 
-      # - name: Upload to Github Artifacts
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: gnss-mgr
-      #     path: target/${{ matrix.target }}/release/gnss-mgr
-
-      # - name: Upload to Bintray
-      #   uses: bpicode/github-action-upload-bintray@master
-
+      - name: Create Github Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          prerelease: true
+          body_path: CHANGELOG.md
+          files: target/${{ matrix.target }}/release/gnss-mgr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
