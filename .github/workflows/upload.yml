@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
       
       - name: Build
-        run: echo ${{ github.sha }} > Release.txt
+        run: echo ${{ github.ref }} > Release.txt
 
       - name: Test
         run: cat Release.txt
