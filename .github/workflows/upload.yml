@@ -1,8 +1,6 @@
 name: Upload Test
 
-on:
-  push:
-    branches: [ ci2 ]
+on: push
 
 
 env:
