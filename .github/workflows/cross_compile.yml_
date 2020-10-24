@@ -2,7 +2,7 @@ name: Cross-compile Linux-armv7
 
 on:
   push:
-    branches: [ master, ci ]
+    branches: [ master, ci2 ]
   pull_request:
     branches: [ master ]
 
@@ -68,14 +68,3 @@ jobs:
       # - name: Upload to Bintray
       #   uses: bpicode/github-action-upload-bintray@master
 
-      - name: Upload to Bintray
-        uses: reznikmm/upload-bintray-action@v2
-        with:
-          subject: renestraub
-          repository: ubx-gnss-mgr
-          package: arm-linux
-          version: 0.3.6
-          sourcePath: 'target/${{ matrix.target }}/release/gnss-mgr'
-          override: 1
-          username: renestraub
-          apiKey: ${{secrets.BINTRAY_API_KEY}}
