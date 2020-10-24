@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::cid::UbxCID;
-use crate::frame::{UbxFramePoll, UbxFrameWithData};
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::frame::{UbxFramePoll, UbxFrameWithData};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x17;
@@ -40,7 +40,7 @@ impl UbxCfgNmea {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
+    use crate::ubxlib::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
 
     #[test]
     fn poll() {

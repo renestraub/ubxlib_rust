@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x00;
@@ -58,7 +58,7 @@ impl UbxCfgPrtUart {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
+    use crate::ubxlib::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
 
     #[test]
     fn poll() {

@@ -5,14 +5,14 @@ use std::time::Instant;
 use log::{debug, warn};
 use serial::prelude::*;
 
-use crate::cid::UbxCID;
-use crate::error::Error;
-use crate::frame::UbxFrame;
-use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
-use crate::parser_nmea::ParserNmea;
-use crate::parser_ubx::ParserUbx;
-use crate::ubx_ack::UbxAck;
-use crate::ubx_ack::{CLS_ACK, ID_ACK, ID_NAK};
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::error::Error;
+use crate::ubxlib::frame::UbxFrame;
+use crate::ubxlib::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
+use crate::ubxlib::parser_nmea::ParserNmea;
+use crate::ubxlib::parser_ubx::ParserUbx;
+use crate::ubxlib::ubx_ack::UbxAck;
+use crate::ubxlib::ubx_ack::{CLS_ACK, ID_ACK, ID_NAK};
 
 pub struct ServerTty {
     device_name: String,
@@ -37,6 +37,22 @@ impl ServerTty {
             cid_nak: UbxCID::new(CLS_ACK, ID_NAK),
             cid_ack: UbxCID::new(CLS_ACK, ID_ACK),
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn set_retries(&mut self, retries: usize) -> usize {
+        debug!("setting max retries to {}", retries);
+        let current = self.max_retries;
+        self.max_retries = retries;
+        current
+    }
+
+    #[allow(dead_code)]
+    pub fn set_retry_delay(&mut self, delay: u128) -> u128 {
+        debug!("setting retry delay to {} ms", delay);
+        let current = self.retry_delay_in_ms;
+        self.retry_delay_in_ms = delay;
+        current
     }
 
     pub fn set_baudrate(&mut self, bitrate: usize) -> Result<(), Error> {

@@ -8,9 +8,9 @@ use clap::ArgMatches;
 use log::{debug, info};
 
 use crate::config_file::GnssMgrConfig;
-use crate::error::Error;
 use crate::neo_m8::NeoM8;
-use crate::ubx_cfg_esfla::LeverArmType;
+use crate::ubxlib::error::Error;
+use crate::ubxlib::ubx_cfg_esfla::LeverArmType;
 
 static CURRENT_FW_VER: &str = "ADR 4.31";
 
@@ -32,7 +32,7 @@ impl GnssMgr {
             // Check bitrate and change to 115'200 if different
             info!("detecting current bitrate");
 
-            let bit_rate_current = match self.modem.detect_baudrate() {
+            let bit_rate_current = match self.modem.detect_baudrate_active() {
                 Ok(bitrate) => bitrate,
                 Err(e) => return Err(format!("bitrate detection failed ({})", e)),
             };

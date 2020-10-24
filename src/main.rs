@@ -1,26 +1,7 @@
-mod checksum;
-mod cid;
 mod config_file;
-mod error;
-mod frame;
 mod gnss_mgr;
 mod neo_m8;
-mod parser_nmea;
-mod parser_ubx;
-mod server_tty;
-mod ubx_ack;
-mod ubx_cfg_cfg;
-mod ubx_cfg_esfalg;
-mod ubx_cfg_esfla;
-mod ubx_cfg_gnss;
-mod ubx_cfg_nav5;
-mod ubx_cfg_nmea;
-mod ubx_cfg_prt;
-mod ubx_cfg_rate;
-mod ubx_cfg_rst;
-mod ubx_mga_init_time_utc;
-mod ubx_mon_ver;
-mod ubx_upd_sos;
+mod ubxlib;
 
 use std::env;
 use std::fs;

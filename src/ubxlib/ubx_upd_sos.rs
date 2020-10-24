@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::cid::UbxCID;
-use crate::frame::{UbxFramePoll, UbxFrameWithData};
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::frame::{UbxFramePoll, UbxFrameWithData};
 
 const CLS: u8 = 0x09;
 const ID: u8 = 0x14;
@@ -97,7 +97,7 @@ impl UbxUpdSosAction {
 #[cfg(test)]
 mod action {
     use super::*;
-    use crate::frame::UbxFrameSerialize;
+    use crate::ubxlib::frame::UbxFrameSerialize;
 
     #[test]
     fn backup() {
@@ -117,7 +117,7 @@ mod action {
 #[cfg(test)]
 mod response {
     use super::*;
-    use crate::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
+    use crate::ubxlib::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
 
     #[test]
     fn poll() {

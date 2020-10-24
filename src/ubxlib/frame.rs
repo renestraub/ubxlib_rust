@@ -2,8 +2,8 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt;
 
-use crate::checksum::Checksum;
-use crate::cid::UbxCID;
+use crate::ubxlib::checksum::Checksum;
+use crate::ubxlib::cid::UbxCID;
 
 pub trait UbxFrameInfo {
     fn name(&self) -> &'static str;

@@ -1,8 +1,8 @@
 use chrono::prelude::*;
 use serde::Serialize;
 
-use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x13;
 const ID: u8 = 0x40;
@@ -74,8 +74,8 @@ impl UbxFrameWithData<DataMgaIniTimeUtc> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frame::UbxFrameInfo;
-    use crate::frame::UbxFrameSerialize;
+    use crate::ubxlib::frame::UbxFrameInfo;
+    use crate::ubxlib::frame::UbxFrameSerialize;
     use chrono::Utc;
 
     #[test]

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::cid::UbxCID;
-use crate::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::frame::{UbxFrame, UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x3E;

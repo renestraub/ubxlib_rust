@@ -4,20 +4,20 @@ use std::collections::HashMap;
 use std::{thread, time};
 
 use crate::config_file::{Angles, Xyz};
-use crate::error::Error;
-use crate::server_tty::ServerTty;
-use crate::ubx_cfg_cfg::UbxCfgCfgAction;
-use crate::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
-use crate::ubx_cfg_esfla::{LeverArmType, UbxCfgEsflaSet};
-use crate::ubx_cfg_gnss::{SystemName, UbxCfgGnss, UbxCfgGnssPoll};
-use crate::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
-use crate::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
-use crate::ubx_cfg_prt::{UbxCfgPrtPoll, UbxCfgPrtUart};
-use crate::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
-use crate::ubx_cfg_rst::UbxCfgRstAction;
-use crate::ubx_mga_init_time_utc::UbxMgaIniTimeUtc;
-use crate::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
-use crate::ubx_upd_sos::{Response, UbxUpdSos, UbxUpdSosAction, UbxUpdSosPoll};
+use crate::ubxlib::error::Error;
+use crate::ubxlib::server_tty::ServerTty;
+use crate::ubxlib::ubx_cfg_cfg::UbxCfgCfgAction;
+use crate::ubxlib::ubx_cfg_esfalg::{UbxCfgEsfAlg, UbxCfgEsfAlgPoll};
+use crate::ubxlib::ubx_cfg_esfla::{LeverArmType, UbxCfgEsflaSet};
+use crate::ubxlib::ubx_cfg_gnss::{SystemName, UbxCfgGnss, UbxCfgGnssPoll};
+use crate::ubxlib::ubx_cfg_nav5::{UbxCfgNav5, UbxCfgNav5Poll};
+use crate::ubxlib::ubx_cfg_nmea::{UbxCfgNmea, UbxCfgNmeaPoll};
+use crate::ubxlib::ubx_cfg_prt::{UbxCfgPrtPoll, UbxCfgPrtUart};
+use crate::ubxlib::ubx_cfg_rate::{UbxCfgRate, UbxCfgRatePoll};
+use crate::ubxlib::ubx_cfg_rst::UbxCfgRstAction;
+use crate::ubxlib::ubx_mga_init_time_utc::UbxMgaIniTimeUtc;
+use crate::ubxlib::ubx_mon_ver::{UbxMonVer, UbxMonVerPoll};
+use crate::ubxlib::ubx_upd_sos::{Response, UbxUpdSos, UbxUpdSosAction, UbxUpdSosPoll};
 
 pub struct NeoM8 {
     pub device_name: String,
@@ -25,6 +25,8 @@ pub struct NeoM8 {
 }
 
 impl NeoM8 {
+    const BITRATES: [usize; 4] = [115200, 38400, 19200, 9600];
+
     pub fn new(device: &str) -> Self {
         Self {
             device_name: String::from(device),
@@ -33,9 +35,7 @@ impl NeoM8 {
     }
 
     pub fn detect_baudrate(&mut self) -> Result<usize, Error> {
-        const BITRATES: [usize; 2] = [115200, 9600];
-
-        for baud in BITRATES.iter() {
+        for baud in NeoM8::BITRATES.iter() {
             debug!("checking {} bps", baud);
 
             self.server.set_baudrate(*baud)?;
@@ -49,9 +49,49 @@ impl NeoM8 {
                     debug!("bitrate {:?} not working", baud);
                 }
             }
-        }
+        };
 
         Err(Error::BaudRateDetectionFailed)
+    }
+
+    pub fn detect_baudrate_active(&mut self) -> Result<usize, Error> {
+        let retries = self.server.set_retries(2);
+        let delay = self.server.set_retry_delay(250);
+
+        let mut result: Result<usize, Error> = Err(Error::BaudRateDetectionFailed);
+        
+        for baud in NeoM8::BITRATES.iter() {
+            debug!("checking {} bps", baud);
+
+            self.server.set_baudrate(*baud)?;
+
+            let poll = UbxCfgPrtPoll::create();
+            let mut response = UbxCfgPrtUart::create();
+
+            /*
+             * Try to query current port settings.
+             * If bitrate matches we should get a response, reporting the current bitrate
+             * Otherwise the request will timeout.
+             */
+            let res = self.server.poll(&poll, &mut response);
+            match res {
+                Ok(_) => {
+                    if response.data.baudrate as usize == *baud {
+                        debug!("bitrate matches");
+                        result = Ok(*baud);
+                        break;
+                    } else {
+                        debug!("bitrate reported ({} bps) does not match", response.data.baudrate);
+                    }
+                },
+                _ => debug!("bitrate {:?} not working", baud),
+            }
+        };
+
+        self.server.set_retries(retries);
+        self.server.set_retry_delay(delay);
+
+        result
     }
 
     pub fn configure(&mut self, bitrate: usize) -> Result<(), Error> {

@@ -11,9 +11,9 @@ use std::collections::VecDeque;
 
 use log::{debug, warn};
 
-use crate::checksum::Checksum;
-use crate::cid::UbxCID;
-use crate::frame::UbxFrame;
+use crate::ubxlib::checksum::Checksum;
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::frame::UbxFrame;
 
 pub struct ParserUbx {
     crc_error_cid: UbxCID,

@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
-use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::frame::UbxFrameWithData;
 
 pub const CLS_ACK: u8 = 0x05;
 pub const ID_ACK: u8 = 0x01;
@@ -34,7 +34,7 @@ impl UbxFrameWithData<DataAck> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frame::UbxFrameDeSerialize;
+    use crate::ubxlib::frame::UbxFrameDeSerialize;
 
     #[test]
     fn poll() {

@@ -1,8 +1,8 @@
 use serde::Deserialize;
 
-use crate::cid::UbxCID;
-use crate::frame::{UbxFrameDeSerialize, UbxFrameInfo};
-use crate::frame::{UbxFramePoll, UbxFrameWithData};
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::frame::{UbxFrameDeSerialize, UbxFrameInfo};
+use crate::ubxlib::frame::{UbxFramePoll, UbxFrameWithData};
 
 const CLS: u8 = 0x0A;
 const ID: u8 = 0x04;
@@ -107,7 +107,7 @@ impl UbxFrameDeSerialize for UbxMonVer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
+    use crate::ubxlib::frame::{UbxFrameDeSerialize, UbxFrameSerialize};
 
     #[test]
     fn poll() {

@@ -1,8 +1,8 @@
 use serde::Serialize;
 use serde_repr::Serialize_repr;
 
-use crate::cid::UbxCID;
-use crate::frame::UbxFrameWithData;
+use crate::ubxlib::cid::UbxCID;
+use crate::ubxlib::frame::UbxFrameWithData;
 
 const CLS: u8 = 0x06;
 const ID: u8 = 0x04;
@@ -77,7 +77,7 @@ impl UbxCfgRstAction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frame::UbxFrameSerialize;
+    use crate::ubxlib::frame::UbxFrameSerialize;
 
     #[test]
     fn cold_start() {
