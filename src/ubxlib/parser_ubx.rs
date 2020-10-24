@@ -74,9 +74,11 @@ impl ParserUbx {
         self.state = State::Init;
     }
 
+    /*
     pub fn frames_received(&self) -> usize {
         self.frames_rx
     }
+    */
 
     pub fn set_filter(&mut self, cid: UbxCID) {
         self.set_filters(&[cid]);

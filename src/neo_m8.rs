@@ -25,7 +25,7 @@ pub struct NeoM8 {
 }
 
 impl NeoM8 {
-    const BITRATES: [usize; 4] = [115200, 38400, 19200, 9600];
+    const BITRATES: [usize; 2] = [115200, 9600];
 
     pub fn new(device: &str) -> Self {
         Self {
@@ -34,6 +34,7 @@ impl NeoM8 {
         }
     }
 
+    /*
     pub fn detect_baudrate(&mut self) -> Result<usize, Error> {
         for baud in NeoM8::BITRATES.iter() {
             debug!("checking {} bps", baud);
@@ -53,13 +54,14 @@ impl NeoM8 {
 
         Err(Error::BaudRateDetectionFailed)
     }
+    */
 
     pub fn detect_baudrate_active(&mut self) -> Result<usize, Error> {
         let retries = self.server.set_retries(2);
         let delay = self.server.set_retry_delay(250);
 
         let mut result: Result<usize, Error> = Err(Error::BaudRateDetectionFailed);
-        
+
         for baud in NeoM8::BITRATES.iter() {
             debug!("checking {} bps", baud);
 
@@ -81,12 +83,15 @@ impl NeoM8 {
                         result = Ok(*baud);
                         break;
                     } else {
-                        debug!("bitrate reported ({} bps) does not match", response.data.baudrate);
+                        debug!(
+                            "bitrate reported ({} bps) does not match",
+                            response.data.baudrate
+                        );
                     }
-                },
+                }
                 _ => debug!("bitrate {:?} not working", baud),
             }
-        };
+        }
 
         self.server.set_retries(retries);
         self.server.set_retry_delay(delay);

@@ -2,7 +2,7 @@ pub mod checksum;
 pub mod cid;
 pub mod error;
 pub mod frame;
-pub mod parser_nmea;
+// pub mod parser_nmea;
 pub mod parser_ubx;
 pub mod server_tty;
 pub mod ubx_ack;

@@ -9,7 +9,7 @@ use crate::ubxlib::cid::UbxCID;
 use crate::ubxlib::error::Error;
 use crate::ubxlib::frame::UbxFrame;
 use crate::ubxlib::frame::{UbxFrameDeSerialize, UbxFrameInfo, UbxFrameSerialize};
-use crate::ubxlib::parser_nmea::ParserNmea;
+// use crate::ubxlib::parser_nmea::ParserNmea;
 use crate::ubxlib::parser_ubx::ParserUbx;
 use crate::ubxlib::ubx_ack::UbxAck;
 use crate::ubxlib::ubx_ack::{CLS_ACK, ID_ACK, ID_NAK};
@@ -79,6 +79,7 @@ impl ServerTty {
         }
     }
 
+    /*
     pub fn scan(&mut self) -> Result<(), Error> {
         let port = self.serial_port.as_mut().unwrap();
         let mut nmea_parser = ParserNmea::new();
@@ -115,6 +116,7 @@ impl ServerTty {
 
         Err(Error::ModemNotResponding)
     }
+    */
 
     /*
     Poll a receiver status
