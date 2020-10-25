@@ -1,10 +1,6 @@
 name: Compile and Test Linux-x64
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
@@ -26,7 +22,7 @@ jobs:
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:
-        command: check
+        command: test
 
     - name: Build Debug Target
       uses: actions-rs/cargo@v1
