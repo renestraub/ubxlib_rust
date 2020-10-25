@@ -42,7 +42,7 @@ impl GnssMgrConfig {
         };
 
         // Update rate
-        self.update_rate = Self::get_int(sec_general, "update-rate", |val| val >= 1 && val <= 11);
+        self.update_rate = Self::get_int(sec_general, "update-rate", |val| val >= 1 && val <= 10);
 
         // GNSS operation mode
         let valid_modes = vec!["stationary", "vehicle"];
