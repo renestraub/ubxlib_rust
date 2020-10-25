@@ -1,6 +1,9 @@
 name: Cross-compile Linux-armv7
 
-on: push
+# on: push
+on:
+  repository_dispatch:
+    types: [x64-target-built]
 
 env:
   CARGO_TERM_COLOR: always

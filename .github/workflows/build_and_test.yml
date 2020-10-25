@@ -24,13 +24,21 @@ jobs:
       with:
         command: test
 
-    - name: Build Debug Target
+    - name: Build debug target
       uses: actions-rs/cargo@v1
       with:
         command: build
 
-    - name: Build Release Target
+    - name: Build release target
       uses: actions-rs/cargo@v1
       with:
         command: build
         args: --release
+
+    - name: Report native target done
+      uses: peter-evans/repository-dispatch@v1
+      with:
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        repository: renestraub/ubxlib_rust 
+        event-type: x64-target-built
+        client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
