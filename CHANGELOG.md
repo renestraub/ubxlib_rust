@@ -6,21 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.3.6] - 2020-10-xx
+## [Unreleased]
+
+
+
+## [0.3.7] - 2020-10-25
 
 ### Added
 
-- This change log
-- Github deployment
+- This changelog
+- Workflow to create releases on Github
+
 
 ### Changed
 
-- Active modem baudrate discovery
-
-### Removed
-
-- 
+- Active GNSS modem baudrate discovery
+- Refactored unit test
 
 
-[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.3.6.test2...HEAD
-[0.3.6]: https://github.com/renestraub/ubxlib_rust/releases/tag/v0.3.6.test2...v0.3.6
+## [0.3.6] - 2020-10-18
+
+### Added
+
+- Github workflow to test and build project
+
+
+[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.3.7...HEAD
+[0.3.7]: https://github.com/renestraub/ubxlib_rust/releases/tag/v0.3.6...v0.3.7
+[0.3.6]: https://github.com/olivierlacan/keep-a-changelog/releases/tag/v0.3.6
