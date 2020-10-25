@@ -311,23 +311,23 @@ mod update_rate {
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_update_rate.conf");
-        assert_eq!(res.is_ok(), true);
-        assert_eq!(config.update_rate.is_none(), true);
+        assert!(res.is_ok());
+        assert!(config.update_rate.is_none());
     }
 
     #[test]
     fn no_value() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_update_rate_empty.conf");
-        assert_eq!(res.is_ok(), true);
-        assert_eq!(config.update_rate.is_none(), true);
+        assert!(res.is_ok());
+        assert!(config.update_rate.is_none());
     }
 
     #[test]
     fn value_ok() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_update_rate_ok.conf");
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
         assert_eq!(config.update_rate, Some(2));
     }
 
@@ -335,16 +335,16 @@ mod update_rate {
     fn value_too_high() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_update_rate_too_high.conf");
-        assert_eq!(res.is_ok(), true);
-        assert_eq!(config.update_rate.is_none(), true);
+        assert!(res.is_ok());
+        assert!(config.update_rate.is_none());
     }
 
     #[test]
     fn syntax_error() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_update_rate_syntax_error.conf");
-        assert_eq!(res.is_ok(), true);
-        assert_eq!(config.update_rate.is_none(), true);
+        assert!(res.is_ok());
+        assert!(config.update_rate.is_none());
     }
 }
 
@@ -355,23 +355,23 @@ mod mode {
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_mode.conf");
-        assert_eq!(res.is_ok(), true);
-        assert_eq!(config.mode.is_none(), true);
+        assert!(res.is_ok());
+        assert!(config.mode.is_none());
     }
 
     #[test]
     fn no_value() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_mode_empty.conf");
-        assert_eq!(res.is_ok(), true);
-        assert_eq!(config.mode.is_none(), true);
+        assert!(res.is_ok());
+        assert!(config.mode.is_none());
     }
 
     #[test]
     fn vehicle() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_mode_vehicle.conf");
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
         assert_eq!(config.mode, Some(String::from("vehicle")));
     }
 
@@ -379,7 +379,7 @@ mod mode {
     fn stationary() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_mode_stationary.conf");
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
         assert_eq!(config.mode, Some(String::from("stationary")));
     }
 
@@ -387,8 +387,8 @@ mod mode {
     fn unknown() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_mode_unknown.conf");
-        assert_eq!(res.is_ok(), true);
-        assert_eq!(config.mode.is_none(), true);
+        assert!(res.is_ok());
+        assert!(config.mode.is_none());
     }
 }
 
@@ -400,7 +400,7 @@ mod imu_angles {
     fn key_missing() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_no_imu_yaw.conf");
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
         assert!(config.imu_angles.is_none());
     }
 
@@ -408,7 +408,7 @@ mod imu_angles {
     fn no_value() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_imu_yaw_empty.conf");
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
         assert!(config.imu_angles.is_none());
     }
 
@@ -416,7 +416,7 @@ mod imu_angles {
     fn valid() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_imu_valid.conf");
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
         assert!(config.imu_angles.is_some());
 
         let angles = config.imu_angles.unwrap();
@@ -434,7 +434,7 @@ mod vrp_antenna {
     fn ok() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_vrp_antenna_ok.conf");
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
 
         let xyz = config.vrp2antenna.unwrap();
         assert!(float_same(xyz.x, 1.0));
@@ -456,7 +456,7 @@ mod sat_systems {
     fn ok() {
         let mut config: GnssMgrConfig = Default::default();
         let res = config.parse_config("test_files/gnss0_systems_ok.conf");
-        assert_eq!(res.is_ok(), true);
+        assert!(res.is_ok());
 
         let systems = config.systems.unwrap();
         assert!(systems.contains(&String::from("gps")));

@@ -291,7 +291,7 @@ mod tests {
         uut.process(&FRAME_1);
 
         let res = uut.packet();
-        assert_eq!(res.is_none(), true);
+        assert!(res.is_none());
     }
 
     #[test]
@@ -301,7 +301,7 @@ mod tests {
         uut.process(&FRAME_1);
 
         let res = uut.packet();
-        assert_eq!(res.is_none(), true);
+        assert!(res.is_none());
     }
 
     #[test]
@@ -327,12 +327,12 @@ mod tests {
         uut.set_filter(UbxCID::new(0x13, 0x40));
         uut.process(&FRAME_1);
         let res = uut.packet();
-        assert_eq!(res.is_some(), true);
+        assert!(res.is_some());
 
         uut.set_filter(UbxCID::new(0x00, 0x00));
         uut.process(&FRAME_1);
         let res = uut.packet();
-        assert_eq!(res.is_none(), true);
+        assert!(res.is_none());
     }
 
     #[test]
@@ -377,7 +377,7 @@ mod tests {
         uut.set_filter(UbxCID::new(0x13, 0x40));
         uut.process(&frame);
         let res = uut.packet(); // crc packet
-        assert_eq!(res.is_some(), true);
+        assert!(res.is_some());
         let packet = res.unwrap(); // panics if None
         assert_eq!(packet.cid, UbxCID::new(0x00, 0x02));
     }
@@ -393,7 +393,7 @@ mod tests {
         uut.set_filter(UbxCID::new(0x13, 0x40));
         uut.process(&frame);
         let res = uut.packet(); // Should be None because frame is too long (MAX_MESSAGE_LENGTH)
-        assert_eq!(res.is_none(), true);
+        assert!(res.is_none());
     }
 
     #[test]

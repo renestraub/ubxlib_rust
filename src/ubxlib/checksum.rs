@@ -40,7 +40,7 @@ mod tests {
     fn construction() {
         let dut = Checksum::new();
         let ok = dut.matches(0, 0);
-        assert_eq!(ok, true);
+        assert!(ok);
     }
 
     #[test]
@@ -51,7 +51,7 @@ mod tests {
 
         dut.reset();
         let ok = dut.matches(0, 0);
-        assert_eq!(ok, true);
+        assert!(ok);
     }
 
     #[test]
@@ -67,7 +67,7 @@ mod tests {
             uut.add(*byte);
         }
         let ok = uut.matches(0x51, 0xAC);
-        assert_eq!(ok, true);
+        assert!(ok);
     }
 
     /*
@@ -88,7 +88,7 @@ mod tests {
             let (a,b) = uut.value();
             println!("{:02x} {:02x}", a, b);    // --> d6 (214), 9c (156)
             let ok = uut.matches(0x51, 0xAC);
-            assert_eq!(ok, true);
+            assert!(ok);
         }
 
 
@@ -107,7 +107,7 @@ mod tests {
             let (a,b) = uut.value();
             println!("{:02x} {:02x}", a, b);    // --> d6 (214), 9c (156)
             let ok = uut.matches(0x51, 0xAC);
-            assert_eq!(ok, true);
+            assert!(ok);
         }
 
         #[test]
@@ -125,7 +125,7 @@ mod tests {
             let (a,b) = uut.value();
             println!("{:02x} {:02x}", a, b);    // --> 0x5a (90), 0x4f (79) -> Ok, but payload checksum is wrong: 0xEC (236), 0x4B (75)
             let ok = uut.matches(0x51, 0xAC);
-            assert_eq!(ok, true);
+            assert!(ok);
 
             // 0x4B   0100 1011    0x5A  0101 1010
             // 0x4F   0100 1111    0xEC  1110 1100
