@@ -1,6 +1,8 @@
 # gnss-mgr
 
 ![Rust](https://github.com/renestraub/ubxlib_rust/workflows/Rust/badge.svg)
+![Linux-x64](https://github.com/renestraub/ubxlib_rust/workflows/Compile%20and%20Test%20Linux-x64/badge.svg)
+![Linux-armv7](https://github.com/renestraub/ubxlib_rust/workflows/Cross-compile%20Linux-armv7/badge.svg)
 
 u-blox gnss mangement tool (and Rust library).
 
@@ -15,7 +17,7 @@ See the command help for more information
 
 ```
 $ gnss-mgr --help
-gnss manager utility 0.3.4
+gnss manager utility 0.3.7
 Operates and configures u-blox NEO GNSS modems
 
 USAGE:
@@ -41,7 +43,7 @@ SUBCOMMANDS:
 
 ## Examples
 
-The following examples assume your GNSS modem is availabe under `/dev/gnss0` (most likely a symlink to a `/dev/ttyXXX` port).
+The following examples assume your GNSS modem is availabe under `/dev/gnss0` (most likely a symlink to a TTY device like `/dev/ttyS3`).
 
 
 ### Initialize and get Modem Information
