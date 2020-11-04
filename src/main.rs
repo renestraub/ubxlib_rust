@@ -37,12 +37,13 @@ fn run_app(matches: &ArgMatches) -> Result<(), String> {
     // unwrap must never fail here, as argument is checked by parser already
     let mut device_name: String = matches.value_of("device").unwrap().to_string();
 
-    /* Ensure port can be used (exists, not used by another process) */
-    let res = check_port(&device_name);
-    if res.is_err() && !device_name.starts_with("/dev/") {
+    // complete devicename if it was given in short hand form, e.g. gnss instead of /dev/gnss0
+    if !device_name.starts_with("/dev/") {
         device_name = format!("/dev/{}", device_name);
-        check_port(&device_name)?;
     }
+
+    // Ensure port can be used (exists, not used by another process)
+    check_port(&device_name)?;
 
     // Create GNSS Manager on specified device
     let mut gnss = GnssMgr::new(&device_name);
