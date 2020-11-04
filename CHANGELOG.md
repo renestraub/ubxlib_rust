@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.3.8] - 2020-11-04
+
+### Changed
+
+- Fixed port check for fully qualified device name (e.g. /dev/gnss0)
+
+
+
 ## [0.3.7] - 2020-10-27
 
 ### Added
@@ -31,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Github workflow to test and build project
 
 
-[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.3.7...HEAD
-[0.3.7]: https://github.com/renestraub/ubxlib_rust/releases/tag/v0.3.6...v0.3.7
+[unreleased]: https://github.com/renestraub/ubxlib_rust/compare/v0.3.8...HEAD
+[0.3.8]: https://github.com/renestraub/ubxlib_rust/compare/v0.3.7...v0.3.8
+[0.3.7]: https://github.com/renestraub/ubxlib_rust/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/renestraub/ubxlib_rust/releases/tag/v0.3.6

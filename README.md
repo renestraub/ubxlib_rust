@@ -17,7 +17,7 @@ See the command help for more information
 
 ```
 $ gnss-mgr --help
-gnss manager utility 0.3.7
+gnss manager utility 0.3.8
 Operates and configures u-blox NEO GNSS modems
 
 USAGE:
